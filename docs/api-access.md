@@ -59,19 +59,20 @@ VITE_MAPTILER_KEY=粘贴你的受限Key
 https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=53.3331&lon=-6.2489
 ~~~
 
-请求必须设置真实 User-Agent，其中包含项目名称以及可联系的项目网址或邮箱。示例格式如下，其中网址必须替换成已经可访问的真实项目网址：
+请求必须设置真实 User-Agent，其中包含项目名称以及可联系的项目网址或邮箱。MET Norway 不需要 API key。官方要求提供可联系的身份，遵守缓存响应头、最多四位小数坐标和数据署名规则。 [MET Norway 使用条款](https://docs.api.met.no/doc/TermsOfService)
 
 ~~~sh
-curl -H 'User-Agent: AuroraOutlook/0.1 (https://github.com/ACCOUNT/REPOSITORY)' \
+curl -H 'User-Agent: AuroraOutlook/0.1 alison.zhangyan@gmail.com' \
   'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=53.3331&lon=-6.2489'
 ~~~
 
-若仓库尚未创建，可使用真实联系邮箱作为身份信息。不得伪造邮箱或网址。坐标最多保留四位小数；按响应缓存头缓存数据；展示 MET Norway 来源署名。条款不要求 API key。
+本项目后端默认通过 `app.metno.user-agent` 发送 `AuroraOutlook/0.1 alison.zhangyan@gmail.com`，也可以用服务端环境变量 `METNO_USER_AGENT` 覆盖。当前仓库未配置 Git remote，尚未确认真实仓库 URL，因此没有伪造或猜测 GitHub 地址。仓库地址确认后，可把 User-Agent 改为 `AuroraOutlook/0.1 github.com/账户名/仓库名`。MET Norway 官方文档接受应用名加 GitHub 项目地址作为识别方式，也要求对方能联系到项目维护者。[Getting Started](https://docs.api.met.no/doc/GettingStarted.html)
 
 ## 在本项目中配置
 
 - Open-Meteo 地点搜索地址目前在后端 app.geocoding.base-url 配置。
 - MapTiler Key 由前端通过 `VITE_MAPTILER_KEY` 读取；它用于底图请求并受来源限制，不是 NOAA Key。
+- MET Norway User-Agent 由后端 `app.metno.user-agent` 配置，可通过部署环境变量 `METNO_USER_AGENT` 替换。
 - 若以后接入需要密钥的服务，只在服务端环境变量中配置；不要写进 React 前端、提交到 Git 或粘贴到公开聊天中。
 - 天气接口尚未接入。完成部署身份配置、缓存和来源验证后，再添加天气 Provider。
 
