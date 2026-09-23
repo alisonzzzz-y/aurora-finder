@@ -118,7 +118,8 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
             throw new ProviderUnavailableException(ProviderFailure.INVALID_RESPONSE, "Location has an invalid time zone", e);
         }
         return new Location(node.path("id").asLong(), node.path("name").asText(),
-                node.path("admin1").asText(""), node.path("country").asText(""),
+                node.path("admin1").asText(""), node.path("admin2").asText(""),
+                node.path("country").asText(""),
                 latitude, longitude, timezone);
     }
 

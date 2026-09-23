@@ -77,7 +77,9 @@ class OpenMeteoGeocodingProviderTest {
     @Test
     void parsesValidLocation() {
         reply.set(new Reply(200, result("53.33306", "Europe/Dublin")));
-        assertEquals("Europe/Dublin", provider.search("Dublin").getFirst().timezone());
+        var dublin = provider.search("Dublin").getFirst();
+        assertEquals("Europe/Dublin", dublin.timezone());
+        assertEquals("County Dublin", dublin.subregion());
         reply.set(new Reply(200, location("53.33306", "Europe/Dublin")));
         assertEquals(2964574, provider.get(2964574).orElseThrow().id());
         assertEquals(ProviderFailure.INVALID_RESPONSE, assertThrows(ProviderUnavailableException.class,
@@ -95,7 +97,8 @@ class OpenMeteoGeocodingProviderTest {
 
     private String location(String latitude, String timezone) {
         return "{\"id\":2964574,\"name\":\"Dublin\",\"latitude\":" + latitude
-                + ",\"longitude\":-6.24889,\"timezone\":\"" + timezone + "\"}";
+                + ",\"longitude\":-6.24889,\"timezone\":\"" + timezone
+                + "\",\"admin1\":\"Leinster\",\"admin2\":\"County Dublin\"}";
     }
 
     private void respond(HttpExchange exchange) throws IOException {

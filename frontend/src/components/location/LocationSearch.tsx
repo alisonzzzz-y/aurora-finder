@@ -47,7 +47,10 @@ export function LocationSearch({ busy, onSelect }: Props) {
       {error && <p className="error" role="alert">{error}</p>}
       {state === 'results' && <ul className="results" aria-label="Matching locations">{results.map(location => (
         <li key={location.id}><button type="button" onClick={() => onSelect(location)} disabled={busy}>
-          <strong>{location.name}</strong><span>{[location.region, location.country].filter(Boolean).join(', ')} · {location.timezone}</span>
+          <strong>{location.name}</strong><span>
+            {[location.subregion, location.region, location.country].filter(Boolean).join(', ')}
+            <br />{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)} · {location.timezone}
+          </span>
         </button></li>
       ))}</ul>}
       {state === 'empty' && <p className="hint">No matching places found. Try another name or spelling.</p>}

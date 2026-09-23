@@ -31,7 +31,7 @@ class LocationServiceTest {
 
     @Test
     void trimsSearchAndReusesLocationFromSearchResults() {
-        Location dublin = new Location(2964574, "Dublin", "Leinster", "Ireland",
+        Location dublin = new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");
         when(provider.search("Dublin")).thenReturn(List.of(dublin));
 
