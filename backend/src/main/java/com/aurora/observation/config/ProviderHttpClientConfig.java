@@ -8,10 +8,10 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration
-public class GeocodingHttpClientConfig {
+public class ProviderHttpClientConfig {
     @Bean
-    public HttpClient geocodingHttpClient(
-            @Value("${app.geocoding.connect-timeout:3s}") Duration connectTimeout) {
+    public HttpClient providerHttpClient(
+            @Value("${app.http.connect-timeout:3s}") Duration connectTimeout) {
         return HttpClient.newBuilder().connectTimeout(connectTimeout).build();
     }
 }

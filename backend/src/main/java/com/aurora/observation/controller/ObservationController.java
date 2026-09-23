@@ -2,8 +2,10 @@ package com.aurora.observation.controller;
 
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.OutlookResponse;
+import com.aurora.observation.dto.AuroraMapResponse;
 import com.aurora.observation.service.LocationService;
 import com.aurora.observation.service.OutlookService;
+import com.aurora.observation.service.AuroraMapService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,10 +19,12 @@ import java.util.List;
 public class ObservationController {
     private final LocationService locations;
     private final OutlookService outlook;
+    private final AuroraMapService auroraMap;
 
-    public ObservationController(LocationService locations, OutlookService outlook) {
+    public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap) {
         this.locations = locations;
         this.outlook = outlook;
+        this.auroraMap = auroraMap;
     }
 
     @GetMapping("/locations")
@@ -31,5 +35,10 @@ public class ObservationController {
     @GetMapping("/outlooks/{locationId}")
     public OutlookResponse outlook(@PathVariable long locationId) {
         return outlook.forLocation(locationId);
+    }
+
+    @GetMapping("/aurora-map")
+    public AuroraMapResponse auroraMap() {
+        return auroraMap.latest();
     }
 }

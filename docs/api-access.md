@@ -1,6 +1,6 @@
 # 数据源 API 获取指南
 
-当前规划使用的 NOAA 和 Open-Meteo 地点搜索接口不需要 API key。MET Norway 天气接口也不使用 API key，但必须发送真实、可联系的 User-Agent。不要为了这些接口创建或提交密钥。
+NOAA OVATION 和 Open-Meteo 地点搜索接口不需要 API key。MapTiler 只为地图底图瓦片需要一个前端 Key。MET Norway 天气接口也不使用 API key，但必须发送真实、可联系的 User-Agent。
 
 ## Open-Meteo 地点搜索与时区
 
@@ -32,7 +32,24 @@ Kp 预测：
 curl 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
 ~~~
 
-以上是公开数据 URL，不要求 API key。后端应缓存 NOAA 响应，分别保留数据观测时间、预测时间和获取时间。OVATION 网格不能解释成个人看到极光的概率。
+以上是公开数据 URL，不要求 API key。NOAA 将 OVATION 描述为短期极光位置和强度预测，通常提前约 30–90 分钟；官方说明可在强度基础上估算观测概率，但这不是结合当地云量、黑暗和视野后的个人观测概率。本项目地图显示来源网格和时间，不据此生成城市概率榜单或未来两晚等级。后端缓存 NOAA 响应，并保留来源观测时间和预测时间。
+
+## MapTiler 底图 Key
+
+本项目用开源 MapLibre GL JS 绘制交互地图，用 MapTiler Cloud 提供底图瓦片。MapLibre 本身不要求 Key，MapTiler 在线样式/瓦片需要 Key。个人或非商业原型可先查看 MapTiler 的 Free 方案和当前配额；公开部署或用途变化前，要重新核对其条款与限额。
+
+1. 在 [MapTiler Cloud](https://cloud.maptiler.com/) 注册或登录。
+2. 打开 **API keys**，创建一个专供本项目使用的 Key。
+3. 为 Key 限制可用网站来源，先加入 `http://localhost:5173`。部署后再加入实际 HTTPS 域名。
+4. 将 Key 写入本地 `frontend/.env.local`：
+
+~~~dotenv
+VITE_MAPTILER_KEY=粘贴你的受限Key
+~~~
+
+5. 重启 Vite 开发服务器。可从 `frontend/.env.example` 复制文件名模板。
+
+浏览器地图需要把这个 Key 发送给 MapTiler，因此它不是服务端秘密；通过来源限制保护它。不要把未受限 Key 提交到 Git、写入 README 或发送到聊天中。仓库 `.gitignore` 已排除 `.env.local`。
 
 ## MET Norway 云量预报
 
@@ -54,7 +71,7 @@ curl -H 'User-Agent: AuroraOutlook/0.1 (https://github.com/ACCOUNT/REPOSITORY)' 
 ## 在本项目中配置
 
 - Open-Meteo 地点搜索地址目前在后端 app.geocoding.base-url 配置。
-- 暂无提供商需要 API key，所以当前没有密钥环境变量。
+- MapTiler Key 由前端通过 `VITE_MAPTILER_KEY` 读取；它用于底图请求并受来源限制，不是 NOAA Key。
 - 若以后接入需要密钥的服务，只在服务端环境变量中配置；不要写进 React 前端、提交到 Git 或粘贴到公开聊天中。
 - 天气接口尚未接入。完成部署身份配置、缓存和来源验证后，再添加天气 Provider。
 

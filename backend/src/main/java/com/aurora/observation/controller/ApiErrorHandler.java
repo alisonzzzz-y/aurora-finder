@@ -23,9 +23,9 @@ public class ApiErrorHandler {
     @ExceptionHandler(ProviderUnavailableException.class)
     public ProblemDetail providerUnavailable(ProviderUnavailableException error) {
         if (error.failure() == ProviderFailure.INVALID_RESPONSE) {
-            log.error("Geocoding provider returned invalid data: {}", error.getMessage(), error);
+            log.error("External data provider returned invalid data: {}", error.getMessage(), error);
         } else {
-            log.warn("Geocoding provider failure [{}]: {}", error.failure(), error.getMessage());
+            log.warn("External data provider failure [{}]: {}", error.failure(), error.getMessage());
         }
         HttpStatus status = switch (error.failure()) {
             case INVALID_RESPONSE -> HttpStatus.BAD_GATEWAY;
@@ -33,10 +33,10 @@ public class ApiErrorHandler {
             default -> HttpStatus.SERVICE_UNAVAILABLE;
         };
         String detail = switch (error.failure()) {
-            case RATE_LIMITED -> "Location search is temporarily rate limited. Please try again later.";
-            case TIMEOUT -> "Location search timed out. Please try again later.";
-            case INVALID_RESPONSE -> "The location source returned invalid data. Please try again later.";
-            default -> "The location source is unavailable. Please try again later.";
+            case RATE_LIMITED -> "The data source is temporarily rate limited. Please try again later.";
+            case TIMEOUT -> "The data source timed out. Please try again later.";
+            case INVALID_RESPONSE -> "The data source returned invalid data. Please try again later.";
+            default -> "The data source is unavailable. Please try again later.";
         };
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setProperty("code", "GEOCODING_" + error.failure().name());

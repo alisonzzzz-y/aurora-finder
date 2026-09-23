@@ -7,8 +7,9 @@ An early project foundation for a location-based aurora viewing assistant. This 
 - Search for a place through Open-Meteo's geocoding API and select one of the returned locations. The selected record supplies coordinates and an IANA time zone.
 - Show the selected place's current local date and the following two local dates. Date labels include the UTC offset at the start of each local date. Displayed timestamps use the place's time zone and show the offset for that instant. Every night is marked **Insufficient data** until the observation inputs and rule thresholds are validated.
 - Expose a Spring Boot health endpoint and separate API endpoints for place search and the three-night response.
+- Show a global NOAA OVATION map on the home page through a backend endpoint. The MapTiler basemap needs a browser key before map tiles can load; city-level viewing ratings remain unimplemented while rules are being validated.
 
-The interface links to proposed data sources but does not present their forecasts as live facts. The map and AI entry are explicitly unavailable.
+The map overlay displays NOAA's short-range model grid, with separate observation and forecast times. It does not account for local clouds or darkness. The AI entry is explicitly unavailable.
 
 ## Run locally
 
@@ -44,7 +45,9 @@ npm run lint
 npm run build
 ```
 
-The geocoding HTTP client's connection and request timeouts are configurable with `APP_GEOCODING_CONNECT_TIMEOUT` and `APP_GEOCODING_REQUEST_TIMEOUT`.
+External HTTP connection timeouts are configurable with `APP_HTTP_CONNECT_TIMEOUT`; provider request timeouts use `APP_GEOCODING_REQUEST_TIMEOUT` and `APP_OVATION_REQUEST_TIMEOUT`.
+
+The home page map uses NOAA SWPC's public OVATION grid through the backend; this feed does not require an API key. MapLibre GL JS renders the interactive map, and MapTiler supplies the basemap tiles. To enable tiles, create a MapTiler Cloud key, restrict its allowed origins to `http://localhost:5173` and your deployed site origin, copy `frontend/.env.example` to `frontend/.env.local`, and set `VITE_MAPTILER_KEY`. The key is visible in browser requests by design, so keep its allowed origins restricted. Never commit `.env.local`.
 
 API examples:
 
