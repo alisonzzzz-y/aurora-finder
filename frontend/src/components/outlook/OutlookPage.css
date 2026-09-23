@@ -8,6 +8,8 @@
 .night-card p { color: #a9b8ca; line-height: 1.55; }
 .night-card .night-index { color: #8ce2c4; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; margin: 0 0 9px; }
 .night-card h3 { font-size: 22px; margin: 0 0 21px; }
+.level-badge { display: inline-block; border: 1px solid #41566a; border-radius: 999px; padding: 7px 12px; color: #b7c7d8; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+.rule-status { color: #9aaec1; font-size: 13px; margin: 0 0 14px; }
 .night-card p:last-child { font-size: 14px; margin-bottom: 0; }
 .timestamp { color: #9aaec1; font-size: 13px; margin-top: 12px; }
 .utc-offset { color: #91a7ba; font-size: 13px; font-weight: 500; white-space: nowrap; }

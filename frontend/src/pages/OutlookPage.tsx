@@ -4,6 +4,11 @@ import '../components/outlook/OutlookPage.css'
 
 type Props = { outlook: Outlook; onChangeLocation: () => void }
 
+const ruleStatusLabels: Record<Outlook['ruleStatus'], string> = {
+  NOT_VALIDATED: 'Viewing rules not validated',
+  VALIDATED: 'Viewing rules validated',
+}
+
 function formatLocalTimestamp(instant: string, timezone: string) {
   const date = new Date(instant)
   const localTime = new Intl.DateTimeFormat('en', {
@@ -22,6 +27,7 @@ export function OutlookPage({ outlook, onChangeLocation }: Props) {
         <div><p className="eyebrow">LOCAL OUTLOOK</p><h1 id="outlook-title">{outlook.location.name}, {outlook.location.country}</h1></div>
         <div className="place-actions"><span>{outlook.location.timezone}</span><button type="button" className="text-button" onClick={onChangeLocation}>Choose another place</button></div>
       </div>
+      <p className="rule-status">{ruleStatusLabels[outlook.ruleStatus]}</p>
       <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} key={night.localDate} />)}</div>
       <p className="timestamp">Response generated {formatLocalTimestamp(outlook.generatedAtUtc, outlook.location.timezone)}. Dates and times follow the selected place's local time.</p>
     </section>
