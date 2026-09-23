@@ -29,6 +29,23 @@ npm run dev
 
 Open the local URL printed by Vite. Its development proxy sends `/api` requests to Spring Boot on port 8080.
 
+Local checks:
+
+```sh
+cd backend
+./mvnw test
+./mvnw -DskipTests package
+```
+
+```sh
+cd frontend
+npm run typecheck
+npm run lint
+npm run build
+```
+
+The geocoding HTTP client's connection and request timeouts are configurable with `APP_GEOCODING_CONNECT_TIMEOUT` and `APP_GEOCODING_REQUEST_TIMEOUT`.
+
 API examples:
 
 - `GET /api/v1/locations?q=Dublin`

@@ -8,15 +8,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,17 +24,21 @@ import java.util.Optional;
 
 @Component
 public class OpenMeteoGeocodingProvider implements GeocodingProvider {
-    private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+    private final HttpClient client;
+    private final Duration requestTimeout;
     private final ObjectMapper mapper;
     private final String baseUrl;
     private final boolean enabled;
 
-    public OpenMeteoGeocodingProvider(ObjectMapper mapper,
+    public OpenMeteoGeocodingProvider(HttpClient client, ObjectMapper mapper,
                                       @Value("${app.geocoding.base-url}") String baseUrl,
-                                      @Value("${app.geocoding.enabled}") boolean enabled) {
+                                      @Value("${app.geocoding.enabled}") boolean enabled,
+                                      @Value("${app.geocoding.request-timeout:8s}") Duration requestTimeout) {
+        this.client = client;
         this.mapper = mapper;
         this.baseUrl = baseUrl;
         this.enabled = enabled;
+        this.requestTimeout = requestTimeout;
     }
 
     @Override
@@ -71,7 +75,7 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
 
     private Optional<JsonNode> request(String url, boolean allowNotFound) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(8)).header("Accept", "application/json").GET().build();
+                .timeout(requestTimeout).header("Accept", "application/json").GET().build();
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();

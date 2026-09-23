@@ -39,9 +39,13 @@
 - [x] 建立 LocationService（地点服务），让地点搜索和获取都经过 Service。Controller 只处理 HTTP 输入输出。
 - [x] 查询先去除首尾空白，再检查长度和空白值；地点 ID 必须为正数。
 - [x] 区分无结果、无效外部响应、超时、限流和提供商不可用；检查 JSON 字段类型、坐标范围和 IANA 时区。
-- [ ] 将 Clock（时钟）和可配置的 HTTP 客户端通过依赖注入传入，使边界时间和外部失败可以测试。
-- [ ] 适度拆分前端 API 调用、类型、地点搜索和三晚卡片；开启 TypeScript 严格检查并处理实际报错；整理难读的 JSX 和 CSS。
-- [ ] 初始化 Git 并建立基线提交，检查忽略规则，清理不再使用的模板资源。配置本地验证命令；远程仓库确定后再接 CI。
+- [x] 将 Clock（时钟）和可配置的 HTTP 客户端通过依赖注入传入，使边界时间和外部失败可以测试。
+- [x] 适度拆分前端 API 调用、类型、地点搜索和三晚卡片；开启 TypeScript 严格检查并处理实际报错；整理难读的 JSX 和 CSS。
+- [x] 初始化 Git 并建立基线提交，检查忽略规则，清理不再使用的模板资源。
+- [x] 配置并验证本地检查命令。
+- [ ] 远程仓库建立并推送后，接入 CI。
+
+**01 区进度记录（2026-09-24）：**本区实现项和本地验收已完成。补充了注入式 HTTP 客户端及连接/请求超时配置、固定时钟三晚回归测试、TypeScript `strict` 检查和本地构建/lint/test 命令；移除了未引用的 React/Vite 模板图片。验证通过：`backend/./mvnw test`（10 项）、`frontend/npm run typecheck`、`npm run lint`、`npm run build`。Git 基线与忽略规则已确认。远程 GitHub 仓库及 CI 尚未配置，因 CLI 登录 token 无效，当前提交暂不能推送；认证完成后应先推送，再补远程 CI。
 
 **涉及位置：**backend 的 controller、service、provider、config 包；frontend/src 中的 API、类型和组件文件。类名和目录可按实际复杂度调整，不要求先建大量空文件。
 

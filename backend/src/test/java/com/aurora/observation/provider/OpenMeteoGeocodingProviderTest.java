@@ -8,8 +8,10 @@ import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,8 +29,8 @@ class OpenMeteoGeocodingProviderTest {
         server.createContext("/search", this::respond);
         server.createContext("/get", this::respond);
         server.start();
-        provider = new OpenMeteoGeocodingProvider(new ObjectMapper(),
-                "http://127.0.0.1:" + server.getAddress().getPort(), true);
+        provider = new OpenMeteoGeocodingProvider(HttpClient.newHttpClient(), new ObjectMapper(),
+                "http://127.0.0.1:" + server.getAddress().getPort(), true, Duration.ofSeconds(2));
     }
 
     @AfterEach
