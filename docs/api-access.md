@@ -68,7 +68,7 @@ curl -H 'User-Agent: AuroraOutlook/0.1 alison.zhangyan@gmail.com' \
   'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=53.3331&lon=-6.2489'
 ~~~
 
-本项目后端默认通过 `app.metno.user-agent` 发送 `AuroraOutlook/0.1 alison.zhangyan@gmail.com`，也可以用服务端环境变量 `METNO_USER_AGENT` 覆盖。当前仓库未配置 Git remote，尚未确认真实仓库 URL，因此没有伪造或猜测 GitHub 地址。仓库地址确认后，可把 User-Agent 改为 `AuroraOutlook/0.1 github.com/账户名/仓库名`。MET Norway 官方文档接受应用名加 GitHub 项目地址作为识别方式，也要求对方能联系到项目维护者。[Getting Started](https://docs.api.met.no/doc/GettingStarted.html)
+本项目后端默认通过 `app.metno.user-agent` 发送 `AuroraFinder/0.1 (https://github.com/alisonzzzz-y/aurora-observation-agent; alison.zhangyan@gmail.com)`，也可以用服务端环境变量 `METNO_USER_AGENT` 覆盖。MET Norway 官方文档接受应用名加项目网址作为识别方式，也要求对方能联系到项目维护者。[Getting Started](https://docs.api.met.no/doc/GettingStarted.html)
 
 ## 在本项目中配置
 
