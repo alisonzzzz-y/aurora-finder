@@ -2,7 +2,7 @@ import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
-import { ForecastGuide } from '../components/aurora/ForecastGuide'
+import { AuroraResources } from '../components/aurora/AuroraResources'
 import type { Location } from '../types/location'
 import { useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
@@ -28,6 +28,6 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
         <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} />
       </aside>
     </section>
-    <ForecastGuide />
+    <AuroraResources />
   </>
 }
