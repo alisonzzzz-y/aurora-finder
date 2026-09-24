@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Map as MapLibreMap, NavigationControl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
+import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import { getAuroraMap } from '../../api/auroraMap'
 import type { AuroraMapData } from '../../types/auroraMap'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
+
+setWorkerUrl(workerUrl)
 
 function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number }> {
   return {
@@ -59,7 +62,12 @@ export function AuroraMap() {
     map.current = instance
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
+    const loadTimeout = window.setTimeout(() => {
+      setMapError('The map could not finish loading. Check the browser console or try reloading the page.')
+    }, 20_000)
     instance.once('load', () => {
+      window.clearTimeout(loadTimeout)
+      setMapError('')
       const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
         observationTime: '', forecastTime: '', source: '', points: [],
       })
@@ -103,10 +111,13 @@ export function AuroraMap() {
       if (event.error.message.toLowerCase().includes('401')
           || event.error.message.toLowerCase().includes('403')) {
         setMapError('MapTiler rejected this key. Check its allowed website origins and usage quota.')
+      } else if (!instance.loaded()) {
+        setMapError('The base map could not load. Check the browser console for the failed request.')
       }
     })
 
     return () => {
+      window.clearTimeout(loadTimeout)
       instance.remove()
       map.current = null
     }
