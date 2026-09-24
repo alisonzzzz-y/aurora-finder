@@ -23,6 +23,7 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} />
+        <p className="map-scope-note">{t('mapScopeNote')}</p>
         <LatestAuroraForecast />
       </div>
       <aside className="map-sidebar">
