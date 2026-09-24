@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AuroraMapServiceTest {
     @Test
@@ -54,5 +55,34 @@ class AuroraMapServiceTest {
 
         assertEquals(1, calls.get());
         assertEquals(map.retrievedAt(), location.retrievedAt());
+    }
+
+    @Test
+    void expiresOvationAtForecastTimeAndSuppressesTheOldGrid() {
+        OvationProvider provider = () -> new OvationForecast(
+                Instant.parse("2026-09-24T11:00:00Z"), Instant.parse("2026-09-24T12:00:00Z"),
+                "https://example.test/ovation", List.of(new OvationGridPoint(-22, 65, 80)));
+        AuroraMapService service = new AuroraMapService(provider,
+                Clock.fixed(Instant.parse("2026-09-24T12:05:00Z"), ZoneOffset.UTC));
+
+        var map = service.latest();
+        var local = service.forCoordinates(65, -22);
+
+        assertEquals("EXPIRED", map.status().name());
+        assertEquals(List.of(), map.points());
+        assertEquals("EXPIRED", local.status().name());
+        assertEquals("INSUFFICIENT_DATA", local.level().name());
+        assertNull(local.modelValue());
+    }
+
+    @Test
+    void forecastIsCurrentAtItsExactTargetTime() {
+        OvationProvider provider = () -> new OvationForecast(
+                Instant.parse("2026-09-24T11:00:00Z"), Instant.parse("2026-09-24T12:05:00Z"),
+                "https://example.test/ovation", List.of(new OvationGridPoint(-22, 65, 80)));
+        AuroraMapService service = new AuroraMapService(provider,
+                Clock.fixed(Instant.parse("2026-09-24T12:05:00Z"), ZoneOffset.UTC));
+
+        assertEquals("CURRENT", service.latest().status().name());
     }
 }

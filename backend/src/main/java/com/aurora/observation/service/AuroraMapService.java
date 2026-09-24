@@ -6,6 +6,7 @@ import com.aurora.observation.dto.LocalAuroraActivityLevel;
 import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import com.aurora.observation.dto.OvationForecast;
 import com.aurora.observation.dto.OvationGridPoint;
+import com.aurora.observation.dto.ForecastStatus;
 import com.aurora.observation.provider.OvationProvider;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +31,10 @@ public class AuroraMapService {
     public synchronized AuroraMapResponse latest() {
         CacheEntry<OvationForecast> entry = latestForecast();
         OvationForecast latest = entry.data();
-        return new AuroraMapResponse(latest.observationTime(), latest.forecastTime(), entry.retrievedAt(), latest.source(),
-                latest.points().stream().filter(point -> point.auroraValue() > 0 && Math.abs(point.latitude()) < 90)
+        ForecastStatus status = isExpired(latest, clock.instant()) ? ForecastStatus.EXPIRED : ForecastStatus.CURRENT;
+        return new AuroraMapResponse(status, latest.observationTime(), latest.forecastTime(), entry.retrievedAt(), latest.source(),
+                status == ForecastStatus.EXPIRED ? java.util.List.of()
+                        : latest.points().stream().filter(point -> point.auroraValue() > 0 && Math.abs(point.latitude()) < 90)
                         .map(point -> new AuroraMapPoint(point.longitude(), point.latitude(), point.auroraValue()))
                         .toList());
     }
@@ -43,6 +46,11 @@ public class AuroraMapService {
         }
         CacheEntry<OvationForecast> entry = latestForecast();
         OvationForecast latest = entry.data();
+        if (isExpired(latest, clock.instant())) {
+            return new LocalAuroraActivityResponse(ForecastStatus.EXPIRED, LocalAuroraActivityLevel.INSUFFICIENT_DATA,
+                    null, null, null, latest.observationTime(), latest.forecastTime(), entry.retrievedAt(),
+                    latest.source(), "ovation-local-v1");
+        }
         OvationGridPoint nearest = latest.points().stream()
                 .min(Comparator.comparingDouble(point -> distanceKm(latitude, longitude,
                         point.latitude(), point.longitude())))
@@ -50,8 +58,12 @@ public class AuroraMapService {
         int value = nearest.auroraValue();
         LocalAuroraActivityLevel level = value < 18 ? LocalAuroraActivityLevel.LOW
                 : value < 50 ? LocalAuroraActivityLevel.MEDIUM : LocalAuroraActivityLevel.HIGH;
-        return new LocalAuroraActivityResponse(level, value, nearest.longitude(), nearest.latitude(),
+        return new LocalAuroraActivityResponse(ForecastStatus.CURRENT, level, value, nearest.longitude(), nearest.latitude(),
                 latest.observationTime(), latest.forecastTime(), entry.retrievedAt(), latest.source(), "ovation-local-v1");
+    }
+
+    private static boolean isExpired(OvationForecast forecast, Instant now) {
+        return now.isAfter(forecast.forecastTime());
     }
 
     private CacheEntry<OvationForecast> latestForecast() {

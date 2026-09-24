@@ -71,6 +71,7 @@ const messages = {
     errorGeneric: 'Something went wrong. Please try again.',
     errorNetwork: 'Could not connect to the service. Check your connection and try again.',
     errorForecastLoad: 'Aurora forecast data could not be loaded.',
+    mapForecastExpired: 'The NOAA forecast has passed its valid time. The old aurora layer has been removed.',
     errorKpForecast: 'The global aurora forecast is unavailable right now.',
     errorSearch: 'Location search failed.',
     latestForecast: 'LATEST FORECAST',
@@ -89,6 +90,7 @@ const messages = {
     localActivityHigh: 'High activity',
     noaaGridValue: 'Nearest NOAA grid value',
     localAuroraNote: 'A short-range model estimate for the nearest 1° grid cell, usually about 30–90 minutes ahead. It is not the probability that you will see aurora from the ground. Level rule: below 18 is low, 18–49 is moderate, and 50 or above is high.',
+    localAuroraExpiredNote: 'This NOAA forecast has passed its valid time. No current local activity level is available.',
   },
   zh: {
     documentTitle: 'Aurora Finder｜极光预报',
@@ -157,6 +159,7 @@ const messages = {
     errorGeneric: '发生错误，请重试。',
     errorNetwork: '无法连接到服务，请检查网络后重试。',
     errorForecastLoad: '无法加载极光预报数据。',
+    mapForecastExpired: 'NOAA 预报已超过有效时间，旧极光图层已移除。',
     errorKpForecast: '全球极光预报暂时不可用。',
     errorSearch: '地点搜索失败。',
     latestForecast: '最新预报',
@@ -175,6 +178,7 @@ const messages = {
     localActivityHigh: '活动较强',
     noaaGridValue: '最近 NOAA 网格值',
     localAuroraNote: '这是离所选地点最近的 1° 网格点短时模型估计，预报通常提前约 30–90 分钟。它不代表人在地面看到极光的概率。分级规则：低于 18 为低，18–49 为中，50 及以上为高。',
+    localAuroraExpiredNote: '这份 NOAA 预报已超过有效时间，目前没有可用的当地活动等级。',
   },
 } as const
 

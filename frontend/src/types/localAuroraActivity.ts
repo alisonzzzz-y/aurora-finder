@@ -1,8 +1,9 @@
 export type LocalAuroraActivity = {
+  status: 'CURRENT' | 'EXPIRED'
   level: 'LOW' | 'MEDIUM' | 'HIGH' | 'INSUFFICIENT_DATA'
-  modelValue: number
-  gridLongitude: number
-  gridLatitude: number
+  modelValue: number | null
+  gridLongitude: number | null
+  gridLatitude: number | null
   observationTime: string
   forecastTime: string
   retrievedAt: string

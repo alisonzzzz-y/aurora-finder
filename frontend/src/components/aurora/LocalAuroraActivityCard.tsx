@@ -59,14 +59,14 @@ export function LocalAuroraActivityCard({ latitude, longitude, timezone }: Props
     {!loading && error === null && data && levelKey && <div className="local-aurora-content">
       <div className="local-aurora-value">
         <span className={`local-activity-badge local-activity-${data.level.toLowerCase()}`}>{t(levelKey)}</span>
-        <span>{t('noaaGridValue')} <strong>{data.modelValue}/100</strong></span>
+        {data.modelValue !== null && <span>{t('noaaGridValue')} <strong>{data.modelValue}/100</strong></span>}
       </div>
       <dl className="local-aurora-meta">
         <div><dt>{t('forecastValid')}</dt><dd>{formatTime(data.forecastTime, timezone, locale)}</dd></div>
         <div><dt>{t('observed')}</dt><dd>{formatTime(data.observationTime, timezone, locale)}</dd></div>
         <div><dt>{t('dataRetrieved')}</dt><dd>{formatTime(data.retrievedAt, timezone, locale)}</dd></div>
       </dl>
-      <p className="local-aurora-note">{t('localAuroraNote')}</p>
+      <p className="local-aurora-note">{t(data.status === 'EXPIRED' ? 'localAuroraExpiredNote' : 'localAuroraNote')}</p>
     </div>}
   </section>
 }

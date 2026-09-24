@@ -5,6 +5,7 @@ export type AuroraMapPoint = {
 }
 
 export type AuroraMapData = {
+  status: 'CURRENT' | 'EXPIRED'
   observationTime: string
   forecastTime: string
   retrievedAt: string

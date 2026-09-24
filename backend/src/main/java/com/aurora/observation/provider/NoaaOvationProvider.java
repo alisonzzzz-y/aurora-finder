@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.DateTimeException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,14 +27,16 @@ public class NoaaOvationProvider implements OvationProvider {
 
     private final HttpClient client;
     private final ObjectMapper mapper;
+    private final Clock clock;
     private final String dataUrl;
     private final Duration requestTimeout;
 
-    public NoaaOvationProvider(HttpClient client, ObjectMapper mapper,
+    public NoaaOvationProvider(HttpClient client, ObjectMapper mapper, Clock clock,
                                @Value("${app.ovation.data-url}") String dataUrl,
                                @Value("${app.ovation.request-timeout:10s}") Duration requestTimeout) {
         this.client = client;
         this.mapper = mapper;
+        this.clock = clock;
         this.dataUrl = dataUrl;
         this.requestTimeout = requestTimeout;
     }
@@ -78,6 +81,13 @@ public class NoaaOvationProvider implements OvationProvider {
 
         Instant observationTime = parseInstant(root.path("Observation Time"));
         Instant forecastTime = parseInstant(root.path("Forecast Time"));
+        Instant retrievedAt = clock.instant();
+        if (observationTime.isAfter(retrievedAt)) {
+            throw invalidResponse("NOAA observation time is later than the retrieval time", null);
+        }
+        if (forecastTime.isBefore(observationTime)) {
+            throw invalidResponse("NOAA forecast time is earlier than the observation time", null);
+        }
         JsonNode coordinates = root.path("coordinates");
         if (coordinates.isEmpty()) throw invalidResponse("NOAA grid is empty", null);
 

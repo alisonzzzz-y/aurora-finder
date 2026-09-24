@@ -72,7 +72,7 @@ export function AuroraMap() {
       window.clearTimeout(loadTimeout)
       setMapError('')
       const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
-        observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
+        status: 'CURRENT', observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
       })
       instance.addSource('ovation-grid', { type: 'geojson', data: sourceData })
       instance.addLayer({
@@ -161,6 +161,7 @@ export function AuroraMap() {
     {(loading || error) && <div className="map-message" role={error ? 'alert' : 'status'}>
       {loading ? t('loading') : localizeError(new Error(error), t)}
     </div>}
+    {!loading && !error && data?.status === 'EXPIRED' && <div className="map-message" role="status">{t('mapForecastExpired')}</div>}
     <div className="map-key" aria-label={t('relativeModelValue')}>
       <span>{t('modelSignal')}</span><div className="map-key-gradient" /><div className="map-key-labels"><span>{t('lower')}</span><span>{t('higher')}</span></div>
     </div>

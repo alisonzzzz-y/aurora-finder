@@ -28,6 +28,7 @@ class NoaaOvationProviderTest {
         server.createContext("/ovation", this::respond);
         server.start();
         provider = new NoaaOvationProvider(HttpClient.newHttpClient(), new ObjectMapper(),
+                java.time.Clock.fixed(java.time.Instant.parse("2026-09-24T12:05:00Z"), java.time.ZoneOffset.UTC),
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/ovation", Duration.ofSeconds(2));
     }
 
@@ -70,6 +71,23 @@ class NoaaOvationProviderTest {
 
         reply.set(new Reply(429, ""));
         assertEquals(ProviderFailure.RATE_LIMITED,
+                assertThrows(ProviderUnavailableException.class, () -> provider.latest()).failure());
+    }
+
+    @Test
+    void rejectsFutureObservationTimeAndForecastBeforeObservation() {
+        reply.set(new Reply(200, """
+                {"Observation Time":"2026-09-24T12:06:00Z","Forecast Time":"2026-09-24T13:00:00Z",
+                 "Data Format":"[Longitude, Latitude, Aurora]","coordinates":[[0,65,12]]}
+                """));
+        assertEquals(ProviderFailure.INVALID_RESPONSE,
+                assertThrows(ProviderUnavailableException.class, () -> provider.latest()).failure());
+
+        reply.set(new Reply(200, """
+                {"Observation Time":"2026-09-24T12:00:00Z","Forecast Time":"2026-09-24T11:59:00Z",
+                 "Data Format":"[Longitude, Latitude, Aurora]","coordinates":[[0,65,12]]}
+                """));
+        assertEquals(ProviderFailure.INVALID_RESPONSE,
                 assertThrows(ProviderUnavailableException.class, () -> provider.latest()).failure());
     }
 
