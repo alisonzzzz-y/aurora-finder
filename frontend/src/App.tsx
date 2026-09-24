@@ -50,7 +50,6 @@ function AppContent() {
     <header className="site-header">
       <div className="brand"><span className="brand-mark">✦</span> {t('brand')}</div>
       <div className="header-tools">
-        <span className="status-pill">{t('projectStatus')}</span>
         <div className="language-switch" role="group" aria-label={t('languageLabel')}>
           <button type="button" aria-label="English" aria-pressed={language === 'en'} className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>EN</button>
           <button type="button" aria-label="简体中文" aria-pressed={language === 'zh'} className={language === 'zh' ? 'active' : ''} onClick={() => setLanguage('zh')}>中文</button>

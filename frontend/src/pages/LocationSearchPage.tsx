@@ -1,17 +1,20 @@
 import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
+import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
 import type { Location } from '../types/location'
 import { useI18n } from '../i18n'
+import { useAuroraMapData } from '../hooks/useAuroraMapData'
 
 type Props = { busy: boolean; onSelect: (location: Location) => void }
 
 export function LocationSearchPage({ busy, onSelect }: Props) {
   const { t } = useI18n()
+  const auroraMap = useAuroraMapData()
   return <>
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
-        <AuroraMap />
+        <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} />
         <LatestAuroraForecast />
       </div>
       <aside className="map-sidebar">
@@ -21,11 +24,7 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
           <span>{t('shortRange')}</span>
         </div>
         <LocationSearch busy={busy} onSelect={onSelect} />
-        <article className="city-ranking-note">
-          <p className="eyebrow">{t('cityOutlooks')}</p>
-          <h2>{t('localConditionsTitle')}</h2>
-          <p>{t('cityOutlooksNote')}</p>
-        </article>
+        <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} />
       </aside>
     </section>
     <section className="intro home-intro">

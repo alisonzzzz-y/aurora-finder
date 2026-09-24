@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
-import { getAuroraMap } from '../../api/auroraMap'
 import type { AuroraMapData } from '../../types/auroraMap'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -27,22 +26,22 @@ function formatUtc(instant: string, locale: string) {
   }).format(new Date(instant))} UTC`
 }
 
-export function AuroraMap() {
+type Props = { data: AuroraMapData | null; forecastError: string; forecastLoading: boolean }
+
+export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
   const { language, t } = useI18n()
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY?.trim()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const dataRef = useRef<AuroraMapData | null>(null)
-  const [data, setData] = useState<AuroraMapData | null>(null)
   const [tilesReady, setTilesReady] = useState(false)
   const [mapError, setMapError] = useState('')
-  const [forecastError, setForecastError] = useState('')
   const geoJson = useMemo(() => data ? asGeoJson(data) : null, [data])
   const error = !mapTilerKey
     ? 'Add VITE_MAPTILER_KEY to frontend/.env.local to load the map.'
     : mapError || forecastError
-  const loading = Boolean(mapTilerKey) && (!tilesReady || !data) && !error
+  const loading = Boolean(mapTilerKey) && (!tilesReady || forecastLoading) && !error
 
   useEffect(() => {
     dataRef.current = data
@@ -127,30 +126,6 @@ export function AuroraMap() {
       window.clearTimeout(loadTimeout)
       instance.remove()
       map.current = null
-    }
-  }, [mapTilerKey])
-
-  useEffect(() => {
-    if (!mapTilerKey) return
-    let controller: AbortController | null = null
-    async function refreshForecast() {
-      controller?.abort()
-      const currentController = new AbortController()
-      controller = currentController
-      try {
-        setData(await getAuroraMap(currentController.signal))
-        setForecastError('')
-      } catch (cause) {
-        if (currentController.signal.aborted) return
-        setData(null)
-        setForecastError(cause instanceof Error ? cause.message : 'Aurora forecast data could not be loaded.')
-      }
-    }
-    void refreshForecast()
-    const timer = window.setInterval(() => { void refreshForecast() }, 5 * 60 * 1000)
-    return () => {
-      window.clearInterval(timer)
-      controller?.abort()
     }
   }, [mapTilerKey])
 
