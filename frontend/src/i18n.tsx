@@ -100,6 +100,7 @@ const messages = {
     metNoAttribution: 'Weather forecast by MET Norway',
     metNoChanges: 'Data is filtered to this local night; cloud values are unchanged.',
     errorWeatherForecast: 'The local cloud forecast is unavailable right now.',
+    apiOriginMissing: 'This deployment has no backend API address configured. Set VITE_API_BASE_URL in Vercel to the deployed Spring Boot API origin.',
   },
   zh: {
     documentTitle: 'Aurora Finder｜极光预报',
@@ -197,6 +198,7 @@ const messages = {
     metNoAttribution: '天气预报来源：MET Norway',
     metNoChanges: '数据按当地今晚筛选，云量数值未修改。',
     errorWeatherForecast: '暂时无法获取当地云量预报。',
+    apiOriginMissing: '当前部署尚未配置后端 API 地址。请在 Vercel 中将 VITE_API_BASE_URL 设置为已部署的 Spring Boot API 根地址。',
   },
 } as const
 

@@ -6,6 +6,7 @@ import { LocationSearchPage } from './pages/LocationSearchPage'
 import { OutlookPage } from './pages/OutlookPage'
 import { I18nProvider, localizeError, useI18n } from './i18n'
 import './App.css'
+import { isProductionApiConfigured } from './api/apiUrl'
 
 function AppContent() {
   const { language, setLanguage, t } = useI18n()
@@ -56,6 +57,7 @@ function AppContent() {
         </div>
       </div>
     </header>
+    {!isProductionApiConfigured && <p className="deployment-config-alert" role="alert">{t('apiOriginMissing')}</p>}
     <main>
       {outlook
         ? <OutlookPage outlook={outlook} onChangeLocation={changeLocation} />

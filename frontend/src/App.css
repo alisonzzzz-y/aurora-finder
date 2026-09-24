@@ -1,4 +1,5 @@
 #root { min-height: 100vh; }
+.deployment-config-alert { margin: 12px auto 0; max-width: 1500px; padding: 10px 14px; border: 1px solid #8c7143; border-radius: 10px; background: #342a1a; color: #f0d69f; font-size: 13px; }
 .page-shell { max-width: 1200px; margin: 0 auto; padding: 0 32px 60px; }
 .home-page-shell { width: 100%; max-width: 1880px; padding-right: 20px; padding-left: 20px; }
 .home-page-shell main { padding-top: 14px; }

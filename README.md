@@ -8,7 +8,7 @@
 
 Aurora Finder is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search, a short-range local OVATION activity level, and time-zone-aware night outlooks. The local activity level is a model grid estimate, not the probability that a person will see aurora. The project does **not** calculate a combined personal viewing probability or provide AI advice in this foundation release.
 
-**Live demo:** No deployment URL is recorded yet. Once deployed, put the Vercel URL here near the top of this README and in the GitHub repository's **About → Website** field.
+**Live demo:** [aurora-finder.vercel.app](https://aurora-finder.vercel.app). The static site is deployed; the production backend origin and MapTiler key origin restrictions still need configuration for live data and map tiles.
 
 ## What works now
 
@@ -19,6 +19,8 @@ Aurora Finder is an early location-based aurora forecast project. It combines a 
 - Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
 - For a selected place, show the nearest NOAA OVATION grid value and low, medium, or high short-range local activity level, with model and forecast timestamps.
 - Switch the interface between English and Simplified Chinese. The selection is saved in the browser.
+
+For production, set `VITE_API_BASE_URL` in Vercel to the deployed Spring Boot service origin. Set `APP_CORS_ALLOWED_ORIGINS` on the backend to `https://aurora-finder.vercel.app` (plus any preview origins you use). Set the MapTiler key's allowed website origins to include the deployed Vercel origin.
 
 The OVATION layer shows modeled aurora activity, not ground-level visibility. It does not include local clouds, darkness, terrain, light pollution, or the observer's horizon. The AI entry point is not enabled.
 
@@ -63,7 +65,7 @@ npm run build
 The NOAA OVATION feed is public and does not require an API key. MapTiler is used for the basemap and does require a browser key:
 
 1. Create a key in MapTiler Cloud.
-2. Restrict its allowed origins to `http://localhost:5173` and the deployed site origin.
+2. Restrict its allowed origins to `localhost` and `aurora-finder.vercel.app` (enter domains only, without protocol or port).
 3. Copy `frontend/.env.example` to `frontend/.env.local` and set `VITE_MAPTILER_KEY`.
 
 The browser must use the key to request map tiles, so restrict its allowed origins. Never commit `.env.local`. External HTTP connection and provider request timeouts can be configured with `APP_HTTP_CONNECT_TIMEOUT`, `APP_GEOCODING_REQUEST_TIMEOUT`, and `APP_OVATION_REQUEST_TIMEOUT`.
@@ -102,7 +104,7 @@ Location results use Open-Meteo geocoding data under CC BY 4.0. Credit: Open-Met
 
 Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索、短时当地 OVATION 活动等级和按当地时区显示的夜间信息。当地活动等级是模型网格估计，不代表个人看到极光的概率。当前基础版本**不会计算综合个人观测概率，也不提供 AI 建议**。
 
-**在线演示：**目前仓库中还没有记录已部署的网址。部署后，建议把 Vercel 链接放在本 README 开头附近，同时填写 GitHub 仓库 **About → Website** 栏。
+**在线演示：**[aurora-finder.vercel.app](https://aurora-finder.vercel.app)。静态网站已部署；线上数据仍需配置后端地址，底图仍需在 MapTiler 密钥中允许线上域名。
 
 ## 当前功能
 
@@ -113,6 +115,8 @@ Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATIO
 - 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
 - 选择地点后，显示最近 NOAA OVATION 网格值、低/中/高短时当地活动等级，以及模型观测时间和预报有效时间。
 - 支持英文与简体中文界面切换，并在浏览器中记住语言选择。
+
+生产环境需要在 Vercel 设置 `VITE_API_BASE_URL`，值为已部署的 Spring Boot 服务根地址；在后端设置 `APP_CORS_ALLOWED_ORIGINS=https://aurora-finder.vercel.app`（以及实际使用的预览域名）；MapTiler key 的网站来源白名单也要包含该线上域名。
 
 OVATION 图层展示的是模型中的极光活动，不代表地面可见范围。它没有包含当地云量、黑暗时段、地形、光污染或观察者的地平线条件。AI 问答入口尚未启用。
 
@@ -157,7 +161,7 @@ npm run build
 NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，需要浏览器端密钥：
 
 1. 在 MapTiler Cloud 创建 key。
-2. 将允许的来源限制为 `http://localhost:5173` 和已部署网站的来源。
+2. 将允许的来源限制为 `localhost` 和 `aurora-finder.vercel.app`（只填域名，不带协议或端口）。
 3. 将 `frontend/.env.example` 复制为 `frontend/.env.local`，然后设置 `VITE_MAPTILER_KEY`。
 
 浏览器需要使用该 key 请求地图瓦片，因此请限制允许的来源。不要提交 `.env.local`。外部 HTTP 连接超时和数据提供商请求超时可分别通过 `APP_HTTP_CONNECT_TIMEOUT`、`APP_GEOCODING_REQUEST_TIMEOUT` 和 `APP_OVATION_REQUEST_TIMEOUT` 配置。

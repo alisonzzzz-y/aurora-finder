@@ -42,7 +42,7 @@ curl 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.js
 
 1. 在 [MapTiler Cloud](https://cloud.maptiler.com/) 注册或登录。
 2. 打开 **API keys**，创建一个专供本项目使用的 Key。
-3. 为 Key 限制可用网站来源，先加入 `http://localhost:5173`。部署后再加入实际 HTTPS 域名。
+3. 为 Key 限制可用网站来源，先加入 `localhost`。部署后再加入实际域名，例如 `aurora-finder.vercel.app`；只填域名，不带协议或端口。
 4. 将 Key 写入本地 `frontend/.env.local`：
 
 ~~~dotenv
