@@ -1,7 +1,7 @@
 package com.aurora.observation.provider;
 
-import com.aurora.observation.dto.AuroraMapPoint;
-import com.aurora.observation.dto.AuroraMapResponse;
+import com.aurora.observation.dto.OvationForecast;
+import com.aurora.observation.dto.OvationGridPoint;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -39,7 +39,7 @@ public class NoaaOvationProvider implements OvationProvider {
     }
 
     @Override
-    public AuroraMapResponse latest() {
+    public OvationForecast latest() {
         HttpRequest request = HttpRequest.newBuilder(URI.create(dataUrl)).timeout(requestTimeout)
                 .header("Accept", "application/json").GET().build();
         try {
@@ -68,7 +68,7 @@ public class NoaaOvationProvider implements OvationProvider {
         }
     }
 
-    private AuroraMapResponse parse(String body) {
+    private OvationForecast parse(String body) {
         JsonNode root = mapper.readTree(body);
         if (root == null || !root.isObject()
                 || !"[Longitude, Latitude, Aurora]".equals(root.path("Data Format").asText())
@@ -81,7 +81,7 @@ public class NoaaOvationProvider implements OvationProvider {
         JsonNode coordinates = root.path("coordinates");
         if (coordinates.isEmpty()) throw invalidResponse("NOAA grid is empty", null);
 
-        List<AuroraMapPoint> points = new ArrayList<>();
+        List<OvationGridPoint> points = new ArrayList<>();
         for (JsonNode coordinate : coordinates) {
             if (!coordinate.isArray() || coordinate.size() != 3
                     || !coordinate.get(0).isIntegralNumber()
@@ -96,12 +96,10 @@ public class NoaaOvationProvider implements OvationProvider {
                     || auroraValue < 0 || auroraValue > 100) {
                 throw invalidResponse("NOAA grid contains an out-of-range value", null);
             }
-            if (auroraValue > 0 && Math.abs(latitude) < 90) {
-                double wrappedLongitude = longitude > 180 ? longitude - 360 : longitude;
-                points.add(new AuroraMapPoint(wrappedLongitude, latitude, auroraValue));
-            }
+            double wrappedLongitude = longitude > 180 ? longitude - 360 : longitude;
+            points.add(new OvationGridPoint(wrappedLongitude, latitude, auroraValue));
         }
-        return new AuroraMapResponse(observationTime, forecastTime, SOURCE_URL, List.copyOf(points));
+        return new OvationForecast(observationTime, forecastTime, SOURCE_URL, List.copyOf(points));
     }
 
     private Instant parseInstant(JsonNode node) {

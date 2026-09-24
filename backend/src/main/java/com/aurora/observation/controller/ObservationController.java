@@ -8,6 +8,7 @@ import com.aurora.observation.service.OutlookService;
 import com.aurora.observation.service.AuroraMapService;
 import com.aurora.observation.service.KpIndexService;
 import com.aurora.observation.dto.KpIndexResponse;
+import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +46,11 @@ public class ObservationController {
     @GetMapping("/aurora-map")
     public AuroraMapResponse auroraMap() {
         return auroraMap.latest();
+    }
+
+    @GetMapping("/aurora-activity")
+    public LocalAuroraActivityResponse auroraActivity(@RequestParam double latitude, @RequestParam double longitude) {
+        return auroraMap.forCoordinates(latitude, longitude);
     }
 
     @GetMapping("/kp-index")

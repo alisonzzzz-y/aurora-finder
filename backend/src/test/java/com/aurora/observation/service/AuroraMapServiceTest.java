@@ -1,0 +1,37 @@
+package com.aurora.observation.service;
+
+import com.aurora.observation.dto.OvationForecast;
+import com.aurora.observation.dto.OvationGridPoint;
+import com.aurora.observation.provider.OvationProvider;
+import org.junit.jupiter.api.Test;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AuroraMapServiceTest {
+    @Test
+    void categorizesTheNearestLocalGridCellAndKeepsTheRawModelValue() {
+        OvationProvider provider = () -> new OvationForecast(
+                Instant.parse("2026-09-24T12:00:00Z"), Instant.parse("2026-09-24T13:00:00Z"),
+                "https://example.test/ovation", List.of(
+                new OvationGridPoint(-22, 65, 17),
+                new OvationGridPoint(-21, 65, 18),
+                new OvationGridPoint(-20, 65, 50)));
+        AuroraMapService service = new AuroraMapService(provider,
+                Clock.fixed(Instant.parse("2026-09-24T12:05:00Z"), ZoneOffset.UTC));
+
+        var low = service.forCoordinates(65, -22);
+        var medium = service.forCoordinates(65, -21);
+        var high = service.forCoordinates(65, -20);
+
+        assertEquals("LOW", low.level().name());
+        assertEquals(17, low.modelValue());
+        assertEquals("MEDIUM", medium.level().name());
+        assertEquals("HIGH", high.level().name());
+        assertEquals("ovation-local-v1", high.ruleVersion());
+    }
+}

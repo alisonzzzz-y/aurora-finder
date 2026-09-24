@@ -19,7 +19,7 @@ const messages = {
     shortRange: 'Short range · both hemispheres',
     cityOutlooks: 'CITY OUTLOOKS',
     localConditionsTitle: 'Local conditions, when the data is ready',
-    cityOutlooksNote: 'City rankings need cloud cover and local darkness as well as aurora activity. Those sources and the viewing rules are still being checked, so this page does not invent low, medium, high, or percentage ratings.',
+    cityOutlooksNote: 'The local card shows the short-range NOAA model signal for the selected map cell. A personal chance of seeing aurora also depends on clouds, darkness, and viewing conditions, so it is not estimated here.',
     planNight: 'PLAN A NIGHT OUTSIDE',
     heroTitle: 'A clearer view of the northern and southern lights.',
     heroCopy: 'Follow the latest global aurora forecast, then choose a place from search results to explore its local nights. The map is a global overview and does not select locations. It shows a short-range model forecast, not a promise of what will be visible from the ground.',
@@ -82,6 +82,13 @@ const messages = {
     noUpcomingForecast: 'No upcoming NOAA Kp forecast is available.',
     dataRetrieved: 'Data retrieved',
     globalKpNote: 'Kp is a global geomagnetic index. This level describes predicted auroral activity, not visibility from a particular place or a probability.',
+    localAuroraForecast: 'LOCAL NOAA FORECAST',
+    localActivityTitle: 'Aurora activity near this place',
+    localActivityLow: 'Low activity',
+    localActivityMedium: 'Moderate activity',
+    localActivityHigh: 'High activity',
+    noaaGridValue: 'Nearest NOAA grid value',
+    localAuroraNote: 'A short-range model estimate for the nearest 1° grid cell, usually about 30–90 minutes ahead. It is not the probability that you will see aurora from the ground. Level rule: below 18 is low, 18–49 is moderate, and 50 or above is high.',
   },
   zh: {
     documentTitle: 'Aurora Finder｜极光预报',
@@ -98,7 +105,7 @@ const messages = {
     shortRange: '短时预报 · 南北半球',
     cityOutlooks: '城市观测信息',
     localConditionsTitle: '数据就绪后提供当地情况',
-    cityOutlooksNote: '城市排序需要结合云量、当地黑暗时段和极光活动。目前相关数据源和观测规则仍在核验，因此页面不会编造低、中、高等级或概率。',
+    cityOutlooksNote: '当地卡片显示选定地点最近 NOAA 网格点的短时模型信号。个人能否看到极光还受云量、黑暗时段和观测条件影响，因此这里不估算个人观测概率。',
     planNight: '规划一次户外观测',
     heroTitle: '更清晰地了解北极光与南极光。',
     heroCopy: '查看最新的全球极光预报，再从搜索结果中选择地点，了解当地夜间情况。地图展示全球概况，不能用于选择地点；它显示的是短时模型预报，不代表地面上一定能看到极光。',
@@ -161,6 +168,13 @@ const messages = {
     noUpcomingForecast: '目前没有可用的 NOAA Kp 后续预报。',
     dataRetrieved: '数据获取时间',
     globalKpNote: 'Kp 是全球地磁活动指数。此等级描述的是预报的极光活动，不代表某个地点实际可见，也不是观测概率。',
+    localAuroraForecast: 'NOAA 当地预报',
+    localActivityTitle: '该地点附近的极光活动',
+    localActivityLow: '活动较弱',
+    localActivityMedium: '中等活动',
+    localActivityHigh: '活动较强',
+    noaaGridValue: '最近 NOAA 网格值',
+    localAuroraNote: '这是离所选地点最近的 1° 网格点短时模型估计，预报通常提前约 30–90 分钟。它不代表人在地面看到极光的概率。分级规则：低于 18 为低，18–49 为中，50 及以上为高。',
   },
 } as const
 
@@ -220,6 +234,7 @@ const errorKeys: Record<string, TranslationKey> = {
   'The selected location could not be loaded.': 'errorOutlook',
   'Aurora forecast data could not be loaded.': 'errorForecastLoad',
   'The global aurora forecast is unavailable right now.': 'errorKpForecast',
+  'Local aurora activity is unavailable right now.': 'errorAuroraData',
   'Location search failed.': 'errorSearch',
 }
 

@@ -6,7 +6,7 @@
 
 ## English
 
-Aurora Finder is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search and time-zone-aware night outlooks. It does **not** calculate a viewing probability or provide AI advice in this foundation release.
+Aurora Finder is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search, a short-range local OVATION activity level, and time-zone-aware night outlooks. The local activity level is a model grid estimate, not the probability that a person will see aurora. The project does **not** calculate a combined personal viewing probability or provide AI advice in this foundation release.
 
 **Live demo:** No deployment URL is recorded yet. Once deployed, put the Vercel URL here near the top of this README and in the GitHub repository's **About → Website** field.
 
@@ -17,6 +17,7 @@ Aurora Finder is an early location-based aurora forecast project. It combines a 
 - Display three night cards. Each currently reports **Insufficient data** because the source inputs and viewing rules have not been validated.
 - Display the latest available short-range NOAA OVATION model grid on an interactive MapLibre map. MapTiler provides the basemap tiles.
 - Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
+- For a selected place, show the nearest NOAA OVATION grid value and low, medium, or high short-range local activity level, with model and forecast timestamps.
 - Switch the interface between English and Simplified Chinese. The selection is saved in the browser.
 
 The OVATION layer shows modeled aurora activity, not ground-level visibility. It does not include local clouds, darkness, terrain, light pollution, or the observer's horizon. The AI entry point is not enabled.
@@ -83,7 +84,7 @@ The backend uses controller, service, provider, config, and DTO packages. It has
 
 Before implementing viewing levels, complete the [Phase 0 source and rule review](docs/phase-0-data-and-rules.md). This includes MET Norway identification and cache handling, darkness calculations across polar and date-line cases, source freshness rules, and evidence-based thresholds. A provider failure must never be presented as a low viewing level.
 
-The planned product is guidance for unaided-eye viewing, not a measured probability or a guarantee. Aurora model regions do not account for clouds, darkness, terrain, local light pollution, or the observer's horizon. See [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) for the phased implementation plan.
+The planned product is guidance for unaided-eye viewing, not a measured personal probability or a guarantee. The local OVATION card describes the nearest model grid cell and does not account for clouds, darkness, terrain, local light pollution, or the observer's horizon. See [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) for the phased implementation plan.
 
 ## Data sources
 
@@ -98,7 +99,7 @@ Location results use Open-Meteo geocoding data under CC BY 4.0. Credit: Open-Met
 
 ## 简体中文
 
-Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索和按当地时区显示的夜间信息。当前基础版本**不会计算观测概率，也不提供 AI 建议**。
+Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索、短时当地 OVATION 活动等级和按当地时区显示的夜间信息。当地活动等级是模型网格估计，不代表个人看到极光的概率。当前基础版本**不会计算综合个人观测概率，也不提供 AI 建议**。
 
 **在线演示：**目前仓库中还没有记录已部署的网址。部署后，建议把 Vercel 链接放在本 README 开头附近，同时填写 GitHub 仓库 **About → Website** 栏。
 
@@ -109,6 +110,7 @@ Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATIO
 - 显示三晚卡片。由于数据输入和观测规则尚未验证，目前状态均为“数据不足”。
 - 通过可交互的 MapLibre 地图展示 NOAA OVATION 最新短时模型网格；底图瓦片由 MapTiler 提供。
 - 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
+- 选择地点后，显示最近 NOAA OVATION 网格值、低/中/高短时当地活动等级，以及模型观测时间和预报有效时间。
 - 支持英文与简体中文界面切换，并在浏览器中记住语言选择。
 
 OVATION 图层展示的是模型中的极光活动，不代表地面可见范围。它没有包含当地云量、黑暗时段、地形、光污染或观察者的地平线条件。AI 问答入口尚未启用。
@@ -175,7 +177,7 @@ NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，�
 
 实现观测等级前，请先完成[数据源与规则核查](docs/phase-0-data-and-rules.md)，包括 MET Norway 身份与缓存要求、高纬度和日期变更线附近的黑暗时段计算、数据时效规则以及有证据支持的等级阈值。数据提供商失败时，绝不能把结果显示成“低”。
 
-项目计划提供肉眼观测参考，不会给出测量所得的概率或保证。极光模型区域没有考虑云量、黑暗时段、地形、当地光污染和观察者的地平线。分阶段开发计划见 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)。
+项目计划提供肉眼观测参考，不会给出个人观测概率或保证。当地 OVATION 卡片描述最近模型网格点，不考虑云量、黑暗时段、地形、当地光污染和观察者的地平线。分阶段开发计划见 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)。
 
 ## 数据来源
 

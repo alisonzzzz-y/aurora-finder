@@ -1,7 +1,7 @@
 package com.aurora.observation.provider;
 
-import com.aurora.observation.dto.AuroraMapResponse;
+import com.aurora.observation.dto.OvationForecast;
 
 public interface OvationProvider {
-    AuroraMapResponse latest();
+    OvationForecast latest();
 }

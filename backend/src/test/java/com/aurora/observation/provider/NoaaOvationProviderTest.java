@@ -48,10 +48,11 @@ class NoaaOvationProviderTest {
 
         assertEquals("2026-09-23T19:59:00Z", result.observationTime().toString());
         assertEquals("2026-09-23T21:30:00Z", result.forecastTime().toString());
-        assertEquals(2, result.points().size());
+        assertEquals(4, result.points().size());
         assertEquals(-1.0, result.points().getFirst().longitude());
         assertEquals(12, result.points().getFirst().auroraValue());
-        assertEquals(-64.0, result.points().getLast().latitude());
+        assertEquals(0.0, result.points().getLast().latitude());
+        assertEquals(0, result.points().getLast().auroraValue());
     }
 
     @Test
