@@ -16,6 +16,7 @@ Aurora Finder is an early location-based aurora forecast project. It combines a 
 - Show the selected place's current local date and the following two local dates. Dates and timestamps use the selected place's time zone and show UTC offsets.
 - Display three night cards. Each currently reports **Insufficient data** because the source inputs and viewing rules have not been validated.
 - Display the latest available short-range NOAA OVATION model grid on an interactive MapLibre map. MapTiler provides the basemap tiles.
+- Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
 - Switch the interface between English and Simplified Chinese. The selection is saved in the browser.
 
 The OVATION layer shows modeled aurora activity, not ground-level visibility. It does not include local clouds, darkness, terrain, light pollution, or the observer's horizon. The AI entry point is not enabled.
@@ -71,6 +72,7 @@ The browser must use the key to request map tiles, so restrict its allowed origi
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
 - `GET /api/v1/aurora-map`
+- `GET /api/v1/kp-index`
 - `GET /actuator/health`
 
 Set `APP_GEOCODING_ENABLED=false` to disable calls to Open-Meteo. Its free endpoint is limited to non-commercial use; review the provider's terms before changing the use or deploying publicly. See [API access instructions](docs/api-access.md) for provider URLs, key requirements, and request identity setup.
@@ -106,6 +108,7 @@ Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATIO
 - 显示所选地点当地的今天及随后两天。日期和时间均按所选地点的时区显示，并附带 UTC 偏移。
 - 显示三晚卡片。由于数据输入和观测规则尚未验证，目前状态均为“数据不足”。
 - 通过可交互的 MapLibre 地图展示 NOAA OVATION 最新短时模型网格；底图瓦片由 MapTiler 提供。
+- 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
 - 支持英文与简体中文界面切换，并在浏览器中记住语言选择。
 
 OVATION 图层展示的是模型中的极光活动，不代表地面可见范围。它没有包含当地云量、黑暗时段、地形、光污染或观察者的地平线条件。AI 问答入口尚未启用。
@@ -161,6 +164,7 @@ NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，�
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
 - `GET /api/v1/aurora-map`
+- `GET /api/v1/kp-index`
 - `GET /actuator/health`
 
 设置 `APP_GEOCODING_ENABLED=false` 可关闭 Open-Meteo 请求。其免费接口仅限非商业用途；若要改变用途或公开部署，请先复核服务条款。数据提供商地址、key 要求和请求身份设置请查看 [API 获取说明](docs/api-access.md)。

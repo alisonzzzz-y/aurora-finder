@@ -1,5 +1,6 @@
 import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
+import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import type { Location } from '../types/location'
 import { useI18n } from '../i18n'
 
@@ -11,6 +12,7 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <AuroraMap />
+        <LatestAuroraForecast />
       </div>
       <aside className="map-sidebar">
         <div className="map-context-heading" aria-label={t('auroraForecast')}>

@@ -71,7 +71,17 @@ const messages = {
     errorGeneric: 'Something went wrong. Please try again.',
     errorNetwork: 'Could not connect to the service. Check your connection and try again.',
     errorForecastLoad: 'Aurora forecast data could not be loaded.',
+    errorKpForecast: 'The global aurora forecast is unavailable right now.',
     errorSearch: 'Location search failed.',
+    latestForecast: 'LATEST FORECAST',
+    globalKpActivity: 'Global geomagnetic activity',
+    activityLow: 'Low activity',
+    activityMedium: 'Moderate activity',
+    activityHigh: 'High activity',
+    forecastPeriod: 'Next predicted 3-hour period',
+    noUpcomingForecast: 'No upcoming NOAA Kp forecast is available.',
+    dataRetrieved: 'Data retrieved',
+    globalKpNote: 'Kp is a global geomagnetic index. This level describes predicted auroral activity, not visibility from a particular place or a probability.',
   },
   zh: {
     documentTitle: 'Aurora Finder｜极光预报',
@@ -140,7 +150,17 @@ const messages = {
     errorGeneric: '发生错误，请重试。',
     errorNetwork: '无法连接到服务，请检查网络后重试。',
     errorForecastLoad: '无法加载极光预报数据。',
+    errorKpForecast: '全球极光预报暂时不可用。',
     errorSearch: '地点搜索失败。',
+    latestForecast: '最新预报',
+    globalKpActivity: '全球地磁活动',
+    activityLow: '活动较弱',
+    activityMedium: '中等活动',
+    activityHigh: '活动较强',
+    forecastPeriod: '下一个三小时预报时段',
+    noUpcomingForecast: '目前没有可用的 NOAA Kp 后续预报。',
+    dataRetrieved: '数据获取时间',
+    globalKpNote: 'Kp 是全球地磁活动指数。此等级描述的是预报的极光活动，不代表某个地点实际可见，也不是观测概率。',
   },
 } as const
 
@@ -199,6 +219,7 @@ const errorKeys: Record<string, TranslationKey> = {
   'Location search is unavailable right now.': 'errorLocationSearch',
   'The selected location could not be loaded.': 'errorOutlook',
   'Aurora forecast data could not be loaded.': 'errorForecastLoad',
+  'The global aurora forecast is unavailable right now.': 'errorKpForecast',
   'Location search failed.': 'errorSearch',
 }
 

@@ -1,0 +1,22 @@
+.latest-aurora-forecast { padding: 22px 26px; border: 1px solid #2b3c4e; border-radius: 20px; background: #121f2d; }
+.latest-forecast-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.latest-forecast-heading .eyebrow { margin-bottom: 7px; }
+.latest-forecast-heading h2 { margin: 0; font-size: 20px; line-height: 1.25; }
+.latest-forecast-heading a { color: #8ce2c4; font-size: 12px; white-space: nowrap; }
+.latest-forecast-content { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-top: 20px; }
+.latest-forecast-value { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.latest-forecast-value strong { font-size: 28px; letter-spacing: -.04em; }
+.activity-badge { padding: 7px 11px; border: 1px solid #41566a; border-radius: 999px; font-size: 12px; font-weight: 750; }
+.activity-low { color: #8ce2c4; }
+.activity-medium { color: #f2d27b; }
+.activity-high { color: #ff9f87; }
+.latest-forecast-meta { display: grid; gap: 10px; justify-items: end; text-align: right; color: #a9b8ca; font-size: 12px; }
+.latest-forecast-meta > div { display: grid; gap: 4px; }
+.latest-forecast-meta time { color: #e8edf6; font-size: 14px; }
+.latest-forecast-note { grid-column: 1 / -1; margin: 0; padding-top: 12px; border-top: 1px solid #2b3c4e; color: #a9b8ca; font-size: 12px; line-height: 1.55; }
+.latest-forecast-message { margin: 18px 0 0; color: #a9b8ca; font-size: 13px; }
+@media (max-width: 520px) {
+  .latest-aurora-forecast { padding: 19px; }
+  .latest-forecast-content { grid-template-columns: 1fr; }
+  .latest-forecast-meta { justify-items: start; text-align: left; }
+}

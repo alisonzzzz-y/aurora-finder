@@ -97,7 +97,7 @@ public class NoaaKpIndexProvider implements KpIndexProvider {
             Instant periodStart = parseUtcTimestamp(item.path("time_tag"));
             KpIndexType type = parseType(item.path("observed"));
             records.add(new KpIndexRecord(periodStart, kp, type,
-                    scale.isTextual() ? scale.asText() : null));
+                    scale.isTextual() ? scale.asText() : null, null));
         }
         return new KpIndexResponse(clock.instant(), SOURCE_URL, List.copyOf(records));
     }

@@ -104,7 +104,9 @@
 
 **OVATION 进度记录（2026-09-24）：**已新增 OVATION Provider 与 `/api/v1/aurora-map`，验证了官方 JSON 的时间字段、`[Longitude, Latitude, Aurora]` 网格、0–359 经度换算和失败响应；12 项后端测试通过。官方数据采样脚本以 5 分钟间隔获取了 3 份约 924 KB 的完整响应，压缩快照和 SHA-256 manifest 保存在 `docs/data/noaa-ovation-samples/`。抓取时间为 11:50:00Z、11:55:03Z、12:00:10Z；三份响应均为 HTTP 200，包含 65,160 个坐标，ETag、Last-Modified、Observation Time 和 Forecast Time 均有变化，且压缩快照解压后的哈希与 manifest 一致。此次 10 分钟观测只证明这些样本期间数据持续更新，不构成长期可用性 SLA 或固定刷新周期。完整时效规则、缓存及剩余故障测试仍未完成。
 
-**Kp 接入进度（2026-09-24）：**NOAA 官方三日地磁预报将 Kp 标为三小时 UTC 时段（如 `00-03UT`），实时 JSON 的 `time_tag` 与该时段起点一致，但不带 `Z` 或偏移；后端按 UTC 解析并在 API 中返回明确的 UTC `Instant`。响应中的 `observed`、`estimated`、`predicted` 被转换为枚举并原样保留语义，另保留 `kp`、`noaa_scale` 和抓取时间。新增只读 `/api/v1/kp-index`，不把 Kp 转为地点观测等级或概率。官方说明称 NOAA 图表展示三小时估算 Kp，并由多个地磁台站数据得出；单次实时样本用于验证 JSON 字段，不代表长期更新保证。验证：新增 provider 测试覆盖三类记录、UTC 解析、空/异常 JSON、越界 Kp 和 429；`./mvnw test` 共 20 项通过。时间解释参考 NOAA [三日地磁预报说明](https://www.spaceweather.gov/products/3-day-geomagnetic-forecast)、[官方预报文本](https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt) 与 [Planetary K-index 说明](https://www.spaceweather.gov/products/planetary-k-index)。缓存、完整时效边界、长时间稳定性和剩余故障样例仍未验证。
+**Kp 接入进度（2026-09-24）：**NOAA 官方三日地磁预报将 Kp 标为三小时 UTC 时段（如 `00-03UT`），实时 JSON 的 `time_tag` 与该时段起点一致，但不带 `Z` 或偏移；后端按 UTC 解析并在 API 中返回明确的 UTC `Instant`。响应中的 `observed`、`estimated`、`predicted` 被转换为枚举并原样保留语义，另保留 `kp`、`noaa_scale` 和抓取时间。新增只读 `/api/v1/kp-index`，不把 Kp 转为地点观测等级或概率。官方说明称 NOAA 图表展示三小时估算 Kp，并由多个地磁台站数据得出；单次实时样本用于验证 JSON 字段，不代表长期更新保证。验证：新增 provider 测试覆盖三类记录、UTC 解析、空/异常 JSON、越界 Kp 和 429；Kp 分类与缓存测试另见地图下方活动卡片记录。数据时效边界、长期稳定性和剩余故障样例仍未验证。时间解释参考 NOAA [三日地磁预报说明](https://www.spaceweather.gov/products/3-day-geomagnetic-forecast)、[官方预报文本](https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt) 与 [Planetary K-index 说明](https://www.spaceweather.gov/products/planetary-k-index)。
+
+**地图下全球活动卡片（2026-09-24）：**新增 `/api/v1/kp-index` 前端展示，在地图下方显示下一条 NOAA `predicted` 三小时记录、Kp 值、活动等级、目标时段和数据获取时刻；日期时间按浏览器本地时区显示并包含偏移。活动等级用三档概括 NOAA 的 Kp 说明：低 `<3`（对应 0–2）、中 `3–<6`（对应 3–5）、高 `>=6`（对应 6–9）。依据为 NOAA 观测指南描述的 Kp 0–2、3–5、6–7、8–9 活动差异；三档合并是产品显示简化，不代表本地可见概率，也不替代完整的观测规则。后端共享 Kp 响应缓存 5 分钟。中英文界面均说明这是全球地磁/极光活动趋势，不是地点级可见性判断。后端测试新增阈值边界及缓存复用覆盖；前端 typecheck、lint、production build 通过。此卡片不改变三晚等级，仍为 `INSUFFICIENT_DATA`。
 
 ## 04 区：天气数据
 
@@ -155,6 +157,7 @@
 - [ ] 仅渲染通过时效检查的 OVATION 图层，并注明预测时间和图层含义。
 - [ ] 数据过期或获取失败时移除失效图层；切换到未来两晚时不沿用当前图层。
 - [ ] 地图旁解释云量、黑暗、视野、地形和光害未包含在该图层内。
+- [x] 地图下展示 NOAA Kp 下一预报时段和有来源依据的全球活动分级，明确它不是当地可见性等级。
 
 **验收：**真实地点能完成搜索 → 选择 → 三晚事实 → 地图及来源详情。浏览器检查加载、切换、错误和窄屏；故障注入确认各来源状态独立。此区可以持续显示“数据不足”，不要求提前产生高、中、低。
 
