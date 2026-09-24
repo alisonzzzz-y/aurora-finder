@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { searchLocations } from '../../api/locations'
 import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
@@ -17,7 +17,40 @@ export function LocationSearch({ busy, onSelect }: Props) {
   const [results, setResults] = useState<Location[]>([])
   const [error, setError] = useState<unknown>(null)
   const [state, setState] = useState<SearchState>('idle')
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const searchRequest = useRef<AbortController | null>(null)
+  const normalizedQuery = query.trim()
+
+  useEffect(() => {
+    searchRequest.current?.abort()
+    searchRequest.current = null
+
+    if (normalizedQuery.length < 2) return
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      searchRequest.current = controller
+      setState('loading')
+      try {
+        const locations = await searchLocations(normalizedQuery, controller.signal)
+        if (controller.signal.aborted || searchRequest.current !== controller) return
+        setResults(locations)
+        setState(locations.length === 0 ? 'empty' : 'results')
+      } catch (cause) {
+        if (controller.signal.aborted || searchRequest.current !== controller) return
+        setError(cause)
+        setState('error')
+      } finally {
+        if (searchRequest.current === controller) searchRequest.current = null
+      }
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [normalizedQuery])
 
   useEffect(() => () => searchRequest.current?.abort(), [])
 
@@ -26,58 +59,106 @@ export function LocationSearch({ busy, onSelect }: Props) {
     searchRequest.current = null
     setQuery(value)
     setResults([])
-    setError('')
+    setError(null)
     setState('idle')
+    setActiveIndex(-1)
   }
 
-  async function search(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const cleanedQuery = query.trim()
-    if (cleanedQuery.length < 2) {
-      setError(new Error('queryTooShort'))
-      return
-    }
-    setError(null)
-    setResults([])
-    setState('loading')
-    searchRequest.current?.abort()
-    const controller = new AbortController()
-    searchRequest.current = controller
-    try {
-      const locations = await searchLocations(cleanedQuery, controller.signal)
-      if (controller.signal.aborted || searchRequest.current !== controller) return
-      setResults(locations)
-      setState(locations.length === 0 ? 'empty' : 'results')
-    } catch (cause) {
-      if (controller.signal.aborted || searchRequest.current !== controller) return
-      setError(cause)
-      setState('error')
-    } finally {
-      if (searchRequest.current === controller) searchRequest.current = null
+  function choose(location: Location) {
+    setOpen(false)
+    setQuery('')
+    onSelect(location)
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown' && results.length > 0) {
+      event.preventDefault()
+      setOpen(true)
+      setActiveIndex(index => (index + 1) % results.length)
+    } else if (event.key === 'ArrowUp' && results.length > 0) {
+      event.preventDefault()
+      setOpen(true)
+      setActiveIndex(index => index <= 0 ? results.length - 1 : index - 1)
+    } else if (event.key === 'Enter' && open && activeIndex >= 0) {
+      event.preventDefault()
+      choose(results[activeIndex])
+    } else if (event.key === 'Escape') {
+      setOpen(false)
+      setActiveIndex(-1)
     }
   }
+
+  const describedBy = state === 'empty'
+    ? 'place-search-status'
+    : state === 'error'
+      ? 'place-search-error'
+      : undefined
 
   return (
-    <section className="search-panel" aria-labelledby="search-title">
+    <section
+      className="search-panel"
+      aria-labelledby="search-title"
+      onBlur={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setOpen(false)
+          setActiveIndex(-1)
+        }
+      }}
+    >
       <div>
         <h2 id="search-title">{t('findPlace')}</h2>
         <p>{t('selectPlaceHelp')}</p>
       </div>
-      <form onSubmit={search} className="search-form">
+      <div className="search-field-wrap">
         <label htmlFor="place-search" className="sr-only">{t('placeNameLabel')}</label>
-        <input id="place-search" value={query} onChange={event => updateQuery(event.target.value)} placeholder={t('placePlaceholder')} minLength={2} maxLength={80} required disabled={busy} />
-        <button disabled={busy || state === 'loading'} type="submit">{state === 'loading' ? t('loading') : t('search')}</button>
-      </form>
-      {error !== null && <p className="error" role="alert">{error instanceof Error && error.message === 'queryTooShort' ? t('queryTooShort') : localizeError(error, t)}</p>}
-      {state === 'results' && <ul className="results" aria-label={t('matchingLocations')}>{results.map(location => (
-        <li key={location.id}><button type="button" onClick={() => onSelect(location)} disabled={busy}>
-          <strong>{location.name}</strong><span>
-            {[location.subregion, location.region, location.country].filter(Boolean).join(', ')}
-            <br />{location.latitude.toFixed(3)}, {location.longitude.toFixed(3)} · {location.timezone}
-          </span>
-        </button></li>
-      ))}</ul>}
-      {state === 'empty' && <p className="hint">{t('emptySearch')}</p>}
+        <input
+          id="place-search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open && (state === 'results' || state === 'loading')}
+          aria-controls="place-search-results"
+          aria-activedescendant={activeIndex >= 0 ? `place-option-${results[activeIndex]?.id}` : undefined}
+          aria-describedby={describedBy}
+          autoComplete="off"
+          value={query}
+          onChange={event => {
+            updateQuery(event.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={t('placePlaceholder')}
+          maxLength={80}
+          disabled={busy}
+        />
+        {open && state === 'loading' && <p className="search-status" role="status">{t('loading')}</p>}
+        {open && state === 'error' && error !== null && <p id="place-search-error" className="error search-status" role="alert">{localizeError(error, t)}</p>}
+        {open && state === 'empty' && <p id="place-search-status" className="hint search-status" role="status">{t('emptySearch')}</p>}
+        {open && state === 'results' && <ul id="place-search-results" className="results" role="listbox" aria-label={t('matchingLocations')}>
+          {results.map((location, index) => {
+            const administrativeArea = [location.region, location.subregion].filter(Boolean).join(', ')
+            return <li key={location.id} role="presentation">
+              <button
+                id={`place-option-${location.id}`}
+                type="button"
+                role="option"
+                aria-selected={activeIndex === index}
+                className={activeIndex === index ? 'active' : ''}
+                onClick={() => choose(location)}
+                disabled={busy}
+              >
+                <span className="location-option-heading">
+                  <strong>{location.name}</strong>
+                  <span className="location-country">{location.country}</span>
+                </span>
+                <span className="location-option-detail">
+                  {[administrativeArea, `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`, location.timezone].filter(Boolean).join(' · ')}
+                </span>
+              </button>
+            </li>
+          })}
+        </ul>}
+      </div>
     </section>
   )
 }
