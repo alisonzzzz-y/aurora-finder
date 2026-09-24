@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getOutlook } from './api/outlooks'
 import type { Location } from './types/location'
 import type { Outlook } from './types/outlook'
@@ -10,17 +10,37 @@ function App() {
   const [outlook, setOutlook] = useState<Outlook | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const outlookRequest = useRef<AbortController | null>(null)
+
+  useEffect(() => () => outlookRequest.current?.abort(), [])
 
   async function selectLocation(location: Location) {
+    outlookRequest.current?.abort()
+    const controller = new AbortController()
+    outlookRequest.current = controller
     setBusy(true)
     setError('')
     try {
-      setOutlook(await getOutlook(location.id))
+      const result = await getOutlook(location.id, controller.signal)
+      if (!controller.signal.aborted && outlookRequest.current === controller) setOutlook(result)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'The outlook could not be loaded.')
+      if (!controller.signal.aborted && outlookRequest.current === controller) {
+        setError(cause instanceof Error ? cause.message : 'The outlook could not be loaded.')
+      }
     } finally {
-      setBusy(false)
+      if (outlookRequest.current === controller) {
+        outlookRequest.current = null
+        setBusy(false)
+      }
     }
+  }
+
+  function changeLocation() {
+    outlookRequest.current?.abort()
+    outlookRequest.current = null
+    setOutlook(null)
+    setError('')
+    setBusy(false)
   }
 
   return <div className="page-shell">
@@ -30,7 +50,7 @@ function App() {
     </header>
     <main>
       {outlook
-        ? <OutlookPage outlook={outlook} onChangeLocation={() => { setOutlook(null); setError('') }} />
+        ? <OutlookPage outlook={outlook} onChangeLocation={changeLocation} />
         : <LocationSearchPage busy={busy} onSelect={selectLocation} />}
       {error && !outlook && <p className="error page-error" role="alert">{error}</p>}
       {!outlook && <button className="agent-button" type="button" disabled title="AI questions will be available after the shared facts service is validated">Ask about a night <span>✦</span></button>}
