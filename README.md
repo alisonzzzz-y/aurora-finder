@@ -15,6 +15,8 @@ Aurora Finder is an early location-based aurora forecast project. It combines a 
 - Search for a named place using Open-Meteo geocoding, then select a result with its coordinates and IANA time zone. Arbitrary coordinates and map-pin selection are not supported.
 - Show the selected place's current local date and the following two local dates. Dates and timestamps use the selected place's time zone and show UTC offsets.
 - Display three night cards with local civil, nautical, and astronomical twilight windows. These describe solar altitude only and are not validated aurora-viewing rules; the all-night outlook remains **Insufficient data**.
+- Load local nights, aurora activity, cloud conditions, and solar windows through one facts endpoint. Each source reports its own state, valid time range, retrieval time, link, and failure code. A failed provider does not hide the other sources.
+- Check whether the short-range NOAA forecast window contains any timestamped cloud values. This overlap check does not create a combined viewing rating.
 - Display the latest available short-range NOAA OVATION model grid on an interactive MapLibre map. MapTiler provides the basemap tiles.
 - Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
 - For a selected place, show the nearest NOAA OVATION grid value and low, medium, or high short-range local activity level, with model and forecast timestamps.
@@ -75,6 +77,7 @@ The browser must use the key to request map tiles, so restrict its allowed origi
 
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
+- `GET /api/v1/facts/2964574`
 - `GET /api/v1/aurora-map`
 - `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
 - `GET /api/v1/kp-index`
@@ -112,6 +115,8 @@ Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATIO
 - 使用 Open-Meteo 地理编码搜索地点，并由用户选择包含坐标和 IANA 时区的结果。暂不支持任意坐标和地图选点。
 - 显示所选地点当地的今天及随后两天。日期和时间均按所选地点的时区显示，并附带 UTC 偏移。
 - 三晚卡片显示当地民用、航海和天文暮光时间段。这些信息只描述太阳高度，不是已验证的极光观测规则；整晚观测等级仍为“数据不足”。
+- 通过一个观测事实接口读取当地夜晚、NOAA 活动、云量和太阳暮光数据。每个来源分别标明状态、适用时间、获取时间、来源链接和失败码；某个来源失败时保留其他结果。
+- 检查 NOAA 短时预报范围内是否有带时间戳的云量值。时间重叠检查不会生成综合观测等级。
 - 通过可交互的 MapLibre 地图展示 NOAA OVATION 最新短时模型网格；底图瓦片由 MapTiler 提供。
 - 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
 - 选择地点后，显示最近 NOAA OVATION 网格值、低/中/高短时当地活动等级，以及模型观测时间和预报有效时间。
@@ -172,6 +177,7 @@ NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，�
 
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
+- `GET /api/v1/facts/2964574`
 - `GET /api/v1/aurora-map`
 - `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
 - `GET /api/v1/kp-index`

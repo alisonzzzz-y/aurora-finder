@@ -10,6 +10,11 @@
 .night-card h3 { font-size: 21px; font-weight: 620; margin: 0 0 18px; }
 .level-badge { display: inline-block; border-bottom: 1px solid var(--line-strong); padding: 4px 0; color: #d2ccdf; font-size: 12px; font-weight: 650; letter-spacing: .02em; }
 .rule-status { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.source-status { color: var(--muted); font-size: 13px; margin: -6px 0 22px; }
+.source-status-current { color: var(--accent); }
+.source-status-partial { color: #d8bb7b; }
+.source-status-unavailable { color: #df8c9c; }
+.source-coverage { color: var(--muted); font-size: 13px; margin: -12px 0 22px; }
 .night-card p:last-child { font-size: 14px; margin-bottom: 0; }
 .solar-darkness { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
 .solar-darkness h4 { margin: 0 0 12px; font-size: 15px; font-weight: 620; }

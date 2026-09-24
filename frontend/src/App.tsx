@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { getOutlook } from './api/outlooks'
+import { getObservationFacts } from './api/observationFacts'
 import type { Location } from './types/location'
-import type { Outlook } from './types/outlook'
+import type { ObservationFacts } from './types/observationFacts'
 import { LocationSearchPage } from './pages/LocationSearchPage'
 import { OutlookPage } from './pages/OutlookPage'
 import { I18nProvider, localizeError, useI18n } from './i18n'
@@ -10,7 +10,7 @@ import { isProductionApiConfigured } from './api/apiUrl'
 
 function AppContent() {
   const { language, setLanguage, t } = useI18n()
-  const [outlook, setOutlook] = useState<Outlook | null>(null)
+  const [facts, setFacts] = useState<ObservationFacts | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const outlookRequest = useRef<AbortController | null>(null)
@@ -24,8 +24,8 @@ function AppContent() {
     setBusy(true)
     setError('')
     try {
-      const result = await getOutlook(location.id, controller.signal)
-      if (!controller.signal.aborted && outlookRequest.current === controller) setOutlook(result)
+      const result = await getObservationFacts(location.id, controller.signal)
+      if (!controller.signal.aborted && outlookRequest.current === controller) setFacts(result)
     } catch (cause) {
       if (!controller.signal.aborted && outlookRequest.current === controller) {
         setError(cause instanceof Error ? cause.message : 'The selected location could not be loaded.')
@@ -38,15 +38,46 @@ function AppContent() {
     }
   }
 
+  const selectedLocationId = facts?.outlook.location.id
+  useEffect(() => {
+    if (!selectedLocationId) return
+    let request: AbortController | null = null
+    const interval = window.setInterval(() => {
+      request?.abort()
+      request = new AbortController()
+      const currentRequest = request
+      getObservationFacts(selectedLocationId, currentRequest.signal)
+        .then(result => {
+          if (!currentRequest.signal.aborted) setFacts(current =>
+            current?.outlook.location.id === selectedLocationId ? result : current)
+        })
+        .catch(() => {
+          if (!currentRequest.signal.aborted) setFacts(current => {
+            if (current?.outlook.location.id !== selectedLocationId) return current
+            return {
+              ...current,
+              sourceStatus: 'UNAVAILABLE',
+              auroraActivity: { ...current.auroraActivity, status: 'UNAVAILABLE', failureCode: 'NETWORK_ERROR', data: null },
+              cloudForecast: { ...current.cloudForecast, status: 'UNAVAILABLE', failureCode: 'NETWORK_ERROR', data: null },
+            }
+          })
+        })
+    }, 5 * 60 * 1000)
+    return () => {
+      window.clearInterval(interval)
+      request?.abort()
+    }
+  }, [selectedLocationId])
+
   function changeLocation() {
     outlookRequest.current?.abort()
     outlookRequest.current = null
-    setOutlook(null)
+    setFacts(null)
     setError('')
     setBusy(false)
   }
 
-  return <div className={`page-shell${outlook ? '' : ' home-page-shell'}`}>
+  return <div className={`page-shell${facts ? '' : ' home-page-shell'}`}>
     <header className="site-header">
       <div className="brand"><span className="brand-mark">✦</span> {t('brand')}</div>
       <div className="header-tools">
@@ -58,11 +89,11 @@ function AppContent() {
     </header>
     {!isProductionApiConfigured && <p className="deployment-config-alert" role="alert">{t('apiOriginMissing')}</p>}
     <main>
-      {outlook
-        ? <OutlookPage outlook={outlook} onChangeLocation={changeLocation} />
+      {facts
+        ? <OutlookPage facts={facts} onChangeLocation={changeLocation} />
         : <LocationSearchPage busy={busy} onSelect={selectLocation} />}
-      {error && !outlook && <p className="error page-error" role="alert">{localizeError(new Error(error), t)}</p>}
-      {!outlook && <button className="agent-button" type="button" disabled title={t('askUnavailable')}>{t('askAboutNight')} <span>✦</span></button>}
+      {error && !facts && <p className="error page-error" role="alert">{localizeError(new Error(error), t)}</p>}
+      {!facts && <button className="agent-button" type="button" disabled title={t('askUnavailable')}>{t('askAboutNight')} <span>✦</span></button>}
     </main>
     <footer>{t('footer')}</footer>
   </div>
