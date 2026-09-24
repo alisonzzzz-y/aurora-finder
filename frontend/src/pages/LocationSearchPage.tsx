@@ -2,6 +2,7 @@ import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
+import { ForecastGuide } from '../components/aurora/ForecastGuide'
 import type { Location } from '../types/location'
 import { useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
@@ -27,10 +28,6 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
         <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} />
       </aside>
     </section>
-    <section className="intro home-intro">
-      <p className="eyebrow">{t('planNight')}</p>
-      <h1>{t('heroTitle')}</h1>
-      <p className="intro-copy">{t('heroCopy')}</p>
-    </section>
+    <ForecastGuide />
   </>
 }
