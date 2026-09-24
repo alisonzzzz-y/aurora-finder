@@ -12,9 +12,14 @@ function nextPredictedPeriod(records: KpIndexRecord[]) {
 }
 
 function formatLocalTime(instant: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'shortOffset',
-  }).format(new Date(instant))
+  const date = new Date(instant)
+  const localTime = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium', timeStyle: 'short',
+  }).format(date)
+  const offset = new Intl.DateTimeFormat('en', {
+    hour: '2-digit', timeZoneName: 'shortOffset',
+  }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value
+  return offset ? `${localTime} (${offset})` : localTime
 }
 
 export function LatestAuroraForecast() {
