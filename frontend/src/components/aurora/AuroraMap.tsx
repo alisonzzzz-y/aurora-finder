@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
+import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
-import type { AuroraMapData } from '../../types/auroraMap'
+import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
@@ -26,7 +26,35 @@ function formatUtc(instant: string, locale: string) {
   }).format(new Date(instant))} UTC`
 }
 
-type Props = { data: AuroraMapData | null; forecastError: string; forecastLoading: boolean }
+function asActivityGeoJson(points: AuroraMapPoint[]): FeatureCollection<Point, { index: number; auroraValue: number }> {
+  return {
+    type: 'FeatureCollection',
+    features: points.map((point, index) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [point.longitude, point.latitude] },
+      properties: { index, auroraValue: point.auroraValue },
+    })),
+  }
+}
+
+function createActivityPopup(number: number, value: number, pointLabel: string, signalLabel: string) {
+  const content = document.createElement('div')
+  const title = document.createElement('strong')
+  title.textContent = `${number}. ${pointLabel}`
+  const signal = document.createElement('div')
+  signal.textContent = `${signalLabel}: ${value}`
+  content.append(title, signal)
+  return content
+}
+
+type Props = {
+  data: AuroraMapData | null
+  forecastError: string
+  forecastLoading: boolean
+  activityPoints: AuroraMapPoint[]
+  selectedActivityIndex: number | null
+  onSelectActivity: (index: number) => void
+}
 
 const baseMaps = [
   { id: 'dataviz-dark', label: 'mapStyleDark' },
@@ -35,13 +63,17 @@ const baseMaps = [
 ] as const
 const initialBaseMapId = baseMaps[0].id
 
-export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
+export function AuroraMap({ data, forecastError, forecastLoading, activityPoints, selectedActivityIndex, onSelectActivity }: Props) {
   const { language, t } = useI18n()
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY?.trim()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const dataRef = useRef<AuroraMapData | null>(null)
+  const activityPointsRef = useRef(activityPoints)
+  const activityPopup = useRef<Popup | null>(null)
+  const selectActivityRef = useRef(onSelectActivity)
+  const translateRef = useRef(t)
   const [tilesReady, setTilesReady] = useState(false)
   const [mapError, setMapError] = useState('')
   const [baseMapId, setBaseMapId] = useState<(typeof baseMaps)[number]['id']>(initialBaseMapId)
@@ -54,6 +86,18 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
   useEffect(() => {
     dataRef.current = data
   }, [data])
+
+  useEffect(() => {
+    activityPointsRef.current = activityPoints
+  }, [activityPoints])
+
+  useEffect(() => {
+    selectActivityRef.current = onSelectActivity
+  }, [onSelectActivity])
+
+  useEffect(() => {
+    translateRef.current = t
+  }, [t])
 
   useEffect(() => {
     if (!mapTilerKey) {
@@ -118,6 +162,36 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
           },
         })
       }
+      if (!instance.getSource('strong-activity-points')) {
+        instance.addSource('strong-activity-points', { type: 'geojson', data: asActivityGeoJson(activityPointsRef.current) })
+      }
+      if (!instance.getLayer('strong-activity-circles')) {
+        instance.addLayer({
+          id: 'strong-activity-circles',
+          type: 'circle',
+          source: 'strong-activity-points',
+          paint: {
+            'circle-radius': 10,
+            'circle-color': '#a889ef',
+            'circle-stroke-color': '#17131f',
+            'circle-stroke-width': 2,
+          },
+        })
+      }
+      if (!instance.getLayer('strong-activity-labels')) {
+        instance.addLayer({
+          id: 'strong-activity-labels',
+          type: 'symbol',
+          source: 'strong-activity-points',
+          layout: {
+            'text-field': ['to-string', ['+', ['get', 'index'], 1]],
+            'text-size': 12,
+            'text-font': ['Open Sans Bold'],
+            'text-allow-overlap': true,
+          },
+          paint: { 'text-color': '#17131f' },
+        })
+      }
     }
     const loadTimeout = window.setTimeout(() => {
       if (!keyRejected) {
@@ -129,6 +203,20 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
       window.clearTimeout(loadTimeout)
       setMapError('')
       installAuroraLayer()
+      instance.on('click', 'strong-activity-circles', event => {
+        const feature = event.features?.[0]
+        const coordinates = feature?.geometry.type === 'Point' ? feature.geometry.coordinates : null
+        const properties = feature?.properties as { index?: number; auroraValue?: number } | undefined
+        if (!coordinates || properties?.index === undefined) return
+        activityPopup.current?.remove()
+        selectActivityRef.current(properties.index)
+        activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
+          .setLngLat(coordinates as [number, number])
+          .setDOMContent(createActivityPopup(properties.index + 1, properties.auroraValue ?? 0, translateRef.current('modelGridPoint'), translateRef.current('activityValue')))
+          .addTo(instance)
+      })
+      instance.on('mouseenter', 'strong-activity-circles', () => { instance.getCanvas().style.cursor = 'pointer' })
+      instance.on('mouseleave', 'strong-activity-circles', () => { instance.getCanvas().style.cursor = '' })
       setTilesReady(true)
     })
     instance.on('style.load', () => {
@@ -148,10 +236,11 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
         setMapError('The base map could not load. Check the browser console for the failed request.')
       }
     })
-
     return () => {
       window.clearTimeout(loadTimeout)
       instance.remove()
+      activityPopup.current?.remove()
+      activityPopup.current = null
       map.current = null
     }
   }, [mapTilerKey])
@@ -168,6 +257,26 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
     const source = instance?.getSource('ovation-grid') as GeoJSONSource | undefined
     if (source) source.setData(geoJson ?? { type: 'FeatureCollection', features: [] })
   }, [geoJson])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance?.getStyle()) return
+    const source = instance.getSource('strong-activity-points') as GeoJSONSource | undefined
+    source?.setData(asActivityGeoJson(activityPoints))
+    if (instance.getLayer('strong-activity-circles')) {
+      instance.setPaintProperty('strong-activity-circles', 'circle-radius', ['case', ['==', ['get', 'index'], selectedActivityIndex ?? -1], 12, 10])
+    }
+    if (selectedActivityIndex !== null) {
+      const point = activityPoints[selectedActivityIndex]
+      if (!point) return
+      activityPopup.current?.remove()
+      instance.flyTo({ center: [point.longitude, point.latitude], zoom: Math.max(instance.getZoom(), 3.2), duration: 900 })
+      activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
+        .setLngLat([point.longitude, point.latitude])
+        .setDOMContent(createActivityPopup(selectedActivityIndex + 1, point.auroraValue, t('modelGridPoint'), t('activityValue')))
+        .addTo(instance)
+    }
+  }, [activityPoints, selectedActivityIndex, t])
 
   return <section className="aurora-map-panel" aria-label={t('mapAria')}>
     <div className="aurora-map-canvas" ref={container} />
