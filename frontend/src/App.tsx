@@ -43,7 +43,7 @@ function App() {
     setBusy(false)
   }
 
-  return <div className="page-shell">
+  return <div className={`page-shell${outlook ? '' : ' home-page-shell'}`}>
     <header className="site-header">
       <div className="brand"><span className="brand-mark">✦</span> Aurora Outlook</div>
       <span className="status-pill">Project foundation</span>
