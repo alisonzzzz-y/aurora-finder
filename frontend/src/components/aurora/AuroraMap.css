@@ -9,8 +9,12 @@
 .map-key { position: absolute; z-index: 2; left: 18px; bottom: 44px; width: 190px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 11px; }
 .map-key-gradient { height: 7px; margin-top: 9px; border-radius: 7px; background: linear-gradient(90deg, #20d29d 0%, #49ebae 36%, #e1ea6b 68%, #ff875e 100%); }
 .map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #aaa2ba; }
-.map-credit { position: absolute; z-index: 2; right: 8px; bottom: 34px; padding: 4px 6px; background: #15131fd9; color: #d4cfe0; font-size: 10px; }
+.map-credit { position: absolute; z-index: 2; right: 8px; bottom: 34px; padding: 3px 5px; background: #15131fd9; color: #c5bfd1; font-size: 9px; }
+.map-credit a { color: #d2c4ff; }
 .map-timestamps { position: absolute; z-index: 2; right: 12px; bottom: 8px; max-width: calc(100% - 24px); margin: 0; color: #d4cfe0; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
+.maplibregl-ctrl-attrib { max-width: min(440px, calc(100vw - 32px)); padding: 2px 6px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 88%) !important; color: #c5bfd1 !important; font-size: 9px !important; line-height: 1.4 !important; }
+.maplibregl-ctrl-attrib a { color: #d2c4ff !important; }
+.maplibregl-ctrl-attrib-button { opacity: .9; }
 .maplibregl-ctrl-group { overflow: hidden; border: 1px solid #514765 !important; border-radius: 7px !important; background: #15131fe8 !important; }
 .maplibregl-ctrl-group button { filter: invert(.82) sepia(.16) hue-rotate(220deg); }
 @media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { bottom: 48px; }.map-timestamps { left: 12px; right: 12px; text-align: left; } }
