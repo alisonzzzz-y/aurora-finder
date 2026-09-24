@@ -1,18 +1,18 @@
 .outlook { margin-top: 54px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
 .section-heading h1 { font-size: 30px; letter-spacing: -.03em; margin: 0; }
-.place-actions { display: flex; align-items: center; gap: 18px; color: #9aaec1; font-size: 13px; }
-.text-button { background: transparent; border: 1px solid #41566a; color: #b7c7d8; border-radius: 9px; padding: 9px 12px; cursor: pointer; }
-.night-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.night-card { background: #121f2d; border: 1px solid #2b3c4e; border-radius: 20px; padding: 25px; }
-.night-card p { color: #a9b8ca; line-height: 1.55; }
-.night-card .night-index { color: #8ce2c4; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; margin: 0 0 9px; }
-.night-card h3 { font-size: 22px; margin: 0 0 21px; }
-.level-badge { display: inline-block; border: 1px solid #41566a; border-radius: 999px; padding: 7px 12px; color: #b7c7d8; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
-.rule-status { color: #9aaec1; font-size: 13px; margin: 0 0 14px; }
+.place-actions { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 13px; }
+.text-button { background: transparent; border: 1px solid var(--line-strong); color: #d2ccdf; border-radius: 6px; padding: 9px 12px; cursor: pointer; }
+.night-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.night-card { padding: 22px 0 0; border-top: 1px solid var(--line); background: transparent; }
+.night-card p { color: var(--muted); line-height: 1.6; }
+.night-card .night-index { color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; margin: 0 0 9px; }
+.night-card h3 { font-size: 21px; font-weight: 620; margin: 0 0 18px; }
+.level-badge { display: inline-block; border-bottom: 1px solid var(--line-strong); padding: 4px 0; color: #d2ccdf; font-size: 12px; font-weight: 650; letter-spacing: .02em; }
+.rule-status { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .night-card p:last-child { font-size: 14px; margin-bottom: 0; }
-.timestamp { color: #9aaec1; font-size: 13px; margin-top: 12px; }
-.utc-offset { color: #91a7ba; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.timestamp { color: var(--muted); font-size: 13px; margin-top: 12px; }
+.utc-offset { color: #aaa2ba; font-size: 13px; font-weight: 500; white-space: nowrap; }
 @media (max-width: 720px) {
   .night-grid { grid-template-columns: 1fr; }
   .section-heading { align-items: start; flex-direction: column; }

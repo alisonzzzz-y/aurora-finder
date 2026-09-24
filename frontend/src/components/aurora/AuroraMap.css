@@ -1,11 +1,11 @@
-.aurora-map-panel { position: relative; min-width: 0; height: 540px; overflow: hidden; border: 1px solid #2b3c4e; border-radius: 20px; background: #0b1520; }
+.aurora-map-panel { position: relative; min-width: 0; height: 540px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #12111b; }
 .aurora-map-canvas { position: absolute; inset: 0; }
-.map-message { position: absolute; z-index: 2; top: 18px; left: 18px; max-width: min(440px, calc(100% - 36px)); padding: 11px 14px; border: 1px solid #41566a; border-radius: 10px; background: #09121de8; color: #d2dfec; font-size: 13px; line-height: 1.5; }
-.map-key { position: absolute; z-index: 2; left: 18px; bottom: 44px; width: 190px; padding: 12px 14px; border: 1px solid #41566a; border-radius: 12px; background: #09121de8; color: #d2dfec; font-size: 11px; }
-.map-key-gradient { height: 8px; margin-top: 9px; border-radius: 8px; background: linear-gradient(90deg, #20d29d 0%, #49ebae 35%, #e1ea6b 68%, #ff875e 100%); }
-.map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #91a7ba; }
-.map-credit { position: absolute; z-index: 2; right: 8px; bottom: 34px; padding: 4px 6px; border-radius: 4px; background: #09121dcc; color: #c5d0dc; font-size: 10px; }
-.map-timestamps { position: absolute; z-index: 2; right: 12px; bottom: 8px; max-width: calc(100% - 24px); margin: 0; color: #c2d0dd; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
-.maplibregl-ctrl-group { border: 1px solid #34485b !important; background: #09121de8 !important; }
-.maplibregl-ctrl-group button { filter: invert(.82); }
-@media (max-width: 720px) { .aurora-map-panel { height: 430px; }.map-key { bottom: 48px; }.map-timestamps { left: 12px; right: 12px; text-align: left; } }
+.map-message { position: absolute; z-index: 2; top: 18px; left: 18px; max-width: min(440px, calc(100% - 36px)); padding: 11px 14px; border-left: 3px solid var(--accent); background: #15131ff0; color: #e1dcec; font-size: 13px; line-height: 1.5; }
+.map-key { position: absolute; z-index: 2; left: 18px; bottom: 44px; width: 190px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 11px; }
+.map-key-gradient { height: 7px; margin-top: 9px; border-radius: 7px; background: linear-gradient(90deg, #513c78 0%, #785bb2 35%, #b49be9 68%, #f0a4c8 100%); }
+.map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #aaa2ba; }
+.map-credit { position: absolute; z-index: 2; right: 8px; bottom: 34px; padding: 4px 6px; background: #15131fd9; color: #d4cfe0; font-size: 10px; }
+.map-timestamps { position: absolute; z-index: 2; right: 12px; bottom: 8px; max-width: calc(100% - 24px); margin: 0; color: #d4cfe0; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
+.maplibregl-ctrl-group { overflow: hidden; border: 1px solid #514765 !important; border-radius: 7px !important; background: #15131fe8 !important; }
+.maplibregl-ctrl-group button { filter: invert(.82) sepia(.16) hue-rotate(220deg); }
+@media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { bottom: 48px; }.map-timestamps { left: 12px; right: 12px; text-align: left; } }
