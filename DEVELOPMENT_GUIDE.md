@@ -91,8 +91,8 @@
 **目标：**把样本核对变成可运行、可验证的数据接入。
 
 - [x] 在合理间隔内采集多个样本，保留抓取时间、原始时间字段、来源地址和内容校验信息，避免把一次成功访问当成稳定可用。
-- [ ] 核对 Kp 无偏移时间字符串的官方时间语义，以及 observed、estimated、predicted 三种记录的含义。
-- [ ] 分别建立 OVATION 和 Kp Provider；外部字段转为后端统一数据结构。
+- [x] 核对 Kp 无偏移时间字符串的官方时间语义，以及 observed、estimated、predicted 三种记录的含义。
+- [x] 分别建立 OVATION 和 Kp Provider；外部字段转为后端统一数据结构。
 - [ ] 校验网格、坐标、强度、时间字段和空响应；统一处理 0–359 经度，明确接缝处理方式。
 - [ ] 区分获取时间、源观测/更新时间和预测目标时间；有依据后配置新鲜度规则。
 - [ ] NOAA 全球数据共享缓存，不因每个用户查询重复下载完整网格；设置超时、有限重试和失败状态。
@@ -102,7 +102,9 @@
 
 **本区交付：**两个 Provider、可追溯样本和解析/失败测试。此时仍不计算观测等级。
 
-**进度记录（2026-09-24）：**已新增 OVATION Provider 与 `/api/v1/aurora-map`，验证了官方 JSON 的时间字段、`[Longitude, Latitude, Aurora]` 网格、0–359 经度换算和失败响应；12 项后端测试通过。官方数据采样脚本以 5 分钟间隔获取了 3 份约 924 KB 的完整响应，压缩快照和 SHA-256 manifest 保存在 `docs/data/noaa-ovation-samples/`。抓取时间为 11:50:00Z、11:55:03Z、12:00:10Z；三份响应均为 HTTP 200，包含 65,160 个坐标，ETag、Last-Modified、Observation Time 和 Forecast Time 均有变化，且压缩快照解压后的哈希与 manifest 一致。此次 10 分钟观测只证明这些样本期间数据持续更新，不构成长期可用性 SLA 或固定刷新周期。Kp 时间语义与状态仍待核实；Provider 规范化、完整的时效规则、缓存及故障测试仍未完成，因此 03 区未完成。
+**OVATION 进度记录（2026-09-24）：**已新增 OVATION Provider 与 `/api/v1/aurora-map`，验证了官方 JSON 的时间字段、`[Longitude, Latitude, Aurora]` 网格、0–359 经度换算和失败响应；12 项后端测试通过。官方数据采样脚本以 5 分钟间隔获取了 3 份约 924 KB 的完整响应，压缩快照和 SHA-256 manifest 保存在 `docs/data/noaa-ovation-samples/`。抓取时间为 11:50:00Z、11:55:03Z、12:00:10Z；三份响应均为 HTTP 200，包含 65,160 个坐标，ETag、Last-Modified、Observation Time 和 Forecast Time 均有变化，且压缩快照解压后的哈希与 manifest 一致。此次 10 分钟观测只证明这些样本期间数据持续更新，不构成长期可用性 SLA 或固定刷新周期。完整时效规则、缓存及剩余故障测试仍未完成。
+
+**Kp 接入进度（2026-09-24）：**NOAA 官方三日地磁预报将 Kp 标为三小时 UTC 时段（如 `00-03UT`），实时 JSON 的 `time_tag` 与该时段起点一致，但不带 `Z` 或偏移；后端按 UTC 解析并在 API 中返回明确的 UTC `Instant`。响应中的 `observed`、`estimated`、`predicted` 被转换为枚举并原样保留语义，另保留 `kp`、`noaa_scale` 和抓取时间。新增只读 `/api/v1/kp-index`，不把 Kp 转为地点观测等级或概率。官方说明称 NOAA 图表展示三小时估算 Kp，并由多个地磁台站数据得出；单次实时样本用于验证 JSON 字段，不代表长期更新保证。验证：新增 provider 测试覆盖三类记录、UTC 解析、空/异常 JSON、越界 Kp 和 429；`./mvnw test` 共 20 项通过。时间解释参考 NOAA [三日地磁预报说明](https://www.spaceweather.gov/products/3-day-geomagnetic-forecast)、[官方预报文本](https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt) 与 [Planetary K-index 说明](https://www.spaceweather.gov/products/planetary-k-index)。缓存、完整时效边界、长时间稳定性和剩余故障样例仍未验证。
 
 ## 04 区：天气数据
 

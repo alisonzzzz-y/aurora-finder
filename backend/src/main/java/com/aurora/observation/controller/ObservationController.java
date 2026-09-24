@@ -6,6 +6,8 @@ import com.aurora.observation.dto.AuroraMapResponse;
 import com.aurora.observation.service.LocationService;
 import com.aurora.observation.service.OutlookService;
 import com.aurora.observation.service.AuroraMapService;
+import com.aurora.observation.service.KpIndexService;
+import com.aurora.observation.dto.KpIndexResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,11 +22,14 @@ public class ObservationController {
     private final LocationService locations;
     private final OutlookService outlook;
     private final AuroraMapService auroraMap;
+    private final KpIndexService kpIndex;
 
-    public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap) {
+    public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
+                                 KpIndexService kpIndex) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
+        this.kpIndex = kpIndex;
     }
 
     @GetMapping("/locations")
@@ -40,5 +45,10 @@ public class ObservationController {
     @GetMapping("/aurora-map")
     public AuroraMapResponse auroraMap() {
         return auroraMap.latest();
+    }
+
+    @GetMapping("/kp-index")
+    public KpIndexResponse kpIndex() {
+        return kpIndex.latest();
     }
 }
