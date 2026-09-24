@@ -8,7 +8,9 @@ import com.aurora.observation.dto.RuleStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -33,7 +35,10 @@ public class OutlookService {
                     LocalDate localDate = tonight.plusDays(offset);
                     ZoneOffset utcOffset = zone.getRules().getOffset(localDate.atStartOfDay(zone).toInstant());
                     String offsetId = utcOffset.equals(ZoneOffset.UTC) ? "+00:00" : utcOffset.getId();
-                    return new NightOutlook(localDate, offsetId, OutlookLevel.INSUFFICIENT_DATA,
+                    Instant windowStart = localDate.atTime(LocalTime.NOON).atZone(zone).toInstant();
+                    Instant windowEnd = localDate.plusDays(1).atTime(LocalTime.NOON).atZone(zone).toInstant();
+                    return new NightOutlook(localDate, offsetId, windowStart, windowEnd,
+                            OutlookLevel.INSUFFICIENT_DATA,
                             "Aurora, cloud, darkness, and freshness rules are pending validation.");
                 })
                 .toList();

@@ -3,6 +3,8 @@ import type { Location } from './location'
 export type NightOutlook = {
   localDate: string
   utcOffsetAtStart: string
+  evaluationWindowStartUtc: string
+  evaluationWindowEndUtc: string
   level: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT_DATA'
   reason: string
 }
