@@ -5,9 +5,9 @@ export type Language = 'en' | 'zh'
 
 const messages = {
   en: {
-    documentTitle: 'Aurora Outlook | Aurora forecasts',
+    documentTitle: 'Aurora Finder | Aurora forecasts',
     metaDescription: 'Explore local nights and the data behind aurora viewing conditions.',
-    brand: 'Aurora Outlook',
+    brand: 'Aurora Finder',
     projectStatus: 'Project foundation',
     languageLabel: 'Language',
     askAboutNight: 'Ask about a night',
@@ -74,9 +74,9 @@ const messages = {
     errorSearch: 'Location search failed.',
   },
   zh: {
-    documentTitle: 'Aurora Outlook｜极光预报',
+    documentTitle: 'Aurora Finder｜极光预报',
     metaDescription: '查看全球极光活动地图、当地夜晚时间和预报数据来源。',
-    brand: 'Aurora Outlook',
+    brand: 'Aurora Finder',
     projectStatus: '项目基础版本',
     languageLabel: '语言',
     askAboutNight: '询问今晚情况',

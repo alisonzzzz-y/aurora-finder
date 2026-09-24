@@ -1,4 +1,4 @@
-# Aurora Outlook
+# Aurora Finder
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-Aurora Outlook is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search and time-zone-aware night outlooks. It does **not** calculate a viewing probability or provide AI advice in this foundation release.
+Aurora Finder is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search and time-zone-aware night outlooks. It does **not** calculate a viewing probability or provide AI advice in this foundation release.
 
 **Live demo:** No deployment URL is recorded yet. Once deployed, put the Vercel URL here near the top of this README and in the GitHub repository's **About → Website** field.
 
@@ -96,7 +96,7 @@ Location results use Open-Meteo geocoding data under CC BY 4.0. Credit: Open-Met
 
 ## 简体中文
 
-Aurora Outlook 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索和按当地时区显示的夜间信息。当前基础版本**不会计算观测概率，也不提供 AI 建议**。
+Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索和按当地时区显示的夜间信息。当前基础版本**不会计算观测概率，也不提供 AI 建议**。
 
 **在线演示：**目前仓库中还没有记录已部署的网址。部署后，建议把 Vercel 链接放在本 README 开头附近，同时填写 GitHub 仓库 **About → Website** 栏。
 

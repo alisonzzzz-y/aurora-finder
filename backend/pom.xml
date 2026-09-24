@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.aurora</groupId>
-	<artifactId>observation-agent</artifactId>
+	<artifactId>aurora-finder</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>observation-agent</name>
+	<name>Aurora Finder</name>
 	<description/>
 	<url/>
 	<licenses>
