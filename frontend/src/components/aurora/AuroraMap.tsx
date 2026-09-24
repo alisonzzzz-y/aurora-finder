@@ -65,8 +65,11 @@ export function AuroraMap() {
     map.current = instance
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
+    let keyRejected = false
     const loadTimeout = window.setTimeout(() => {
-      setMapError('The map could not finish loading. Check the browser console or try reloading the page.')
+      if (!keyRejected) {
+        setMapError('The map could not finish loading. Check the browser console or try reloading the page.')
+      }
     }, 20_000)
     instance.once('load', () => {
       window.clearTimeout(loadTimeout)
@@ -113,8 +116,9 @@ export function AuroraMap() {
     instance.on('error', (event: MapEventType['error']) => {
       if (event.error.message.toLowerCase().includes('401')
           || event.error.message.toLowerCase().includes('403')) {
+        keyRejected = true
         setMapError('MapTiler rejected this key. Check its allowed website origins and usage quota.')
-      } else if (!instance.loaded()) {
+      } else if (!instance.loaded() && !keyRejected) {
         setMapError('The base map could not load. Check the browser console for the failed request.')
       }
     })
