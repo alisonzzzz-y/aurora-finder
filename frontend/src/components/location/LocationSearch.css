@@ -1,4 +1,4 @@
-.search-panel { background: #121f2d; border: 1px solid #2b3c4e; border-radius: 20px; padding: 30px; }
+.search-panel { padding: 0; }
 .search-panel h2 { margin: 0 0 6px; font-size: 23px; }
 .search-panel p { color: #a9b8ca; line-height: 1.55; margin: 0; }
 .search-form { display: flex; gap: 12px; margin-top: 24px; }
