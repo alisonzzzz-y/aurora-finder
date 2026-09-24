@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,6 +90,25 @@ class NoaaOvationProviderTest {
                 """));
         assertEquals(ProviderFailure.INVALID_RESPONSE,
                 assertThrows(ProviderUnavailableException.class, () -> provider.latest()).failure());
+    }
+
+    @Test
+    void rejectsBlankTruncatedAndChangedGridFormatResponses() {
+        List<String> invalidBodies = List.of(
+                "",
+                "   ",
+                "{\"Observation Time\":\"2026-09-24T12:00:00Z\",",
+                """
+                {"Observation Time":"2026-09-24T12:00:00Z","Forecast Time":"2026-09-24T13:00:00Z",
+                 "Data Format":"[Latitude, Longitude, Aurora]","coordinates":[[65,0,12]]}
+                """
+        );
+
+        for (String body : invalidBodies) {
+            reply.set(new Reply(200, body));
+            assertEquals(ProviderFailure.INVALID_RESPONSE,
+                    assertThrows(ProviderUnavailableException.class, () -> provider.latest()).failure());
+        }
     }
 
     private void respond(HttpExchange exchange) throws IOException {
