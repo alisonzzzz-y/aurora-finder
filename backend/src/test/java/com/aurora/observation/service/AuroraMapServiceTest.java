@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,8 +31,28 @@ class AuroraMapServiceTest {
 
         assertEquals("LOW", low.level().name());
         assertEquals(17, low.modelValue());
+        assertEquals(Instant.parse("2026-09-24T12:05:00Z"), low.retrievedAt());
         assertEquals("MEDIUM", medium.level().name());
         assertEquals("HIGH", high.level().name());
         assertEquals("ovation-local-v1", high.ruleVersion());
+    }
+
+    @Test
+    void sharesTheRetrievedAtTimestampAcrossMapAndLocationResponsesWhileCached() {
+        AtomicInteger calls = new AtomicInteger();
+        OvationProvider provider = () -> {
+            calls.incrementAndGet();
+            return new OvationForecast(Instant.parse("2026-09-24T12:00:00Z"),
+                    Instant.parse("2026-09-24T13:00:00Z"), "https://example.test/ovation",
+                    List.of(new OvationGridPoint(0, 60, 20)));
+        };
+        AuroraMapService service = new AuroraMapService(provider,
+                Clock.fixed(Instant.parse("2026-09-24T12:05:00Z"), ZoneOffset.UTC));
+
+        var map = service.latest();
+        var location = service.forCoordinates(60, 0);
+
+        assertEquals(1, calls.get());
+        assertEquals(map.retrievedAt(), location.retrievedAt());
     }
 }

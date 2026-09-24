@@ -34,7 +34,7 @@ Kp 预测：
 curl 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
 ~~~
 
-以上是公开数据 URL，不要求 API key。NOAA 将 OVATION 描述为短期极光位置和强度预测，通常提前约 30–90 分钟。选定地点后，`GET /api/v1/aurora-activity?latitude=...&longitude=...` 会读取最近 1° 网格点，返回短时活动等级（low/medium/high）、原始网格值、观测时间和预测有效时间。分级规则 `ovation-local-v1` 为 `<18` 低、`18–49` 中、`>=50` 高；18 对应 NOAA 研究采用的可见极光边界，50 是便于阅读的产品分组线。它不表示个人观测概率，也不覆盖云量、黑暗、地形或视野。个人观测条件和未来几晚继续使用 `INSUFFICIENT_DATA`，直到相关来源及规则完成验证。后端缓存 NOAA 响应五分钟。
+以上是公开数据 URL，不要求 API key。NOAA 将 OVATION 描述为短期极光位置和强度预测，通常提前约 30–90 分钟。`/api/v1/aurora-map` 与 `GET /api/v1/aurora-activity?latitude=...&longitude=...` 均分别返回 NOAA 观测时间、预报目标时间和本服务获取时间。选定地点的接口会读取最近 1° 网格点，返回短时活动等级（low/medium/high）和原始网格值。分级规则 `ovation-local-v1` 为 `<18` 低、`18–49` 中、`>=50` 高；18 对应 NOAA 研究采用的可见极光边界，50 是便于阅读的产品分组线。它不表示个人观测概率，也不覆盖云量、黑暗、地形或视野。个人观测条件和未来几晚继续使用 `INSUFFICIENT_DATA`，直到相关来源及规则完成验证。后端缓存 NOAA 响应五分钟。
 
 ## MapTiler 底图 Key
 

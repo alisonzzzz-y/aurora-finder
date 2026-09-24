@@ -4,5 +4,5 @@ import java.time.Instant;
 
 public record LocalAuroraActivityResponse(LocalAuroraActivityLevel level, int modelValue,
                                           double gridLongitude, double gridLatitude,
-                                          Instant observationTime, Instant forecastTime,
+                                          Instant observationTime, Instant forecastTime, Instant retrievedAt,
                                           String source, String ruleVersion) {}

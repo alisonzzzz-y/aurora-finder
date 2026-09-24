@@ -5,6 +5,7 @@ export type LocalAuroraActivity = {
   gridLatitude: number
   observationTime: string
   forecastTime: string
+  retrievedAt: string
   source: string
   ruleVersion: string
 }

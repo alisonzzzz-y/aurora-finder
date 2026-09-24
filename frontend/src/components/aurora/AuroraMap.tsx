@@ -72,7 +72,7 @@ export function AuroraMap() {
       window.clearTimeout(loadTimeout)
       setMapError('')
       const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
-        observationTime: '', forecastTime: '', source: '', points: [],
+        observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
       })
       instance.addSource('ovation-grid', { type: 'geojson', data: sourceData })
       instance.addLayer({
@@ -165,6 +165,6 @@ export function AuroraMap() {
       <span>{t('modelSignal')}</span><div className="map-key-gradient" /><div className="map-key-labels"><span>{t('lower')}</span><span>{t('higher')}</span></div>
     </div>
     <div className="map-credit">{t('baseMapCredit')} · <a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC {language === 'zh' ? '数据' : 'data'} ↗</a></div>
-    {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale)} · {t('forecastValid')} {formatUtc(data.forecastTime, locale)}</p>}
+    {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale)} · {t('forecastValid')} {formatUtc(data.forecastTime, locale)} · {t('dataRetrieved')} {formatUtc(data.retrievedAt, locale)}</p>}
   </section>
 }

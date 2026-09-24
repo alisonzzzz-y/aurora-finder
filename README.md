@@ -73,6 +73,7 @@ The browser must use the key to request map tiles, so restrict its allowed origi
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
 - `GET /api/v1/aurora-map`
+- `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
 - `GET /api/v1/kp-index`
 - `GET /actuator/health`
 
@@ -166,6 +167,7 @@ NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，�
 - `GET /api/v1/locations?q=Dublin`
 - `GET /api/v1/outlooks/2964574`
 - `GET /api/v1/aurora-map`
+- `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
 - `GET /api/v1/kp-index`
 - `GET /actuator/health`
 

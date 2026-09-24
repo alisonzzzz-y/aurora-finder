@@ -7,6 +7,7 @@ export type AuroraMapPoint = {
 export type AuroraMapData = {
   observationTime: string
   forecastTime: string
+  retrievedAt: string
   source: string
   points: AuroraMapPoint[]
 }

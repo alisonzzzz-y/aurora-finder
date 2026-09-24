@@ -28,8 +28,9 @@ public class AuroraMapService {
     }
 
     public synchronized AuroraMapResponse latest() {
-        OvationForecast latest = latestForecast();
-        return new AuroraMapResponse(latest.observationTime(), latest.forecastTime(), latest.source(),
+        CacheEntry<OvationForecast> entry = latestForecast();
+        OvationForecast latest = entry.data();
+        return new AuroraMapResponse(latest.observationTime(), latest.forecastTime(), entry.retrievedAt(), latest.source(),
                 latest.points().stream().filter(point -> point.auroraValue() > 0 && Math.abs(point.latitude()) < 90)
                         .map(point -> new AuroraMapPoint(point.longitude(), point.latitude(), point.auroraValue()))
                         .toList());
@@ -40,7 +41,8 @@ public class AuroraMapService {
                 || !Double.isFinite(longitude) || longitude < -180 || longitude > 180) {
             throw new InvalidLocationRequestException("Coordinates are outside the valid latitude/longitude range.");
         }
-        OvationForecast latest = latestForecast();
+        CacheEntry<OvationForecast> entry = latestForecast();
+        OvationForecast latest = entry.data();
         OvationGridPoint nearest = latest.points().stream()
                 .min(Comparator.comparingDouble(point -> distanceKm(latitude, longitude,
                         point.latitude(), point.longitude())))
@@ -49,15 +51,16 @@ public class AuroraMapService {
         LocalAuroraActivityLevel level = value < 18 ? LocalAuroraActivityLevel.LOW
                 : value < 50 ? LocalAuroraActivityLevel.MEDIUM : LocalAuroraActivityLevel.HIGH;
         return new LocalAuroraActivityResponse(level, value, nearest.longitude(), nearest.latitude(),
-                latest.observationTime(), latest.forecastTime(), latest.source(), "ovation-local-v1");
+                latest.observationTime(), latest.forecastTime(), entry.retrievedAt(), latest.source(), "ovation-local-v1");
     }
 
-    private OvationForecast latestForecast() {
+    private CacheEntry<OvationForecast> latestForecast() {
         Instant now = clock.instant();
-        if (cache != null && now.isBefore(cache.expiresAt())) return cache.data();
+        if (cache != null && now.isBefore(cache.expiresAt())) return cache;
         OvationForecast latest = provider.latest();
-        cache = new CacheEntry<>(latest, now.plus(CACHE_TTL));
-        return latest;
+        Instant retrievedAt = clock.instant();
+        cache = new CacheEntry<>(latest, retrievedAt, retrievedAt.plus(CACHE_TTL));
+        return cache;
     }
 
     private static double distanceKm(double latitude1, double longitude1, double latitude2, double longitude2) {
@@ -70,5 +73,5 @@ public class AuroraMapService {
         return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    private record CacheEntry<T>(T data, Instant expiresAt) {}
+    private record CacheEntry<T>(T data, Instant retrievedAt, Instant expiresAt) {}
 }
