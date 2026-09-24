@@ -25,7 +25,7 @@ class OutlookServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         when(geocoding.get(dublin.id())).thenReturn(Optional.of(dublin));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-09-24T23:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock, new SolarDarknessService());
 
         var response = service.forLocation(dublin.id());
 
@@ -47,7 +47,7 @@ class OutlookServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         when(geocoding.get(dublin.id())).thenReturn(Optional.of(dublin));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-10-24T10:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock, new SolarDarknessService());
 
         var response = service.forLocation(dublin.id());
         var transitionNight = response.nights().getFirst();
@@ -71,7 +71,7 @@ class OutlookServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         when(geocoding.get(dublin.id())).thenReturn(Optional.of(dublin));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-03-28T11:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock, new SolarDarknessService());
 
         var night = service.forLocation(dublin.id()).nights().getFirst();
 
@@ -91,7 +91,7 @@ class OutlookServiceTest {
         when(geocoding.get(apia.id())).thenReturn(Optional.of(apia));
         when(geocoding.get(pagoPago.id())).thenReturn(Optional.of(pagoPago));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-09-24T10:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock, new SolarDarknessService());
 
         var apiaTonight = service.forLocation(apia.id()).nights().getFirst();
         var pagoPagoTonight = service.forLocation(pagoPago.id()).nights().getFirst();

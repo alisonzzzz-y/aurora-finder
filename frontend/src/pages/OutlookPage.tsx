@@ -28,7 +28,7 @@ export function OutlookPage({ outlook, onChangeLocation }: Props) {
         <div className="place-actions"><span>{outlook.location.timezone}</span><button type="button" className="text-button" onClick={onChangeLocation}>{t('chooseAnotherPlace')}</button></div>
       </div>
       <p className="rule-status">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidated')}</p>
-      <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} key={night.localDate} />)}</div>
+      <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} timezone={outlook.location.timezone} key={night.localDate} />)}</div>
       <p className="timestamp">{t('generatedAt')} {formatLocalTimestamp(outlook.generatedAtUtc, outlook.location.timezone, locale)}. {t('localTimeNote')}</p>
       <LocalAuroraActivityCard latitude={outlook.location.latitude} longitude={outlook.location.longitude} timezone={outlook.location.timezone} />
       <CloudForecastCard latitude={outlook.location.latitude} longitude={outlook.location.longitude} timezone={outlook.location.timezone} />

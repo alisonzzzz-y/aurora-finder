@@ -14,10 +14,11 @@ Aurora Finder is an early location-based aurora forecast project. It combines a 
 
 - Search for a named place using Open-Meteo geocoding, then select a result with its coordinates and IANA time zone. Arbitrary coordinates and map-pin selection are not supported.
 - Show the selected place's current local date and the following two local dates. Dates and timestamps use the selected place's time zone and show UTC offsets.
-- Display three night cards. Each currently reports **Insufficient data** because the source inputs and viewing rules have not been validated.
+- Display three night cards with local civil, nautical, and astronomical twilight windows. These describe solar altitude only and are not validated aurora-viewing rules; the all-night outlook remains **Insufficient data**.
 - Display the latest available short-range NOAA OVATION model grid on an interactive MapLibre map. MapTiler provides the basemap tiles.
 - Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
 - For a selected place, show the nearest NOAA OVATION grid value and low, medium, or high short-range local activity level, with model and forecast timestamps.
+- Show candidate solar-darkness intervals in the selected place's local time, with separate statuses for no interval, continuous darkness, and calculation failure.
 - Switch the interface between English and Simplified Chinese. The selection is saved in the browser.
 
 For production, set `VITE_API_BASE_URL` in Vercel to the deployed Spring Boot service origin. Set `APP_CORS_ALLOWED_ORIGINS` on the backend to `https://aurora-finder.vercel.app` (plus any preview origins you use). Set the MapTiler key's allowed website origins to include the deployed Vercel origin.
@@ -110,10 +111,11 @@ Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATIO
 
 - 使用 Open-Meteo 地理编码搜索地点，并由用户选择包含坐标和 IANA 时区的结果。暂不支持任意坐标和地图选点。
 - 显示所选地点当地的今天及随后两天。日期和时间均按所选地点的时区显示，并附带 UTC 偏移。
-- 显示三晚卡片。由于数据输入和观测规则尚未验证，目前状态均为“数据不足”。
+- 三晚卡片显示当地民用、航海和天文暮光时间段。这些信息只描述太阳高度，不是已验证的极光观测规则；整晚观测等级仍为“数据不足”。
 - 通过可交互的 MapLibre 地图展示 NOAA OVATION 最新短时模型网格；底图瓦片由 MapTiler 提供。
 - 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
 - 选择地点后，显示最近 NOAA OVATION 网格值、低/中/高短时当地活动等级，以及模型观测时间和预报有效时间。
+- 显示所选地点当地时间下的候选黑暗时段，并分别标记无时段、整个窗口持续满足和计算失败。
 - 支持英文与简体中文界面切换，并在浏览器中记住语言选择。
 
 生产环境需要在 Vercel 设置 `VITE_API_BASE_URL`，值为已部署的 Spring Boot 服务根地址；在后端设置 `APP_CORS_ALLOWED_ORIGINS=https://aurora-finder.vercel.app`（以及实际使用的预览域名）；MapTiler key 的网站来源白名单也要包含该线上域名。

@@ -7,6 +7,14 @@ export type NightOutlook = {
   evaluationWindowEndUtc: string
   level: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT_DATA'
   reason: string
+  solarDarkness: {
+    thresholds: {
+      threshold: 'CIVIL_TWILIGHT' | 'NAUTICAL_TWILIGHT' | 'ASTRONOMICAL_TWILIGHT'
+      solarElevationDegrees: number
+      status: 'INTERVALS_FOUND' | 'NO_INTERVAL' | 'CONTINUOUS' | 'CALCULATION_FAILED'
+      intervals: { startUtc: string; endUtc: string }[]
+    }[]
+  }
 }
 
 export type Outlook = {

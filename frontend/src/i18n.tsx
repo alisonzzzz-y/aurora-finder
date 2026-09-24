@@ -48,12 +48,21 @@ const messages = {
     rulesValidated: 'Viewing rules validated',
     generatedAt: 'Response generated',
     localTimeNote: 'Dates and times follow the selected place’s local time.',
+    solarDarknessTitle: 'Sun darkness windows',
+    solarDarknessNote: 'Astronomical thresholds only. They describe the Sun’s position, not a validated aurora viewing rule. Times are local.',
+    civilTwilight: 'Civil twilight',
+    nauticalTwilight: 'Nautical twilight',
+    astronomicalTwilight: 'Astronomical twilight',
+    solarIntervalsFound: 'Below threshold',
+    solarNoInterval: 'No interval below threshold',
+    solarContinuous: 'Below threshold for this whole window',
+    solarCalculationFailed: 'Could not calculate',
     tonight: 'Tonight',
     nightNumber: 'Night ',
     highLevel: 'High outlook level',
     mediumLevel: 'Medium outlook level',
     lowLevel: 'Low outlook level',
-    pendingReason: 'Aurora, cloud, darkness, and freshness rules are pending validation.',
+    pendingReason: 'Aurora inputs, cloud coverage, data freshness, and combined viewing rules still need validation. Solar twilight windows are shown separately.',
     mapFeature: 'AURORA MAP',
     shortRangeActivity: 'Short-range activity',
     mapFeatureNote: 'The NOAA OVATION layer will appear here only when its forecast time and data freshness have been checked. The model’s aurora area is not a ground visibility boundary.',
@@ -155,12 +164,21 @@ const messages = {
     rulesValidated: '观测规则已验证',
     generatedAt: '响应生成于',
     localTimeNote: '日期和时间均按所选地点的当地时间显示。',
+    solarDarknessTitle: '太阳黑暗时段',
+    solarDarknessNote: '这里只描述太阳高度对应的天文阈值，不代表已经验证的极光观测规则。以下时间为当地时间。',
+    civilTwilight: '民用暮光',
+    nauticalTwilight: '航海暮光',
+    astronomicalTwilight: '天文暮光',
+    solarIntervalsFound: '太阳低于阈值时段',
+    solarNoInterval: '没有低于阈值的时段',
+    solarContinuous: '整个候选窗口均低于阈值',
+    solarCalculationFailed: '计算失败',
     tonight: '今晚',
     nightNumber: '第',
     highLevel: '观测条件：高',
     mediumLevel: '观测条件：中',
     lowLevel: '观测条件：低',
-    pendingReason: '极光、云量、黑暗时段和数据时效规则仍待验证。',
+    pendingReason: '极光数据、云量覆盖、数据时效和综合观测规则仍待验证。太阳暮光时段会单独显示。',
     mapFeature: '极光地图',
     shortRangeActivity: '短时活动',
     mapFeatureNote: '完成预报时间和数据时效核验后，才会在此显示 NOAA OVATION 图层。模型中的极光区域不代表地面可见范围。',
@@ -290,7 +308,7 @@ export function localizeError(error: unknown, t: I18nValue['t']) {
 }
 
 export function localizeReason(reason: string, t: I18nValue['t']) {
-  if (reason === 'Aurora, cloud, darkness, and freshness rules are pending validation.') {
+  if (reason === 'Aurora, cloud, and freshness rules are pending validation.') {
     return t('pendingReason')
   }
   return reason

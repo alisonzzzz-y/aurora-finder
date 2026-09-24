@@ -20,10 +20,12 @@ import java.util.stream.IntStream;
 public class OutlookService {
     private final LocationService locations;
     private final Clock clock;
+    private final SolarDarknessService solarDarkness;
 
-    public OutlookService(LocationService locations, Clock clock) {
+    public OutlookService(LocationService locations, Clock clock, SolarDarknessService solarDarkness) {
         this.locations = locations;
         this.clock = clock;
+        this.solarDarkness = solarDarkness;
     }
 
     public OutlookResponse forLocation(long id) {
@@ -39,7 +41,8 @@ public class OutlookService {
                     Instant windowEnd = localDate.plusDays(1).atTime(LocalTime.NOON).atZone(zone).toInstant();
                     return new NightOutlook(localDate, offsetId, windowStart, windowEnd,
                             OutlookLevel.INSUFFICIENT_DATA,
-                            "Aurora, cloud, darkness, and freshness rules are pending validation.");
+                            "Aurora, cloud, and freshness rules are pending validation.",
+                            solarDarkness.forWindow(location, windowStart, windowEnd));
                 })
                 .toList();
         return new OutlookResponse(location, clock.instant(), RuleStatus.NOT_VALIDATED, nights);
