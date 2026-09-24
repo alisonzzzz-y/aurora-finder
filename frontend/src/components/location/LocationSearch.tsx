@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { searchLocations } from '../../api/locations'
 import type { Location } from '../../types/location'
+import { localizeError, useI18n } from '../../i18n'
 import './LocationSearch.css'
 
 type Props = {
@@ -11,9 +12,10 @@ type Props = {
 type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error'
 
 export function LocationSearch({ busy, onSelect }: Props) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Location[]>([])
-  const [error, setError] = useState('')
+  const [error, setError] = useState<unknown>(null)
   const [state, setState] = useState<SearchState>('idle')
   const searchRequest = useRef<AbortController | null>(null)
 
@@ -31,8 +33,11 @@ export function LocationSearch({ busy, onSelect }: Props) {
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const cleanedQuery = query.trim()
-    if (cleanedQuery.length < 2) return
-    setError('')
+    if (cleanedQuery.length < 2) {
+      setError(new Error('queryTooShort'))
+      return
+    }
+    setError(null)
     setResults([])
     setState('loading')
     searchRequest.current?.abort()
@@ -45,7 +50,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
       setState(locations.length === 0 ? 'empty' : 'results')
     } catch (cause) {
       if (controller.signal.aborted || searchRequest.current !== controller) return
-      setError(cause instanceof Error ? cause.message : 'Location search failed.')
+      setError(cause)
       setState('error')
     } finally {
       if (searchRequest.current === controller) searchRequest.current = null
@@ -55,16 +60,16 @@ export function LocationSearch({ busy, onSelect }: Props) {
   return (
     <section className="search-panel" aria-labelledby="search-title">
       <div>
-        <h2 id="search-title">Find a place</h2>
-        <p>Select a result to confirm the place and its time zone.</p>
+        <h2 id="search-title">{t('findPlace')}</h2>
+        <p>{t('selectPlaceHelp')}</p>
       </div>
       <form onSubmit={search} className="search-form">
-        <label htmlFor="place-search" className="sr-only">City or place name</label>
-        <input id="place-search" value={query} onChange={event => updateQuery(event.target.value)} placeholder="Try Dublin, Tromsø, or Dunedin" minLength={2} maxLength={80} required disabled={busy} />
-        <button disabled={busy || state === 'loading'} type="submit">{state === 'loading' ? 'Loading…' : 'Search'}</button>
+        <label htmlFor="place-search" className="sr-only">{t('placeNameLabel')}</label>
+        <input id="place-search" value={query} onChange={event => updateQuery(event.target.value)} placeholder={t('placePlaceholder')} minLength={2} maxLength={80} required disabled={busy} />
+        <button disabled={busy || state === 'loading'} type="submit">{state === 'loading' ? t('loading') : t('search')}</button>
       </form>
-      {error && <p className="error" role="alert">{error}</p>}
-      {state === 'results' && <ul className="results" aria-label="Matching locations">{results.map(location => (
+      {error !== null && <p className="error" role="alert">{error instanceof Error && error.message === 'queryTooShort' ? t('queryTooShort') : localizeError(error, t)}</p>}
+      {state === 'results' && <ul className="results" aria-label={t('matchingLocations')}>{results.map(location => (
         <li key={location.id}><button type="button" onClick={() => onSelect(location)} disabled={busy}>
           <strong>{location.name}</strong><span>
             {[location.subregion, location.region, location.country].filter(Boolean).join(', ')}
@@ -72,7 +77,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
           </span>
         </button></li>
       ))}</ul>}
-      {state === 'empty' && <p className="hint">No matching places found. Try another name or spelling.</p>}
+      {state === 'empty' && <p className="hint">{t('emptySearch')}</p>}
     </section>
   )
 }

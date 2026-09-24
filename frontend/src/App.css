@@ -3,6 +3,11 @@
 .home-page-shell { width: 100%; max-width: 1680px; padding-right: 24px; padding-left: 24px; }
 .home-page-shell main { padding-top: 20px; }
 .site-header { height: 86px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #243246; }
+.header-tools { display: flex; align-items: center; gap: 12px; }
+.language-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #34485b; border-radius: 10px; background: #0b1723; }
+.language-switch button { border: 0; border-radius: 7px; padding: 7px 10px; background: transparent; color: #a9b8ca; font-size: 12px; font-weight: 750; cursor: pointer; }
+.language-switch button.active { background: #8ce2c4; color: #08251f; }
+.language-switch button:focus-visible { outline: 2px solid #8ce2c4; outline-offset: 2px; }
 .brand { font-size: 19px; font-weight: 750; letter-spacing: -.03em; }
 .brand-mark { color: #8ce2c4; margin-right: 10px; font-size: 24px; }
 .status-pill, .unknown-badge, .coming-soon { display: inline-block; border: 1px solid #41566a; border-radius: 999px; padding: 7px 12px; color: #b7c7d8; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
@@ -38,6 +43,9 @@ footer { margin-top: 35px; color: #8d9eaf; font-size: 12px; padding-right: 160px
 @media (max-width: 720px) {
   .page-shell { padding: 0 18px 100px; }
   .site-header { height: 70px; }
+  .header-tools { gap: 8px; }
+  .header-tools .status-pill { padding: 6px 8px; font-size: 10px; }
+  .language-switch button { padding: 6px 8px; }
   .intro { padding: 55px 0 38px; }
   .foundation-grid { grid-template-columns: 1fr; }
   .home-dashboard-grid { grid-template-columns: 1fr; }
@@ -49,6 +57,9 @@ footer { margin-top: 35px; color: #8d9eaf; font-size: 12px; padding-right: 160px
 }
 @media (min-width: 721px) and (max-width: 960px) {
   .home-dashboard-grid { grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); }
+}
+@media (max-width: 520px) {
+  .header-tools .status-pill { display: none; }
 }
 .home-page-shell .aurora-map-panel { height: clamp(430px, calc(100svh - 250px), 720px); }
 @media (max-width: 720px) {

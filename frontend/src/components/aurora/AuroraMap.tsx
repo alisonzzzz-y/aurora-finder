@@ -4,6 +4,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import { getAuroraMap } from '../../api/auroraMap'
 import type { AuroraMapData } from '../../types/auroraMap'
+import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
 
@@ -20,13 +21,15 @@ function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue:
   }
 }
 
-function formatUtc(instant: string) {
-  return `${new Intl.DateTimeFormat('en', {
+function formatUtc(instant: string, locale: string) {
+  return `${new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
   }).format(new Date(instant))} UTC`
 }
 
 export function AuroraMap() {
+  const { language, t } = useI18n()
+  const locale = language === 'zh' ? 'zh-CN' : 'en'
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY?.trim()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
@@ -153,15 +156,15 @@ export function AuroraMap() {
     if (source) source.setData(geoJson ?? { type: 'FeatureCollection', features: [] })
   }, [geoJson])
 
-  return <section className="aurora-map-panel" aria-label="NOAA aurora forecast map">
+  return <section className="aurora-map-panel" aria-label={t('mapAria')}>
     <div className="aurora-map-canvas" ref={container} />
     {(loading || error) && <div className="map-message" role={error ? 'alert' : 'status'}>
-      {loading ? 'Loading the map and NOAA forecast…' : error}
+      {loading ? t('loading') : localizeError(new Error(error), t)}
     </div>}
-    <div className="map-key" aria-label="Relative NOAA model value">
-      <span>Model signal</span><div className="map-key-gradient" /><div className="map-key-labels"><span>Lower</span><span>Higher</span></div>
+    <div className="map-key" aria-label={t('relativeModelValue')}>
+      <span>{t('modelSignal')}</span><div className="map-key-gradient" /><div className="map-key-labels"><span>{t('lower')}</span><span>{t('higher')}</span></div>
     </div>
-    <div className="map-credit">Base map © MapTiler · <a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC data ↗</a></div>
-    {data && <p className="map-timestamps">Observed {formatUtc(data.observationTime)} · Forecast valid {formatUtc(data.forecastTime)}</p>}
+    <div className="map-credit">{t('baseMapCredit')} · <a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC {language === 'zh' ? '数据' : 'data'} ↗</a></div>
+    {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale)} · {t('forecastValid')} {formatUtc(data.forecastTime, locale)}</p>}
   </section>
 }
