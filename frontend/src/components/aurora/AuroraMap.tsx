@@ -28,6 +28,13 @@ function formatUtc(instant: string, locale: string) {
 
 type Props = { data: AuroraMapData | null; forecastError: string; forecastLoading: boolean }
 
+const baseMaps = [
+  { id: 'dataviz-dark', label: 'mapStyleDark' },
+  { id: 'streets-v4', label: 'mapStyleStreets' },
+  { id: 'hybrid-v4', label: 'mapStyleSatellite' },
+] as const
+const initialBaseMapId = baseMaps[0].id
+
 export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
   const { language, t } = useI18n()
   const locale = language === 'zh' ? 'zh-CN' : 'en'
@@ -37,6 +44,7 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
   const dataRef = useRef<AuroraMapData | null>(null)
   const [tilesReady, setTilesReady] = useState(false)
   const [mapError, setMapError] = useState('')
+  const [baseMapId, setBaseMapId] = useState<(typeof baseMaps)[number]['id']>(initialBaseMapId)
   const geoJson = useMemo(() => data ? asGeoJson(data) : null, [data])
   const error = !mapTilerKey
     ? 'Add VITE_MAPTILER_KEY to frontend/.env.local to load the map.'
@@ -55,7 +63,7 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
 
     const instance = new MapLibreMap({
       container: container.current,
-      style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(mapTilerKey)}`,
+      style: `https://api.maptiler.com/maps/${initialBaseMapId}/style.json?key=${encodeURIComponent(mapTilerKey)}`,
       center: [0, 62],
       zoom: 1.15,
       minZoom: 0.6,
@@ -65,52 +73,71 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
     let keyRejected = false
+    let initialStyleLoaded = false
+    const installAuroraLayer = () => {
+      const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
+        status: 'CURRENT', observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
+      })
+      if (!instance.getSource('ovation-grid')) {
+        instance.addSource('ovation-grid', { type: 'geojson', data: sourceData })
+      }
+      if (!instance.getLayer('ovation-heatmap')) {
+        instance.addLayer({
+          id: 'ovation-heatmap',
+          type: 'heatmap',
+          source: 'ovation-grid',
+          maxzoom: 7,
+          paint: {
+            'heatmap-weight': ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
+            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 7, 2.2],
+            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 7, 24],
+            'heatmap-opacity': 0.82,
+            'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
+              0, 'rgba(32, 210, 157, 0)',
+              0.18, 'rgba(32, 210, 157, 0.34)',
+              0.42, 'rgba(73, 235, 174, 0.72)',
+              0.68, 'rgba(225, 234, 107, 0.85)',
+              1, 'rgba(255, 135, 94, 0.92)',
+            ],
+          },
+        })
+      }
+      if (!instance.getLayer('ovation-points')) {
+        instance.addLayer({
+          id: 'ovation-points',
+          type: 'circle',
+          source: 'ovation-grid',
+          minzoom: 5,
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 8, 5],
+            'circle-color': ['interpolate', ['linear'], ['get', 'auroraValue'],
+              1, '#20d29d', 25, '#49ebae', 60, '#e1ea6b', 100, '#ff875e',
+            ],
+            'circle-opacity': 0.8,
+            'circle-blur': 0.35,
+          },
+        })
+      }
+    }
     const loadTimeout = window.setTimeout(() => {
       if (!keyRejected) {
         setMapError('The map could not finish loading. Check the browser console or try reloading the page.')
       }
     }, 20_000)
     instance.once('load', () => {
+      initialStyleLoaded = true
       window.clearTimeout(loadTimeout)
       setMapError('')
-      const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
-        status: 'CURRENT', observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
-      })
-      instance.addSource('ovation-grid', { type: 'geojson', data: sourceData })
-      instance.addLayer({
-        id: 'ovation-heatmap',
-        type: 'heatmap',
-        source: 'ovation-grid',
-        maxzoom: 7,
-        paint: {
-          'heatmap-weight': ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 7, 2.2],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 7, 24],
-          'heatmap-opacity': 0.82,
-          'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(32, 210, 157, 0)',
-            0.18, 'rgba(32, 210, 157, 0.34)',
-            0.42, 'rgba(73, 235, 174, 0.72)',
-            0.68, 'rgba(225, 234, 107, 0.85)',
-            1, 'rgba(255, 135, 94, 0.92)',
-          ],
-        },
-      })
-      instance.addLayer({
-        id: 'ovation-points',
-        type: 'circle',
-        source: 'ovation-grid',
-        minzoom: 5,
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 8, 5],
-          'circle-color': ['interpolate', ['linear'], ['get', 'auroraValue'],
-            1, '#20d29d', 25, '#49ebae', 60, '#e1ea6b', 100, '#ff875e',
-          ],
-          'circle-opacity': 0.8,
-          'circle-blur': 0.35,
-        },
-      })
+      installAuroraLayer()
       setTilesReady(true)
+    })
+    instance.on('style.load', () => {
+      if (!initialStyleLoaded) return
+      installAuroraLayer()
+      instance.once('idle', () => {
+        setMapError('')
+        setTilesReady(true)
+      })
     })
     instance.on('error', (event: MapEventType['error']) => {
       if (event.error.message.toLowerCase().includes('401')
@@ -129,6 +156,13 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
     }
   }, [mapTilerKey])
 
+  function changeBaseMap(baseMap: (typeof baseMaps)[number]['id']) {
+    setBaseMapId(baseMap)
+    if (!map.current || !mapTilerKey || baseMap === baseMapId) return
+    setTilesReady(false)
+    map.current.setStyle(`https://api.maptiler.com/maps/${baseMap}/style.json?key=${encodeURIComponent(mapTilerKey)}`)
+  }
+
   useEffect(() => {
     const instance = map.current
     const source = instance?.getSource('ovation-grid') as GeoJSONSource | undefined
@@ -137,6 +171,12 @@ export function AuroraMap({ data, forecastError, forecastLoading }: Props) {
 
   return <section className="aurora-map-panel" aria-label={t('mapAria')}>
     <div className="aurora-map-canvas" ref={container} />
+    <label className="map-style-picker">
+      <span>{t('mapStyleLabel')}</span>
+      <select value={baseMapId} onChange={event => changeBaseMap(event.target.value as (typeof baseMaps)[number]['id'])} disabled={!tilesReady || !mapTilerKey || Boolean(mapError)}>
+        {baseMaps.map(baseMap => <option key={baseMap.id} value={baseMap.id}>{t(baseMap.label)}</option>)}
+      </select>
+    </label>
     {(loading || error) && <div className="map-message" role={error ? 'alert' : 'status'}>
       {loading ? t('loading') : localizeError(new Error(error), t)}
     </div>}
