@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ObservationAgentApplication {
+public class AuroraFinderApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ObservationAgentApplication.class, args);
+		SpringApplication.run(AuroraFinderApplication.class, args);
 	}
 
 }

@@ -64,11 +64,11 @@ https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=53.3331&lon=-6.24
 请求必须设置真实 User-Agent，其中包含项目名称以及可联系的项目网址或邮箱。MET Norway 不需要 API key。官方要求提供可联系的身份，遵守缓存响应头、最多四位小数坐标和数据署名规则。 [MET Norway 使用条款](https://docs.api.met.no/doc/TermsOfService)
 
 ~~~sh
-curl -H 'User-Agent: AuroraOutlook/0.1 alison.zhangyan@gmail.com' \
+curl -H 'User-Agent: AuroraFinder/0.1 alison.zhangyan@gmail.com' \
   'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=53.3331&lon=-6.2489'
 ~~~
 
-本项目后端默认通过 `app.metno.user-agent` 发送 `AuroraFinder/0.1 (https://github.com/alisonzzzz-y/aurora-observation-agent; alison.zhangyan@gmail.com)`，也可以用服务端环境变量 `METNO_USER_AGENT` 覆盖。MET Norway 官方文档接受应用名加项目网址作为识别方式，也要求对方能联系到项目维护者。[Getting Started](https://docs.api.met.no/doc/GettingStarted.html)
+本项目后端默认通过 `app.metno.user-agent` 发送 `AuroraFinder/0.1 (https://github.com/alisonzzzz-y/aurora-finder; alison.zhangyan@gmail.com)`，也可以用服务端环境变量 `METNO_USER_AGENT` 覆盖。MET Norway 官方文档接受应用名加项目网址作为识别方式，也要求对方能联系到项目维护者。[Getting Started](https://docs.api.met.no/doc/GettingStarted.html)
 
 ## 在本项目中配置
 

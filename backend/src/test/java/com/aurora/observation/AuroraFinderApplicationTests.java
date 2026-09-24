@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ObservationAgentApplicationTests {
+class AuroraFinderApplicationTests {
 	@Autowired
 	private MockMvc mockMvc;
 

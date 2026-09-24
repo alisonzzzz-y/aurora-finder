@@ -33,7 +33,7 @@ def main():
     for index in range(args.count):
         if index:
             time.sleep(args.interval_seconds)
-        request = Request(SOURCE, headers={"Accept": "application/json", "User-Agent": "AuroraObservationAgent/0.1 (sample validation)"})
+        request = Request(SOURCE, headers={"Accept": "application/json", "User-Agent": "AuroraFinder/0.1 (sample validation)"})
         with urlopen(request, timeout=20) as response:
             body = response.read()
             headers = response.headers

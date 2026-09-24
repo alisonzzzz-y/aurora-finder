@@ -45,7 +45,7 @@
 - [x] 配置并验证本地检查命令。
 - [ ] 远程仓库建立并推送后，接入 CI。
 
-**01 区进度记录（2026-09-24）：**本区实现项和本地验收已完成。补充了注入式 HTTP 客户端及连接/请求超时配置、固定时钟三晚回归测试、TypeScript `strict` 检查和本地构建/lint/test 命令；移除了未引用的 React/Vite 模板图片。远程仓库 `alisonzzzz-y/aurora-observation-agent` 已建立，最近功能提交已推送；目前未发现 GitHub Actions 工作流，CI 仍待接入。
+**01 区进度记录（2026-09-24）：**本区实现项和本地验收已完成。补充了注入式 HTTP 客户端及连接/请求超时配置、固定时钟三晚回归测试、TypeScript `strict` 检查和本地构建/lint/test 命令；移除了未引用的 React/Vite 模板图片。远程仓库 `alisonzzzz-y/aurora-finder` 已建立，最近功能提交已推送；目前未发现 GitHub Actions 工作流，CI 仍待接入。
 
 **涉及位置：**backend 的 controller、service、provider、config 包；frontend/src 中的 API、类型和组件文件。类名和目录可按实际复杂度调整，不要求先建大量空文件。
 
