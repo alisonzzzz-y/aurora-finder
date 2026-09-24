@@ -10,10 +10,14 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
   return <>
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
-        <div className="map-heading"><div><p className="eyebrow">{t('globalActivity')}</p><h2>{t('auroraForecast')}</h2></div><span>{t('shortRange')}</span></div>
         <AuroraMap />
       </div>
       <aside className="map-sidebar">
+        <div className="map-context-heading" aria-label={t('auroraForecast')}>
+          <p className="eyebrow">{t('globalActivity')}</p>
+          <h2>{t('auroraForecast')}</h2>
+          <span>{t('shortRange')}</span>
+        </div>
         <LocationSearch busy={busy} onSelect={onSelect} />
         <article className="city-ranking-note">
           <p className="eyebrow">{t('cityOutlooks')}</p>
