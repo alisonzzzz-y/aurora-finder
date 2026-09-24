@@ -4,6 +4,7 @@ import com.aurora.observation.provider.ProviderUnavailableException;
 import com.aurora.observation.provider.ProviderFailure;
 import com.aurora.observation.service.InvalidLocationRequestException;
 import com.aurora.observation.service.LocationNotFoundException;
+import com.aurora.observation.service.InvalidWeatherRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,17 +35,26 @@ public class ApiErrorHandler {
         };
         String detail = switch (error.failure()) {
             case RATE_LIMITED -> "The data source is temporarily rate limited. Please try again later.";
+            case FORBIDDEN -> "The weather source rejected this request. Check its request identification settings.";
             case TIMEOUT -> "The data source timed out. Please try again later.";
             case INVALID_RESPONSE -> "The data source returned invalid data. Please try again later.";
             default -> "The data source is unavailable. Please try again later.";
         };
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setProperty("code", "GEOCODING_" + error.failure().name());
+        problem.setProperty("code", error.failure() == ProviderFailure.FORBIDDEN
+                ? "WEATHER_FORBIDDEN" : "GEOCODING_" + error.failure().name());
         return problem;
     }
 
     @ExceptionHandler(InvalidLocationRequestException.class)
     public ProblemDetail invalidQuery(InvalidLocationRequestException error) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, error.getMessage());
+    }
+
+    @ExceptionHandler(InvalidWeatherRequestException.class)
+    public ProblemDetail invalidWeatherRequest(InvalidWeatherRequestException error) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, error.getMessage());
+        problem.setProperty("code", "WEATHER_INVALID_COORDINATES");
+        return problem;
     }
 }

@@ -9,6 +9,8 @@ import com.aurora.observation.service.AuroraMapService;
 import com.aurora.observation.service.KpIndexService;
 import com.aurora.observation.dto.KpIndexResponse;
 import com.aurora.observation.dto.LocalAuroraActivityResponse;
+import com.aurora.observation.dto.WeatherForecastResponse;
+import com.aurora.observation.service.WeatherService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +26,15 @@ public class ObservationController {
     private final OutlookService outlook;
     private final AuroraMapService auroraMap;
     private final KpIndexService kpIndex;
+    private final WeatherService weather;
 
     public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
-                                 KpIndexService kpIndex) {
+                                 KpIndexService kpIndex, WeatherService weather) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
         this.kpIndex = kpIndex;
+        this.weather = weather;
     }
 
     @GetMapping("/locations")
@@ -56,5 +60,11 @@ public class ObservationController {
     @GetMapping("/kp-index")
     public KpIndexResponse kpIndex() {
         return kpIndex.latest();
+    }
+
+    @GetMapping("/weather-forecast")
+    public WeatherForecastResponse weatherForecast(@RequestParam double latitude, @RequestParam double longitude,
+                                                   @RequestParam String timezone) {
+        return weather.forecast(latitude, longitude, timezone);
     }
 }

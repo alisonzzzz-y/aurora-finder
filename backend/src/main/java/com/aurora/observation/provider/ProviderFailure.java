@@ -5,6 +5,7 @@ public enum ProviderFailure {
     INVALID_RESPONSE,
     TIMEOUT,
     RATE_LIMITED,
+    FORBIDDEN,
     UPSTREAM_ERROR,
     NETWORK_ERROR,
     INTERRUPTED

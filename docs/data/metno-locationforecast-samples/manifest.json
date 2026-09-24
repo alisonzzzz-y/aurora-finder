@@ -1,0 +1,87 @@
+{
+  "source": "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+  "documentation": "https://docs.api.met.no/doc/locationforecast/datamodel.html",
+  "license": "CC BY 4.0",
+  "retrievalMethod": "HTTPS GET with identifying AuroraFinder User-Agent",
+  "coordinatePolicy": "Coordinates sent with at most four decimals, truncated toward zero.",
+  "samples": [
+    {
+      "place": "Oslo, Norway",
+      "requestedCoordinates": {
+        "latitude": "59.9139",
+        "longitude": "10.7522"
+      },
+      "retrievedAt": "2026-09-24T15:10:22Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "expires": "Thu, 24 Sep 2026 15:27:44 GMT",
+      "lastModified": "Thu, 24 Sep 2026 14:56:12 GMT",
+      "etag": null,
+      "timeseriesCount": 84,
+      "firstForecastTime": "2026-09-24T14:00:00Z",
+      "lastForecastTime": "2026-10-04T12:00:00Z",
+      "intervalHoursObserved": [
+        1.0,
+        6.0
+      ],
+      "missingCloudValues": 0,
+      "cloudVariable": "cloud_area_fraction",
+      "cloudUnit": "percent",
+      "rawResponseFile": "locationforecast-oslo-20260924T151022Z.json.gz",
+      "rawResponseSha256": "f75d7dc09c3f87d6b6589e38932452bb9f4dad39ef2fc4d8981c2cdae16e1a47",
+      "rawResponseBytes": 36283
+    },
+    {
+      "place": "Dublin, Ireland",
+      "requestedCoordinates": {
+        "latitude": "53.3498",
+        "longitude": "-6.2603"
+      },
+      "retrievedAt": "2026-09-24T15:10:26Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "expires": "Thu, 24 Sep 2026 15:39:04 GMT",
+      "lastModified": "Thu, 24 Sep 2026 15:07:49 GMT",
+      "etag": null,
+      "timeseriesCount": 91,
+      "firstForecastTime": "2026-09-24T15:00:00Z",
+      "lastForecastTime": "2026-10-04T00:00:00Z",
+      "intervalHoursObserved": [
+        1.0,
+        6.0
+      ],
+      "missingCloudValues": 0,
+      "cloudVariable": "cloud_area_fraction",
+      "cloudUnit": "percent",
+      "rawResponseFile": "locationforecast-dublin-20260924T151026Z.json.gz",
+      "rawResponseSha256": "eba70277a27a6027f5421487154090728da5517bd10b2da426dbf701fafadd89",
+      "rawResponseBytes": 40130
+    },
+    {
+      "place": "Queenstown, New Zealand",
+      "requestedCoordinates": {
+        "latitude": "-45.0312",
+        "longitude": "168.6626"
+      },
+      "retrievedAt": "2026-09-24T15:10:30Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "expires": "Thu, 24 Sep 2026 15:41:44 GMT",
+      "lastModified": "Thu, 24 Sep 2026 15:10:30 GMT",
+      "etag": null,
+      "timeseriesCount": 91,
+      "firstForecastTime": "2026-09-24T15:00:00Z",
+      "lastForecastTime": "2026-10-04T00:00:00Z",
+      "intervalHoursObserved": [
+        1.0,
+        6.0
+      ],
+      "missingCloudValues": 0,
+      "cloudVariable": "cloud_area_fraction",
+      "cloudUnit": "percent",
+      "rawResponseFile": "locationforecast-queenstown-20260924T151030Z.json.gz",
+      "rawResponseSha256": "9697c127a9e4e925d910d6677aeef9a7d7f4eaa476d5137e4b825dae73bfab50",
+      "rawResponseBytes": 39905
+    }
+  ]
+}

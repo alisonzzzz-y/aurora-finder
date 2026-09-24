@@ -12,6 +12,7 @@ public class ProviderHttpClientConfig {
     @Bean
     public HttpClient providerHttpClient(
             @Value("${app.http.connect-timeout:3s}") Duration connectTimeout) {
-        return HttpClient.newBuilder().connectTimeout(connectTimeout).build();
+        return HttpClient.newBuilder().connectTimeout(connectTimeout)
+                .followRedirects(HttpClient.Redirect.NORMAL).build();
     }
 }

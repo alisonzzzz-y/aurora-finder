@@ -91,6 +91,15 @@ const messages = {
     noaaGridValue: 'Nearest NOAA grid value',
     localAuroraNote: 'A short-range model estimate for the nearest 1° grid cell, usually about 30–90 minutes ahead. It is not the probability that you will see aurora from the ground. Level rule: below 18 is low, 18–49 is moderate, and 50 or above is high.',
     localAuroraExpiredNote: 'This NOAA forecast has passed its valid time. No current local activity level is available.',
+    cloudForecast: 'LOCAL CLOUD FORECAST',
+    cloudForecastTitle: 'Cloud cover for this place',
+    cloudMissing: 'Unavailable',
+    cloudNoCoverage: 'The source returned no cloud forecast points for this local night.',
+    forecastCacheExpires: 'Cache valid until',
+    cloudForecastNote: 'Forecast timestamps and gaps follow the source model output. Missing cloud values stay unavailable and are not treated as clear skies. Cloud cover is one viewing condition, not an aurora visibility estimate.',
+    metNoAttribution: 'Weather forecast by MET Norway',
+    metNoChanges: 'Data is filtered to this local night; cloud values are unchanged.',
+    errorWeatherForecast: 'The local cloud forecast is unavailable right now.',
   },
   zh: {
     documentTitle: 'Aurora Finder｜极光预报',
@@ -179,6 +188,15 @@ const messages = {
     noaaGridValue: '最近 NOAA 网格值',
     localAuroraNote: '这是离所选地点最近的 1° 网格点短时模型估计，预报通常提前约 30–90 分钟。它不代表人在地面看到极光的概率。分级规则：低于 18 为低，18–49 为中，50 及以上为高。',
     localAuroraExpiredNote: '这份 NOAA 预报已超过有效时间，目前没有可用的当地活动等级。',
+    cloudForecast: '当地云量预报',
+    cloudForecastTitle: '该地点的云量情况',
+    cloudMissing: '暂无数据',
+    cloudNoCoverage: '来源没有覆盖这个当地夜晚的云量预报。',
+    forecastCacheExpires: '缓存有效至',
+    cloudForecastNote: '预报时间和间隔遵循来源模型的输出。缺失的云量数据会保留为暂无数据，不会当成晴空。云量只是观测条件之一，不是极光可见性估计。',
+    metNoAttribution: '天气预报来源：MET Norway',
+    metNoChanges: '数据按当地今晚筛选，云量数值未修改。',
+    errorWeatherForecast: '暂时无法获取当地云量预报。',
   },
 } as const
 
@@ -239,6 +257,7 @@ const errorKeys: Record<string, TranslationKey> = {
   'Aurora forecast data could not be loaded.': 'errorForecastLoad',
   'The global aurora forecast is unavailable right now.': 'errorKpForecast',
   'Local aurora activity is unavailable right now.': 'errorAuroraData',
+  'Local cloud forecast is unavailable right now.': 'errorWeatherForecast',
   'Location search failed.': 'errorSearch',
 }
 

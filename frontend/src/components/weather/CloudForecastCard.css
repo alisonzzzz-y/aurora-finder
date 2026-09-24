@@ -1,0 +1,15 @@
+.cloud-forecast-card { margin-top: 18px; padding: 22px; border: 1px solid #2b3c4e; border-radius: 18px; background: #121f2d; }
+.cloud-forecast-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.cloud-forecast-heading h2 { margin: 0; font-size: 20px; }
+.cloud-forecast-heading > a, .cloud-forecast-credit a { color: #8ce2c4; }
+.cloud-forecast-message, .cloud-forecast-note, .cloud-forecast-credit { color: #a9b8ca; font-size: 13px; line-height: 1.55; }
+.cloud-forecast-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 20px 0 12px; }
+.cloud-forecast-list li { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: #0a1420; border-radius: 10px; }
+.cloud-forecast-list time { color: #a9b8ca; font-size: 12px; }
+.cloud-forecast-list strong { font-size: 17px; }
+.cloud-forecast-meta { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 14px 0; }
+.cloud-forecast-meta div { display: flex; gap: 7px; font-size: 12px; }
+.cloud-forecast-meta dt { color: #8fa2b6; }
+.cloud-forecast-meta dd { margin: 0; color: #cad6e4; }
+.cloud-forecast-note, .cloud-forecast-credit { margin: 8px 0 0; }
+@media (max-width: 720px) { .cloud-forecast-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

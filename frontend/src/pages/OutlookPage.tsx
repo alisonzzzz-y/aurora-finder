@@ -1,6 +1,7 @@
 import type { Outlook } from '../types/outlook'
 import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
 import { LocalAuroraActivityCard } from '../components/aurora/LocalAuroraActivityCard'
+import { CloudForecastCard } from '../components/weather/CloudForecastCard'
 import { useI18n } from '../i18n'
 import '../components/outlook/OutlookPage.css'
 
@@ -30,6 +31,7 @@ export function OutlookPage({ outlook, onChangeLocation }: Props) {
       <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} key={night.localDate} />)}</div>
       <p className="timestamp">{t('generatedAt')} {formatLocalTimestamp(outlook.generatedAtUtc, outlook.location.timezone, locale)}. {t('localTimeNote')}</p>
       <LocalAuroraActivityCard latitude={outlook.location.latitude} longitude={outlook.location.longitude} timezone={outlook.location.timezone} />
+      <CloudForecastCard latitude={outlook.location.latitude} longitude={outlook.location.longitude} timezone={outlook.location.timezone} />
     </section>
     <section className="foundation-grid" aria-label={t('upcomingFeatures')}>
       <article className="feature-card"><p className="eyebrow">{t('mapFeature')}</p><h2>{t('shortRangeActivity')}</h2><p>{t('mapFeatureNote')}</p><span className="coming-soon">{t('awaitingIntegration')}</span></article>
