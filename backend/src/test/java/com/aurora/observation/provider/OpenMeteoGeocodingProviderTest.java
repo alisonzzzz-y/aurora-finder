@@ -10,9 +10,13 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.InetSocketAddress;
+import java.time.Clock;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,16 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OpenMeteoGeocodingProviderTest {
     private final AtomicReference<Reply> reply = new AtomicReference<>();
+    private final AtomicInteger requestCount = new AtomicInteger();
     private HttpServer server;
     private OpenMeteoGeocodingProvider provider;
 
     @BeforeEach
     void startServer() throws IOException {
+        requestCount.set(0);
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/search", this::respond);
         server.createContext("/get", this::respond);
         server.start();
         provider = new OpenMeteoGeocodingProvider(HttpClient.newHttpClient(), new ObjectMapper(),
+                new OpenMeteoRequestRateLimiter(Clock.systemUTC(), 500, 4500, 9000),
                 "http://127.0.0.1:" + server.getAddress().getPort(), true, Duration.ofSeconds(2));
     }
 
@@ -86,6 +93,21 @@ class OpenMeteoGeocodingProviderTest {
                 () -> provider.get(12)).failure());
     }
 
+    @Test
+    void enforcesConfiguredLocalBudgetWithoutRetryingTheProvider() {
+        OpenMeteoRequestRateLimiter rateLimiter = new OpenMeteoRequestRateLimiter(
+                Clock.fixed(Instant.parse("2026-09-24T00:00:00Z"), ZoneOffset.UTC), 1, 2, 3);
+        OpenMeteoGeocodingProvider limitedProvider = new OpenMeteoGeocodingProvider(
+                HttpClient.newHttpClient(), new ObjectMapper(), rateLimiter,
+                "http://127.0.0.1:" + server.getAddress().getPort(), true, Duration.ofSeconds(2));
+        reply.set(new Reply(200, result("53.33306", "Europe/Dublin")));
+
+        assertEquals(1, limitedProvider.search("Dublin").size());
+        assertEquals(ProviderFailure.RATE_LIMITED, assertThrows(ProviderUnavailableException.class,
+                () -> limitedProvider.search("Galway")).failure());
+        assertEquals(1, requestCount.get());
+    }
+
     private void assertFailure(ProviderFailure expected) {
         assertEquals(expected, assertThrows(ProviderUnavailableException.class,
                 () -> provider.search("Dublin")).failure());
@@ -102,6 +124,7 @@ class OpenMeteoGeocodingProviderTest {
     }
 
     private void respond(HttpExchange exchange) throws IOException {
+        requestCount.incrementAndGet();
         Reply current = reply.get();
         byte[] body = current.body().getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(current.status(), body.length == 0 ? -1 : body.length);

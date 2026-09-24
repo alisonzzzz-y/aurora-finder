@@ -29,13 +29,16 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
     private final ObjectMapper mapper;
     private final String baseUrl;
     private final boolean enabled;
+    private final OpenMeteoRequestRateLimiter rateLimiter;
 
     public OpenMeteoGeocodingProvider(HttpClient client, ObjectMapper mapper,
+                                      OpenMeteoRequestRateLimiter rateLimiter,
                                       @Value("${app.geocoding.base-url}") String baseUrl,
                                       @Value("${app.geocoding.enabled}") boolean enabled,
                                       @Value("${app.geocoding.request-timeout:8s}") Duration requestTimeout) {
         this.client = client;
         this.mapper = mapper;
+        this.rateLimiter = rateLimiter;
         this.baseUrl = baseUrl;
         this.enabled = enabled;
         this.requestTimeout = requestTimeout;
@@ -74,6 +77,7 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
     }
 
     private Optional<JsonNode> request(String url, boolean allowNotFound) {
+        rateLimiter.acquire();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(requestTimeout).header("Accept", "application/json").GET().build();
         try {

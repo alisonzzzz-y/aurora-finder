@@ -7,6 +7,7 @@ import com.aurora.observation.provider.GeocodingProvider;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -24,7 +25,7 @@ class OutlookServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         when(geocoding.get(dublin.id())).thenReturn(Optional.of(dublin));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-09-24T23:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(new LocationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
 
         var response = service.forLocation(dublin.id());
 
@@ -46,7 +47,7 @@ class OutlookServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         when(geocoding.get(dublin.id())).thenReturn(Optional.of(dublin));
         Clock fixedClock = Clock.fixed(Instant.parse("2026-10-24T10:30:00Z"), ZoneOffset.UTC);
-        OutlookService service = new OutlookService(new LocationService(geocoding, fixedClock), fixedClock);
+        OutlookService service = new OutlookService(locationService(geocoding, fixedClock), fixedClock);
 
         var response = service.forLocation(dublin.id());
         var transitionNight = response.nights().getFirst();
@@ -61,5 +62,9 @@ class OutlookServiceTest {
         assertEquals(Instant.parse("2026-10-26T12:00:00Z"), followingNight.evaluationWindowEndUtc());
         assertEquals(24, between(followingNight.evaluationWindowStartUtc(),
                 followingNight.evaluationWindowEndUtc()).toHours());
+    }
+
+    private LocationService locationService(GeocodingProvider geocoding, Clock clock) {
+        return new LocationService(geocoding, clock, 256, Duration.ofMinutes(10), Duration.ofHours(1));
     }
 }
