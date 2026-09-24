@@ -1,10 +1,10 @@
 # Aurora Outlook
 
-An early project foundation for a location-based aurora viewing assistant. This repository does **not** calculate a viewing chance, show a live aurora map, or offer AI advice yet.
+An early project foundation for a location-based aurora viewing assistant. This repository does **not** calculate a viewing chance or offer AI advice yet. Its map displays the latest available short-range NOAA OVATION model grid, not ground-level visibility.
 
 ## What works now
 
-- Search for a place through Open-Meteo's geocoding API and select one of the returned locations. The selected record supplies coordinates and an IANA time zone.
+- Search for a named place through Open-Meteo's geocoding API and select one of the returned locations. The selected record supplies coordinates and an IANA time zone. The first release does not support map-pin selection or arbitrary coordinates.
 - Show the selected place's current local date and the following two local dates. Date labels include the UTC offset at the start of each local date. Displayed timestamps use the place's time zone and show the offset for that instant. Every night is marked **Insufficient data** until the observation inputs and rule thresholds are validated.
 - Expose a Spring Boot health endpoint and separate API endpoints for place search and the three-night response.
 - Show a global NOAA OVATION map on the home page through a backend endpoint. The MapTiler basemap needs a browser key before map tiles can load; city-level viewing ratings remain unimplemented while rules are being validated.

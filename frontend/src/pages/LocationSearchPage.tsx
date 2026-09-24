@@ -9,7 +9,7 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
     <section className="intro">
       <p className="eyebrow">PLAN A NIGHT OUTSIDE</p>
       <h1>A clearer view of the northern and southern lights.</h1>
-      <p className="intro-copy">Follow the latest global aurora forecast, then choose a place to explore its local nights. The map shows a short-range model forecast, not a promise of what will be visible from the ground.</p>
+      <p className="intro-copy">Follow the latest global aurora forecast, then choose a place from search results to explore its local nights. The map is a global overview and does not select locations. It shows a short-range model forecast, not a promise of what will be visible from the ground.</p>
     </section>
     <section className="home-dashboard-grid" aria-label="Aurora map and location search">
       <div className="map-column">
