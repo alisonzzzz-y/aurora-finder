@@ -1,0 +1,47 @@
+{
+  "source": "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+  "samples": [
+    {
+      "fetchedAt": "2026-09-24T11:50:00Z",
+      "source": "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+      "httpStatus": 200,
+      "lastModified": "Thu, 24 Sep 2026 11:48:44 GMT",
+      "etag": "\"e1b5f-65c392e99ce51\"",
+      "observationTime": "2026-09-24T11:41:00Z",
+      "forecastTime": "2026-09-24T12:49:00Z",
+      "dataFormat": "[Longitude, Latitude, Aurora]",
+      "coordinateCount": 65160,
+      "responseBytes": 924511,
+      "sha256": "fc18c02ff60ace39eaa8a5caf2d4f06b5e1e4515a165d177d29a902bbf0aa41d",
+      "rawGzip": "ovation-20260924T115000Z.json.gz"
+    },
+    {
+      "fetchedAt": "2026-09-24T11:55:03Z",
+      "source": "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+      "httpStatus": 200,
+      "lastModified": "Thu, 24 Sep 2026 11:51:21 GMT",
+      "etag": "\"e1b34-65c3937edbb39\"",
+      "observationTime": "2026-09-24T11:43:00Z",
+      "forecastTime": "2026-09-24T12:54:00Z",
+      "dataFormat": "[Longitude, Latitude, Aurora]",
+      "coordinateCount": 65160,
+      "responseBytes": 924468,
+      "sha256": "6371712cfac5b73db04a324a1784402bf5081116a99cde46564895d4bfcf5fa3",
+      "rawGzip": "ovation-20260924T115503Z.json.gz"
+    },
+    {
+      "fetchedAt": "2026-09-24T12:00:10Z",
+      "source": "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+      "httpStatus": 200,
+      "lastModified": "Thu, 24 Sep 2026 11:56:35 GMT",
+      "etag": "\"e1b53-65c394a9fbb0b\"",
+      "observationTime": "2026-09-24T11:48:00Z",
+      "forecastTime": "2026-09-24T13:00:00Z",
+      "dataFormat": "[Longitude, Latitude, Aurora]",
+      "coordinateCount": 65160,
+      "responseBytes": 924499,
+      "sha256": "072645be47e78c7c610a1c61435d51854e3efaefdac1eae5eae85fc564da8466",
+      "rawGzip": "ovation-20260924T120010Z.json.gz"
+    }
+  ]
+}
