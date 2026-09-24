@@ -1,44 +1,33 @@
 # Aurora Finder
 
-[English](#english) | [简体中文](#简体中文)
+[Live demo / 在线体验](https://aurora-finder.vercel.app) · [English](#english) · [简体中文](#简体中文)
 
 <a id="english"></a>
 
 ## English
 
-Aurora Finder is an early location-based aurora forecast project. It combines a global NOAA OVATION map with local place search, a short-range local OVATION activity level, and time-zone-aware night outlooks. The local activity level is a model grid estimate, not the probability that a person will see aurora. The project does **not** calculate a combined personal viewing probability or provide AI advice in this foundation release.
+Aurora Finder helps people explore current aurora activity and check conditions for a chosen place. Search for a city, choose the right match, and see the local forecast, cloud cover, darker hours, and when each piece of information was updated.
 
-**Live demo:** [aurora-finder.vercel.app](https://aurora-finder.vercel.app). The static site is deployed; the production backend origin and MapTiler key origin restrictions still need configuration for live data and map tiles.
+The global map shows modelled aurora activity. It does not tell you the exact chance of seeing aurora from the ground. Clouds, darkness, and other viewing conditions are shown separately, and some full-night results may say “Insufficient data” while the rules are being checked.
 
-## What works now
+### What you can do
 
-- Search for a named place using Open-Meteo geocoding, then select a result with its coordinates and IANA time zone. Arbitrary coordinates and map-pin selection are not supported.
-- Show the selected place's current local date and the following two local dates. Dates and timestamps use the selected place's time zone and show UTC offsets.
-- Display three night cards with local civil, nautical, and astronomical twilight windows. These describe solar altitude only and are not validated aurora-viewing rules; the all-night outlook remains **Insufficient data**.
-- Load local nights, aurora activity, cloud conditions, and solar windows through one facts endpoint. Each source reports its own state, valid time range, retrieval time, link, and failure code. A failed provider does not hide the other sources.
-- Check whether the short-range NOAA forecast window contains any timestamped cloud values. This overlap check does not create a combined viewing rating.
-- Display the latest available short-range NOAA OVATION model grid on an interactive MapLibre map. MapTiler provides the basemap tiles.
-- Show the next NOAA three-hour Kp forecast below the map with a low, medium, or high global activity label. This is not a local visibility rating or viewing probability.
-- For a selected place, show the nearest NOAA OVATION grid value and low, medium, or high short-range local activity level, with model and forecast timestamps.
-- Show candidate solar-darkness intervals in the selected place's local time, with separate statuses for no interval, continuous darkness, and calculation failure.
-- Switch the interface between English and Simplified Chinese. The selection is saved in the browser.
+- Explore the global aurora map and switch between dark, street, and satellite views.
+- Search for a place and choose the matching city.
+- Check short-term aurora activity, cloud cover, and local darker hours when data is available.
+- See the latest global activity outlook and the time and source behind the data.
+- Switch between English and Simplified Chinese.
 
-For production, set `VITE_API_BASE_URL` in Vercel to the deployed Spring Boot service origin. Set `APP_CORS_ALLOWED_ORIGINS` on the backend to `https://aurora-finder.vercel.app` (plus any preview origins you use). Set the MapTiler key's allowed website origins to include the deployed Vercel origin.
+The AI chat feature is not available yet. Aurora Finder is an ongoing project, so some information and features are still being checked and improved.
 
-The OVATION layer shows modeled aurora activity, not ground-level visibility. It does not include local clouds, darkness, terrain, light pollution, or the observer's horizon. The AI entry point is not enabled.
+### Run it locally
 
-## Run locally
-
-Requirements: Java 21 and Node.js 22 or newer.
-
-Start the backend:
+You will need Java 21 and Node.js 22 or newer. Start the backend and frontend in separate terminals:
 
 ```sh
 cd backend
 ./mvnw spring-boot:run
 ```
-
-In another terminal, start the frontend:
 
 ```sh
 cd frontend
@@ -46,99 +35,38 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Its development proxy sends `/api` requests to Spring Boot on port 8080.
+To show the map locally, add a restricted MapTiler key as `VITE_MAPTILER_KEY` in `frontend/.env.local`. Setup details are in [API access instructions](docs/api-access.md). Do not commit this local key file.
 
-Run checks:
+### Data and credits
 
-```sh
-cd backend
-./mvnw test
-./mvnw -DskipTests package
-```
-
-```sh
-cd frontend
-npm run typecheck
-npm run lint
-npm run build
-```
-
-## Map setup
-
-The NOAA OVATION feed is public and does not require an API key. MapTiler is used for the basemap and does require a browser key:
-
-1. Create a key in MapTiler Cloud.
-2. Restrict its allowed origins to `localhost` and `aurora-finder.vercel.app` (enter domains only, without protocol or port).
-3. Copy `frontend/.env.example` to `frontend/.env.local` and set `VITE_MAPTILER_KEY`.
-
-The browser must use the key to request map tiles, so restrict its allowed origins. Never commit `.env.local`. External HTTP connection and provider request timeouts can be configured with `APP_HTTP_CONNECT_TIMEOUT`, `APP_GEOCODING_REQUEST_TIMEOUT`, and `APP_OVATION_REQUEST_TIMEOUT`.
-
-## API examples
-
-- `GET /api/v1/locations?q=Dublin`
-- `GET /api/v1/outlooks/2964574`
-- `GET /api/v1/facts/2964574`
-- `GET /api/v1/aurora-map`
-- `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
-- `GET /api/v1/kp-index`
-- `GET /actuator/health`
-
-Set `APP_GEOCODING_ENABLED=false` to disable calls to Open-Meteo. Its free endpoint is limited to non-commercial use; review the provider's terms before changing the use or deploying publicly. See [API access instructions](docs/api-access.md) for provider URLs, key requirements, and request identity setup.
-
-## Architecture and current limits
-
-The backend uses controller, service, provider, config, and DTO packages. It has no database, so it has no repository or entity classes. Location searches are cached for 10 minutes and location records for one hour, with up to 256 entries per cache. Provider failures distinguish invalid responses, timeouts, rate limits, and other errors. Deployment behavior still needs verification.
-
-Before implementing viewing levels, complete the [Phase 0 source and rule review](docs/phase-0-data-and-rules.md). This includes MET Norway identification and cache handling, darkness calculations across polar and date-line cases, source freshness rules, and evidence-based thresholds. A provider failure must never be presented as a low viewing level.
-
-The planned product is guidance for unaided-eye viewing, not a measured personal probability or a guarantee. The local OVATION card describes the nearest model grid cell and does not account for clouds, darkness, terrain, local light pollution, or the observer's horizon. See [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) for the phased implementation plan.
-
-## Data sources
-
-- [NOAA OVATION short-range aurora forecast](https://www.spaceweather.gov/products/aurora-30-minute-forecast)
-- [NOAA Kp forecast feed](https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json)
-- [MET Norway Locationforecast data model](https://docs.api.met.no/doc/locationforecast/datamodel.html) and [terms](https://docs.api.met.no/doc/TermsOfService)
-- [Open-Meteo geocoding documentation](https://open-meteo.com/en/docs/geocoding-api) and [terms](https://open-meteo.com/en/terms)
-
-Location results use Open-Meteo geocoding data under CC BY 4.0. Credit: Open-Meteo.
+Aurora activity, weather, and place information come from separate public data services. The app shows their sources and update times so you can understand what each result is based on. The map background is provided by MapTiler. Place search uses Open-Meteo data under CC BY 4.0. Credit: Open-Meteo.
 
 <a id="简体中文"></a>
 
 ## 简体中文
 
-Aurora Finder 是一个早期的地点型极光预报项目，结合 NOAA OVATION 全球地图、地点搜索、短时当地 OVATION 活动等级和按当地时区显示的夜间信息。当地活动等级是模型网格估计，不代表个人看到极光的概率。当前基础版本**不会计算综合个人观测概率，也不提供 AI 建议**。
+Aurora Finder 帮助普通观测者了解当前极光活动，并查看指定地点的观测条件。搜索城市并选择正确地点后，可以查看当地极光活动、云量、较暗时段，以及各项数据的更新时间。
 
-**在线演示：**[aurora-finder.vercel.app](https://aurora-finder.vercel.app)。静态网站已部署；线上数据仍需配置后端地址，底图仍需在 MapTiler 密钥中允许线上域名。
+全球地图展示的是模型预测的极光活动，并不代表人在地面看到极光的具体概率。云量、黑暗时段等观测条件会分别展示；部分整晚结果在规则核查完成前可能显示“数据不足”。
 
-## 当前功能
+### 目前可以做什么
 
-- 使用 Open-Meteo 地理编码搜索地点，并由用户选择包含坐标和 IANA 时区的结果。暂不支持任意坐标和地图选点。
-- 显示所选地点当地的今天及随后两天。日期和时间均按所选地点的时区显示，并附带 UTC 偏移。
-- 三晚卡片显示当地民用、航海和天文暮光时间段。这些信息只描述太阳高度，不是已验证的极光观测规则；整晚观测等级仍为“数据不足”。
-- 通过一个观测事实接口读取当地夜晚、NOAA 活动、云量和太阳暮光数据。每个来源分别标明状态、适用时间、获取时间、来源链接和失败码；某个来源失败时保留其他结果。
-- 检查 NOAA 短时预报范围内是否有带时间戳的云量值。时间重叠检查不会生成综合观测等级。
-- 通过可交互的 MapLibre 地图展示 NOAA OVATION 最新短时模型网格；底图瓦片由 MapTiler 提供。
-- 在地图下显示下一段 NOAA 三小时 Kp 预报及低、中、高全球活动等级。该等级不是当地可见性判断或观测概率。
-- 选择地点后，显示最近 NOAA OVATION 网格值、低/中/高短时当地活动等级，以及模型观测时间和预报有效时间。
-- 显示所选地点当地时间下的候选黑暗时段，并分别标记无时段、整个窗口持续满足和计算失败。
-- 支持英文与简体中文界面切换，并在浏览器中记住语言选择。
+- 查看全球极光地图，并切换深色、街道和卫星影像底图。
+- 搜索地点，并从候选项中选择正确的城市。
+- 在数据可用时查看短时极光活动、云量和当地较暗时段。
+- 查看最新的全球活动趋势，以及数据来源和更新时间。
+- 在英文和简体中文之间切换。
 
-生产环境需要在 Vercel 设置 `VITE_API_BASE_URL`，值为已部署的 Spring Boot 服务根地址；在后端设置 `APP_CORS_ALLOWED_ORIGINS=https://aurora-finder.vercel.app`（以及实际使用的预览域名）；MapTiler key 的网站来源白名单也要包含该线上域名。
+AI 对话功能目前尚未开放。项目仍在持续开发，部分数据和功能还在核查与完善中。
 
-OVATION 图层展示的是模型中的极光活动，不代表地面可见范围。它没有包含当地云量、黑暗时段、地形、光污染或观察者的地平线条件。AI 问答入口尚未启用。
+### 本地运行
 
-## 本地运行
-
-需要 Java 21 和 Node.js 22 或更新版本。
-
-启动后端：
+需要 Java 21 和 Node.js 22 或更新版本。在两个终端中分别启动后端和前端：
 
 ```sh
 cd backend
 ./mvnw spring-boot:run
 ```
-
-另开一个终端启动前端：
 
 ```sh
 cd frontend
@@ -146,58 +74,8 @@ npm install
 npm run dev
 ```
 
-打开 Vite 输出的本地网址。开发代理会将 `/api` 请求转发到 8080 端口的 Spring Boot 服务。
+如需在本地显示地图，请在 `frontend/.env.local` 中设置受来源限制的 MapTiler key，变量名为 `VITE_MAPTILER_KEY`。具体说明见 [API 获取说明](docs/api-access.md)。不要将本地 key 文件提交到 Git。
 
-运行检查：
+### 数据与署名
 
-```sh
-cd backend
-./mvnw test
-./mvnw -DskipTests package
-```
-
-```sh
-cd frontend
-npm run typecheck
-npm run lint
-npm run build
-```
-
-## 地图配置
-
-NOAA OVATION 数据源公开提供，无需 API key。底图使用 MapTiler，需要浏览器端密钥：
-
-1. 在 MapTiler Cloud 创建 key。
-2. 将允许的来源限制为 `localhost` 和 `aurora-finder.vercel.app`（只填域名，不带协议或端口）。
-3. 将 `frontend/.env.example` 复制为 `frontend/.env.local`，然后设置 `VITE_MAPTILER_KEY`。
-
-浏览器需要使用该 key 请求地图瓦片，因此请限制允许的来源。不要提交 `.env.local`。外部 HTTP 连接超时和数据提供商请求超时可分别通过 `APP_HTTP_CONNECT_TIMEOUT`、`APP_GEOCODING_REQUEST_TIMEOUT` 和 `APP_OVATION_REQUEST_TIMEOUT` 配置。
-
-## API 示例
-
-- `GET /api/v1/locations?q=Dublin`
-- `GET /api/v1/outlooks/2964574`
-- `GET /api/v1/facts/2964574`
-- `GET /api/v1/aurora-map`
-- `GET /api/v1/aurora-activity?latitude=64.1&longitude=-21.9`
-- `GET /api/v1/kp-index`
-- `GET /actuator/health`
-
-设置 `APP_GEOCODING_ENABLED=false` 可关闭 Open-Meteo 请求。其免费接口仅限非商业用途；若要改变用途或公开部署，请先复核服务条款。数据提供商地址、key 要求和请求身份设置请查看 [API 获取说明](docs/api-access.md)。
-
-## 架构与当前限制
-
-后端分为 controller、service、provider、config 和 DTO 包。项目没有数据库，因此暂时没有 repository 或 entity 类。地点搜索缓存 10 分钟，地点记录缓存 1 小时，每类缓存最多 256 条。提供商错误区分无效响应、超时、限流和其他失败。部署环境的行为仍待验证。
-
-实现观测等级前，请先完成[数据源与规则核查](docs/phase-0-data-and-rules.md)，包括 MET Norway 身份与缓存要求、高纬度和日期变更线附近的黑暗时段计算、数据时效规则以及有证据支持的等级阈值。数据提供商失败时，绝不能把结果显示成“低”。
-
-项目计划提供肉眼观测参考，不会给出个人观测概率或保证。当地 OVATION 卡片描述最近模型网格点，不考虑云量、黑暗时段、地形、当地光污染和观察者的地平线。分阶段开发计划见 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)。
-
-## 数据来源
-
-- [NOAA OVATION 短时极光预报](https://www.spaceweather.gov/products/aurora-30-minute-forecast)
-- [NOAA Kp 预报数据](https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json)
-- [MET Norway Locationforecast 数据模型](https://docs.api.met.no/doc/locationforecast/datamodel.html)和[服务条款](https://docs.api.met.no/doc/TermsOfService)
-- [Open-Meteo 地理编码文档](https://open-meteo.com/en/docs/geocoding-api)和[服务条款](https://open-meteo.com/en/terms)
-
-地点搜索结果使用 Open-Meteo 地理编码数据，遵循 CC BY 4.0。署名：Open-Meteo。
+极光活动、天气和地点信息来自不同的公开数据服务。页面会标明数据来源和更新时间，方便了解每项结果的依据。地图底图由 MapTiler 提供。地点搜索使用 Open-Meteo 数据，遵循 CC BY 4.0。署名：Open-Meteo。
