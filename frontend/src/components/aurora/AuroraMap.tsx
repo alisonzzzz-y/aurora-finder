@@ -11,9 +11,13 @@ import './AuroraMap.css'
 setWorkerUrl(workerUrl)
 
 function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number }> {
+  const forecastDeadline = Date.parse(data.forecastTime)
+  const forecastIsCurrent = data.status === 'CURRENT'
+    && Number.isFinite(forecastDeadline)
+    && Date.now() <= forecastDeadline
   return {
     type: 'FeatureCollection',
-    features: data.points.map(point => ({
+    features: (forecastIsCurrent ? data.points : []).map(point => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [point.longitude, point.latitude] },
       properties: { auroraValue: point.auroraValue },
