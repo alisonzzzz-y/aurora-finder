@@ -190,6 +190,8 @@
 
 **临时上游失败恢复验收（2026-09-25）：**前端对 NOAA 地图与 Kp 请求新增有限重试：网络错误、HTTP 408 和 5xx 按 10、30、60 秒间隔最多重试三次；4xx（包括 429）不重试，避免加剧额度或参数问题。Chrome 端到端模拟两接口首次返回 504、重试返回 200：两个请求均各发出 2 次，Kp 内容恢复显示，页面无 JavaScript 异常。`npm run lint` 与 `npm run build` 通过。该验证证明客户端可从短时 504 自行恢复，不证明 Render 504 的根因已消除；线上延迟、冷启动和供应商故障仍需观察。实现位于 `frontend/src/api/requestError.ts`、`frontend/src/api/auroraMap.ts`、`frontend/src/api/kpIndex.ts`、`frontend/src/hooks/useAuroraMapData.ts` 和 `frontend/src/components/aurora/LatestAuroraForecast.tsx`。
 
+**高纬地图与图标检查（2026-09-25）：**在正式站搜索并选择 Longyearbyen（78.22°N，`Arctic/Longyearbyen`），聚焦后 MapTiler 样式、字体和高纬视图所需的矢量瓦片请求均返回 HTTP 200，地图画布正常加载，署名可见。首次检查发现 `/favicon.ico` 404；前端已有 `public/favicon.svg` 但 `index.html` 未声明，因此补充 SVG favicon link。按 MapTiler 当前公开说明，Free 计划额度为每月 5,000 map sessions 和 100,000 API requests，达到额度后当月暂停；Free 使用限于非商业用途及商业产品研发。本站使用 MapLibre + MapTiler API，官方说明此集成按单个 API 请求计量，而非按 map session。公开页面不能确认 Alison 账户当前套餐、实际用量，也不能判定该公开作品集用途是否符合 Free 许可；06.2 许可/配额项仍待账户控制台核验。来源：[MapTiler Cloud Terms](https://www.maptiler.com/terms/cloud/)、[Pricing](https://www.maptiler.com/cloud/pricing/)、[Sessions vs requests](https://docs.maptiler.com/guides/account/sessions-vs-requests/)。
+
 ## 07 区：观测等级规则
 
 **本区有明确门槛：**数据接入成功不代表高、中、低的科学依据已经成立。没有足够依据时，完成规则研究记录，并保持“数据不足”；不能为了勾选任务随意制定百分比或阈值。
