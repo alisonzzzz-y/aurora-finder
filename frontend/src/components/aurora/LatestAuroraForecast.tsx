@@ -23,6 +23,18 @@ function formatLocalTime(instant: string, locale: string) {
   return offset ? `${localTime} (${offset})` : localTime
 }
 
+function nearbyPeriods(records: KpIndexRecord[]) {
+  const now = Date.now()
+  const reported = records
+    .filter(record => record.type !== 'PREDICTED' && Date.parse(record.periodStart) <= now)
+    .sort((left, right) => Date.parse(right.periodStart) - Date.parse(left.periodStart))[0]
+  const upcoming = records
+    .filter(record => record.type === 'PREDICTED' && Date.parse(record.periodStart) >= now)
+    .sort((left, right) => Date.parse(left.periodStart) - Date.parse(right.periodStart))
+    .slice(0, 6)
+  return { reported, upcoming }
+}
+
 export function LatestAuroraForecast() {
   const { language, t } = useI18n()
   const [data, setData] = useState<KpIndexData | null>(null)
@@ -81,6 +93,7 @@ export function LatestAuroraForecast() {
   }, [])
 
   const forecast = data ? nextPredictedPeriod(data.records) : undefined
+  const periods = data ? nearbyPeriods(data.records) : { reported: undefined, upcoming: [] }
   const levelKey = forecast
     ? forecast.activityLevel === 'LOW' ? 'activityLow'
       : forecast.activityLevel === 'MEDIUM' ? 'activityMedium' : 'activityHigh'
@@ -117,6 +130,22 @@ export function LatestAuroraForecast() {
         </div>}
       </div>
       <p className="latest-forecast-note">{t('globalKpNote')}</p>
+      <div className="kp-trend">
+        <div className="kp-trend-heading"><h3>{t('kpTrendTitle')}</h3><span>{t('kpTrendLocalTime')}</span></div>
+        <div className="kp-trend-layout">
+          {periods.reported && <div className="kp-latest-reported">
+            <span>{t('latestReportedKp')}</span>
+            <strong>Kp {periods.reported.kp.toFixed(2)}</strong>
+            <small>{t(periods.reported.type === 'OBSERVED' ? 'observedKp' : 'estimatedKp')} · {formatLocalTime(periods.reported.periodStart, locale)}</small>
+          </div>}
+          <ol className="kp-period-list" aria-label={t('kpTrendTitle')}>
+            {periods.upcoming.map(record => <li key={record.periodStart}>
+              <div className="kp-period-meta"><time dateTime={record.periodStart}>{new Intl.DateTimeFormat(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(record.periodStart))}</time><strong>{record.kp.toFixed(1)}</strong></div>
+              <span className="kp-period-track"><span style={{ width: `${Math.min(record.kp / 9, 1) * 100}%` }} /></span>
+            </li>)}
+          </ol>
+        </div>
+      </div>
     </div>}
   </section>
 }
