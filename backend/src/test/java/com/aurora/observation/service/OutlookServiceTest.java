@@ -44,8 +44,9 @@ class OutlookServiceTest {
                 response.nights().getFirst().evaluationWindowStartUtc());
         assertEquals(Instant.parse("2026-09-26T11:00:00Z"),
                 response.nights().getFirst().evaluationWindowEndUtc());
-        assertEquals(OutlookLevel.INSUFFICIENT_DATA, response.nights().getFirst().level());
-        assertEquals(OutlookReasonCode.RULES_NOT_VALIDATED, response.nights().getFirst().reasonCode());
+        assertTrue(response.nights().stream().allMatch(night ->
+                night.level() == OutlookLevel.INSUFFICIENT_DATA
+                        && night.reasonCode() == OutlookReasonCode.RULES_NOT_VALIDATED));
     }
 
     @Test
