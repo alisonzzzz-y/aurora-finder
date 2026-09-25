@@ -168,6 +168,7 @@
 ### 06.2 地图
 
 - [x] 选择 MapLibre GL JS 作为地图渲染方式、MapTiler Cloud 作为底图服务；来源说明见 `docs/api-access.md`。
+- [x] 保留可读的 MapTiler/OpenStreetMap 文字署名，并添加免费账户要求的 MapTiler 标志链接。
 - [ ] 核对部署用途的底图许可与配额，并用 MapTiler Key 验收高纬度显示。
 - [x] 地点详情页地图标记所选地点，并显示地点名和时区；可点击标记查看信息。
 - [ ] 用浏览器验证南北半球、日期线接缝、缩放和窄屏交互。

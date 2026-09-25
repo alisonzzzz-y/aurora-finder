@@ -385,7 +385,10 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     <div className="map-key" aria-label={t('relativeModelValue')}>
       <span>{t('modelSignal')}</span><div className="map-key-gradient" /><div className="map-key-labels"><span>{t('lower')}</span><span>{t('higher')}</span></div>
     </div>
-    <div className="map-credit">{t('baseMapCredit')} · <a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC {language === 'zh' ? '数据' : 'data'} ↗</a></div>
+    <a className="maptiler-logo" href="https://www.maptiler.com/" target="_blank" rel="noreferrer" aria-label="MapTiler website">
+      <img src="https://api.maptiler.com/resources/logo.svg" alt="MapTiler" width="92" height="20" />
+    </a>
+    <div className="map-credit"><a href="https://www.maptiler.com/copyright/" target="_blank" rel="noreferrer">{t('baseMapCredit')}</a> · <a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC {language === 'zh' ? '数据' : 'data'} ↗</a></div>
     {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale)} · {t('forecastValid')} {formatUtc(data.forecastTime, locale)} · {t('dataRetrieved')} {formatUtc(data.retrievedAt, locale)}</p>}
   </section>
 }
