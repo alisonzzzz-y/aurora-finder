@@ -1,19 +1,25 @@
 package com.aurora.observation.service;
 
 import com.aurora.observation.dto.Location;
+import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.OutlookLevel;
 import com.aurora.observation.dto.OutlookReasonCode;
+import com.aurora.observation.dto.SolarDarkness;
 import com.aurora.observation.dto.RuleStatus;
 import com.aurora.observation.provider.GeocodingProvider;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static java.time.Duration.between;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,6 +46,17 @@ class OutlookServiceTest {
                 response.nights().getFirst().evaluationWindowEndUtc());
         assertEquals(OutlookLevel.INSUFFICIENT_DATA, response.nights().getFirst().level());
         assertEquals(OutlookReasonCode.RULES_NOT_VALIDATED, response.nights().getFirst().reasonCode());
+    }
+
+    @Test
+    void serializesReasonCodeAndLegacyReasonDuringRollingDeployment() {
+        NightOutlook night = new NightOutlook(LocalDate.of(2026, 9, 25), "+00:00", Instant.EPOCH,
+                Instant.EPOCH.plusSeconds(86_400), OutlookLevel.INSUFFICIENT_DATA,
+                OutlookReasonCode.RULES_NOT_VALIDATED, new SolarDarkness(List.of()));
+        var json = JsonMapper.builder().findAndAddModules().build().valueToTree(night);
+
+        assertEquals("RULES_NOT_VALIDATED", json.path("reasonCode").asText());
+        assertTrue(json.path("reason").asText().contains("pending validation"));
     }
 
     @Test

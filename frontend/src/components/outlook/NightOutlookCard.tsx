@@ -37,7 +37,7 @@ export function NightOutlookCard({ night, index, timezone }: Props) {
     <p className="night-index">{index === 0 ? t('tonight') : `${t('nightNumber')}${index + 1}${language === 'zh' ? '晚' : ''}`}</p>
     <h3>{date} <span className="utc-offset">(UTC{night.utcOffsetAtStart})</span></h3>
     <span className="level-badge">{levelLabels[night.level]}</span>
-    <p>{reasonLabels[night.reasonCode]}</p>
+    <p>{reasonLabels[night.reasonCode ?? 'RULES_NOT_VALIDATED']}</p>
     <section className="solar-darkness" aria-label={t('solarDarknessTitle')}>
       <h4>{t('solarDarknessTitle')}</h4>
       {night.solarDarkness.thresholds.map((window) => <div className="solar-threshold" key={window.threshold}>
