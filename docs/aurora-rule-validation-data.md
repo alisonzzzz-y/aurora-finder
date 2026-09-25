@@ -4,9 +4,9 @@
 
 ## 候选来源：Aurorasaurus Web Observations
 
-Zenodo 发布了 2014-08-01 至 2025-08-02 的 Aurorasaurus 网页观测 CSV，含 transformed 与 cleaned 两种文件，总大小约 16.8 MB。记录说明这是社区提交的极光目击观测数据，供科学研究使用。NASA 的项目介绍说明报告者可提交“看到”或“未看到”的观测。
+Zenodo 发布了 2014-08-01 至 2025-08-02 的 Aurorasaurus 网页观测 CSV，含 transformed 与 cleaned 两种文件，总大小约 16.8 MB。记录说明这是社区提交的极光目击观测数据，供科学研究使用。NASA 的项目介绍说明报告者可提交“看到”或“未看到”的观测。2026 年技术报告已在 Frontiers 发布，Aurorasaurus 的数据发布说明进一步概述了处理流程：transformed 数据会移除或遮盖垃圾、测试和个人信息；cleaned 数据还会排除持续超过 12 小时、报告为多云/光污染/月光过亮以及重复的记录。说明指出，遮挡天空的记录无法确认或否定极光，因此科学分析通常关注明确表示天空清晰的负面报告。
 
-相关研究使用经筛选的 Aurorasaurus 地面报告与极光模型比较，明确指出：负面报告须有清晰无遮挡视野；需排除重复项；时间或地点异常记录要做质量筛选。研究样本主要集中在强地磁风暴期，因此不能将“没有报告”视作“没有极光”，也不能假定全时段、全球和地点覆盖均衡。旧研究所述的筛选条件不自动等于 2026 发布数据每一列都已完成相同处理，须查看配套技术报告和字段说明。
+该处理说明支持一个重要边界：清晰天空下明确提交的“未看到”可以作为候选负标签；没有报告仍然不是负标签。发布方也提醒，报告受观察视角、人口分布和光污染影响，报告地点并不等于极光实际所在的位置；数据在强地磁风暴期间尤其丰富。因此不能假定全时段、全球和地点覆盖均衡，也不能直接把记录比例解释为某地的观测概率。清理流程的公开概述并没有解决具体字段语义、坐标与时间精度、各文件差异及本项目所需空间/时间匹配误差。
 
 ## 本项目可用来回答什么
 
@@ -16,11 +16,18 @@ Zenodo 发布了 2014-08-01 至 2025-08-02 的 Aurorasaurus 网页观测 CSV，�
 
 ## 使用前置检查
 
-- [ ] 读取 2026 技术报告、字段字典及 cleaned/transformed 的差异，核实标签、时间精度、坐标、质量标记和排重规则。
-- [ ] 核对 Zenodo 数据记录和 Aurorasaurus 条款中适用于下载、分析、衍生指标和公开发表的许可；截至核查时 Zenodo 页面 Rights/License 区域没有显示明确许可文本。未确认前不把文件提交仓库、不重新分发、不用于线上产品。
-- [ ] 评估负面观测是否包含可用的清晰天空条件，且确认数据中无报告不能作为负例。
+- [ ] 继续逐字段读取 2026 技术报告和配套 notebook/字典，核实标签、时间精度、坐标、质量标记以及 cleaned/transformed 文件之间的精确差异。已查到技术报告和发布方对清理步骤的摘要，但本次没有下载或解析 CSV，也未确认字段级定义。
+- [ ] 联系数据发布方，确认 Zenodo 数据记录中空白的 Rights/License 栏是否允许本项目所需的下载、离线分析、衍生评估和公开展示。Frontiers 论文的 CC BY 条款只明确适用于论文，不能据此推断 CSV 数据许可。确认前不将文件提交仓库、不重新分发、不用于线上产品。
+- [x] 初步核实负面标签边界：发布方说明清晰天空下明确报告“未看到”具有科学价值，云遮、光污染或月光过亮的记录会从 cleaned 文件排除；没有报告不能作为负例。实际 CSV 是否保留足够字段以可靠筛出这些记录仍待字段审查。
 - [ ] 将报告位置、时间与 NOAA/云量数据匹配，并量化时间误差、空间误差、地区与事件覆盖偏差。
 - [ ] 先预注册/冻结评估切分和指标，再查看留出集结果，避免用同一批样本调阈值又报告准确度。
+
+## 2026-09-25 来源复核记录
+
+- Zenodo 页面列出两个 CSV（transformed 8.8 MB、cleaned 8.0 MB），说明数据开放获取、面向科学研究，但 Rights 下的 License 项没有给出许可标识或文本。
+- 2026 技术报告发表于 Frontiers，论文页面说明论文采用 CC BY；这不是 CSV 数据许可的替代说明。
+- Aurorasaurus 发布说明明确概述 transformed 与 cleaned 的处理差异，也说明负面报告的天空条件和人口/观察视角偏差。该说明足以排除“无报告等于没看到”的做法，但不足以验证本项目能否构造可靠的负样本。
+- 因为仍未核实 CSV 许可和字段级定义，本项目没有下载数据文件，没有新增外部数据依赖，也没有调整线上规则。
 
 ## 当前结论
 
@@ -30,5 +37,7 @@ Aurorasaurus 是值得进一步查字段与许可的地面报告候选，不是�
 
 - 数据集：[Aurorasaurus Web Observations (2014–2025), Zenodo](https://zenodo.org/records/16783265)。
 - 项目说明：[Aurorasaurus, NASA Science](https://science.nasa.gov/citizen-science/aurorasaurus/)。
+- 技术报告：[MacDonald et al. (2026), Frontiers](https://www.frontiersin.org/journals/astronomy-and-space-sciences/articles/10.3389/fspas.2026.1883317/abstract)。
+- 发布方处理流程说明：[A solar cycle of data: Aurorasaurus reports 2014–2025](https://blog.aurorasaurus.org/?p=2520)。
 - 方法与局限：[Kosar et al. (2018), NOAA Central Library copy](https://repository.library.noaa.gov/view/noaa/21676/noaa_21676_DS1.pdf)。
 - 数据使用条款：[Aurorasaurus Privacy Policy and Terms](https://blog.aurorasaurus.org/?page_id=1064)。
