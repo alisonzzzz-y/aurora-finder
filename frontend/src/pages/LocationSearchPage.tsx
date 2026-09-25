@@ -2,6 +2,7 @@ import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
+import { NextAuroraStormForecast } from '../components/aurora/NextAuroraStormForecast'
 import { AuroraResources } from '../components/aurora/AuroraResources'
 import type { Location } from '../types/location'
 import { useI18n } from '../i18n'
@@ -36,6 +37,7 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
     </section>
     <div className="home-content-sections">
       <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
+      <NextAuroraStormForecast />
       <LatestAuroraForecast />
       <ForecastGuide />
       <UpcomingFeatures />
