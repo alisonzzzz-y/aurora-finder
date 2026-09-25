@@ -2,6 +2,7 @@ package com.aurora.observation.service;
 
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.OutlookLevel;
+import com.aurora.observation.dto.OutlookReasonCode;
 import com.aurora.observation.dto.RuleStatus;
 import com.aurora.observation.provider.GeocodingProvider;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,7 @@ class OutlookServiceTest {
         assertEquals(Instant.parse("2026-09-26T11:00:00Z"),
                 response.nights().getFirst().evaluationWindowEndUtc());
         assertEquals(OutlookLevel.INSUFFICIENT_DATA, response.nights().getFirst().level());
+        assertEquals(OutlookReasonCode.RULES_NOT_VALIDATED, response.nights().getFirst().reasonCode());
     }
 
     @Test

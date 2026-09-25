@@ -5,4 +5,4 @@ import java.time.Instant;
 
 public record NightOutlook(LocalDate localDate, String utcOffsetAtStart,
                            Instant evaluationWindowStartUtc, Instant evaluationWindowEndUtc,
-                           OutlookLevel level, String reason, SolarDarkness solarDarkness) {}
+                           OutlookLevel level, OutlookReasonCode reasonCode, SolarDarkness solarDarkness) {}

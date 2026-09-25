@@ -7,6 +7,7 @@ import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
 import com.aurora.observation.dto.OutlookLevel;
+import com.aurora.observation.dto.OutlookReasonCode;
 import com.aurora.observation.dto.OutlookResponse;
 import com.aurora.observation.dto.RuleStatus;
 import com.aurora.observation.dto.SolarDarkness;
@@ -102,6 +103,6 @@ class ObservationFactsServiceTest {
                 new ThresholdWindow(Threshold.ASTRONOMICAL_TWILIGHT, -18, Status.NO_INTERVAL, List.of())));
         return new OutlookResponse(DUBLIN, NOW, RuleStatus.NOT_VALIDATED, List.of(
                 new NightOutlook(LocalDate.of(2026, 9, 25), "+01:00", NOW, NOW.plusSeconds(86_400),
-                        OutlookLevel.INSUFFICIENT_DATA, "pending", darkness)));
+                        OutlookLevel.INSUFFICIENT_DATA, OutlookReasonCode.RULES_NOT_VALIDATED, darkness)));
     }
 }

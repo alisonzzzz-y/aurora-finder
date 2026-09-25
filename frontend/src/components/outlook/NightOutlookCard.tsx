@@ -1,5 +1,5 @@
 import type { NightOutlook } from '../../types/outlook'
-import { localizeReason, useI18n } from '../../i18n'
+import { useI18n } from '../../i18n'
 
 type Props = { night: NightOutlook; index: number; timezone: string }
 
@@ -20,6 +20,9 @@ export function NightOutlookCard({ night, index, timezone }: Props) {
     NAUTICAL_TWILIGHT: t('nauticalTwilight'),
     ASTRONOMICAL_TWILIGHT: t('astronomicalTwilight'),
   }
+  const reasonLabels: Record<NightOutlook['reasonCode'], string> = {
+    RULES_NOT_VALIDATED: t('pendingReason'),
+  }
   const statusLabels: Record<NightOutlook['solarDarkness']['thresholds'][number]['status'], string> = {
     INTERVALS_FOUND: t('solarIntervalsFound'),
     NO_INTERVAL: t('solarNoInterval'),
@@ -34,7 +37,7 @@ export function NightOutlookCard({ night, index, timezone }: Props) {
     <p className="night-index">{index === 0 ? t('tonight') : `${t('nightNumber')}${index + 1}${language === 'zh' ? '晚' : ''}`}</p>
     <h3>{date} <span className="utc-offset">(UTC{night.utcOffsetAtStart})</span></h3>
     <span className="level-badge">{levelLabels[night.level]}</span>
-    <p>{localizeReason(night.reason, t)}</p>
+    <p>{reasonLabels[night.reasonCode]}</p>
     <section className="solar-darkness" aria-label={t('solarDarknessTitle')}>
       <h4>{t('solarDarknessTitle')}</h4>
       {night.solarDarkness.thresholds.map((window) => <div className="solar-threshold" key={window.threshold}>

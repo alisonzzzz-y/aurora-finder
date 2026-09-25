@@ -6,7 +6,7 @@ export type NightOutlook = {
   evaluationWindowStartUtc: string
   evaluationWindowEndUtc: string
   level: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT_DATA'
-  reason: string
+  reasonCode: 'RULES_NOT_VALIDATED'
   solarDarkness: {
     thresholds: {
       threshold: 'CIVIL_TWILIGHT' | 'NAUTICAL_TWILIGHT' | 'ASTRONOMICAL_TWILIGHT'

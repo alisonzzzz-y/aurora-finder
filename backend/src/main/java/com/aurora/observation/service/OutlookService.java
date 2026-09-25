@@ -4,6 +4,7 @@ import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.OutlookResponse;
 import com.aurora.observation.dto.OutlookLevel;
+import com.aurora.observation.dto.OutlookReasonCode;
 import com.aurora.observation.dto.RuleStatus;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +42,7 @@ public class OutlookService {
                     Instant windowEnd = localDate.plusDays(1).atTime(LocalTime.NOON).atZone(zone).toInstant();
                     return new NightOutlook(localDate, offsetId, windowStart, windowEnd,
                             OutlookLevel.INSUFFICIENT_DATA,
-                            "Aurora, cloud, and freshness rules are pending validation.",
+                            OutlookReasonCode.RULES_NOT_VALIDATED,
                             solarDarkness.forWindow(location, windowStart, windowEnd));
                 })
                 .toList();

@@ -344,10 +344,3 @@ export function localizeError(error: unknown, t: I18nValue['t']) {
   }
   return errorKeys[error.message] ? t(errorKeys[error.message]) : error.message
 }
-
-export function localizeReason(reason: string, t: I18nValue['t']) {
-  if (reason === 'Aurora, cloud, and freshness rules are pending validation.') {
-    return t('pendingReason')
-  }
-  return reason
-}
