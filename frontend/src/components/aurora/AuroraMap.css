@@ -14,7 +14,8 @@
 .maptiler-logo { position: absolute; z-index: 3; right: 8px; bottom: 27px; display: flex; align-items: center; min-height: 18px; padding: 2px 4px; border-radius: 3px; background: rgb(21 19 31 / 88%); }
 .maptiler-logo img { display: block; width: 54px; height: auto; }
 .map-timestamps { position: absolute; z-index: 2; top: 14px; right: 52px; max-width: min(48%, calc(100% - 220px)); margin: 0; color: #d4cfe0; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { margin: 0 !important; max-width: min(440px, calc(100vw - 16px)); padding: 2px 5px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 94%) !important; color: #c9c3d2 !important; font-size: 10px !important; line-height: 1.35 !important; }
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { margin: 0 !important; max-width: min(440px, calc(100vw - 16px)); padding: 2px 5px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 94%) !important; color: #c9c3d2 !important; font-size: 9px !important; line-height: 1.3 !important; opacity: .82; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib { display: none !important; }
 .maplibregl-ctrl-attrib a { color: #d8ccf0 !important; }
 .maplibregl-ctrl-attrib-button { opacity: .9; }
 .maplibregl-ctrl-group { overflow: hidden; border: 1px solid #514765 !important; border-radius: 7px !important; background: #15131fe8 !important; }

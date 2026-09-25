@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
+import { AttributionControl, Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
@@ -136,9 +136,11 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       zoom: selectedLocationRef.current ? 3.2 : 1.15,
       minZoom: 0.6,
       maxZoom: 8,
+      attributionControl: false,
     })
     map.current = instance
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
+    instance.addControl(new AttributionControl({ compact: true }), 'bottom-right')
 
     let keyRejected = false
     let initialStyleLoaded = false
