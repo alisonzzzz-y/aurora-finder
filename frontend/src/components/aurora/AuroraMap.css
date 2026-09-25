@@ -9,14 +9,14 @@
 .map-key { position: absolute; z-index: 2; left: 18px; bottom: 44px; width: 190px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 11px; }
 .map-key-gradient { height: 7px; margin-top: 9px; border-radius: 7px; background: linear-gradient(90deg, #20d29d 0%, #49ebae 36%, #e1ea6b 68%, #ff875e 100%); }
 .map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #aaa2ba; }
-.map-credit { position: absolute; z-index: 2; right: 8px; bottom: 34px; padding: 4px 6px; background: #15131ff2; color: #e1dcec; font-size: 10px; line-height: 1.4; }
-.map-credit a { color: #e0d2ff; }
-.maptiler-logo { position: absolute; z-index: 3; left: 10px; bottom: 9px; display: flex; align-items: center; min-height: 26px; padding: 3px 5px; border-radius: 3px; background: rgb(21 19 31 / 94%); }
-.maptiler-logo img { display: block; width: 74px; height: auto; }
-.map-timestamps { position: absolute; z-index: 2; right: 12px; bottom: 8px; max-width: calc(100% - 24px); margin: 0; color: #d4cfe0; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
-.maplibregl-ctrl-attrib { max-width: min(440px, calc(100vw - 32px)); padding: 3px 7px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 96%) !important; color: #e1dcec !important; font-size: 10px !important; line-height: 1.45 !important; }
-.maplibregl-ctrl-attrib a { color: #e0d2ff !important; }
+.map-credit { position: absolute; z-index: 3; right: 76px; bottom: 31px; padding: 3px 5px; background: rgb(21 19 31 / 88%); color: #cbc5d7; font-size: 10px; line-height: 1.3; }
+.map-credit a { color: #d5c8f2; }
+.maptiler-logo { position: absolute; z-index: 3; right: 8px; bottom: 27px; display: flex; align-items: center; min-height: 18px; padding: 2px 4px; border-radius: 3px; background: rgb(21 19 31 / 88%); }
+.maptiler-logo img { display: block; width: 54px; height: auto; }
+.map-timestamps { position: absolute; z-index: 2; top: 14px; right: 52px; max-width: min(48%, calc(100% - 220px)); margin: 0; color: #d4cfe0; font-size: 10px; text-align: right; text-shadow: 0 1px 3px #000; }
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { margin: 0 !important; max-width: min(440px, calc(100vw - 16px)); padding: 2px 5px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 94%) !important; color: #c9c3d2 !important; font-size: 10px !important; line-height: 1.35 !important; }
+.maplibregl-ctrl-attrib a { color: #d8ccf0 !important; }
 .maplibregl-ctrl-attrib-button { opacity: .9; }
 .maplibregl-ctrl-group { overflow: hidden; border: 1px solid #514765 !important; border-radius: 7px !important; background: #15131fe8 !important; }
 .maplibregl-ctrl-group button { filter: invert(.82) sepia(.16) hue-rotate(220deg); }
-@media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { bottom: 48px; }.map-timestamps { left: 12px; right: 12px; text-align: left; } }
+@media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { bottom: 48px; }.map-timestamps { top: 54px; left: 12px; right: 12px; max-width: none; text-align: left; }.map-credit { right: 72px; bottom: 30px; font-size: 10px; }.maptiler-logo { right: 6px; bottom: 27px; }.maptiler-logo img { width: 50px; } }
