@@ -25,10 +25,12 @@ function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue:
   }
 }
 
-function formatUtc(instant: string, locale: string) {
+function formatUtc(instant: string, locale: string, unavailable: string) {
+  const date = new Date(instant)
+  if (!Number.isFinite(date.getTime())) return unavailable
   return `${new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
-  }).format(new Date(instant))} UTC`
+  }).format(date)} UTC`
 }
 
 function asSelectedLocationGeoJson(location: Location | null): FeatureCollection<Point, { name: string; timezone: string }> {
@@ -389,6 +391,6 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       <img src="https://api.maptiler.com/resources/logo.svg" alt="MapTiler" width="92" height="20" />
     </a>
     <div className="map-credit"><a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">NOAA SWPC {language === 'zh' ? '数据' : 'data'} ↗</a></div>
-    {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale)} · {t('forecastValid')} {formatUtc(data.forecastTime, locale)} · {t('dataRetrieved')} {formatUtc(data.retrievedAt, locale)}</p>}
+    {data && <p className="map-timestamps">{t('observed')} {formatUtc(data.observationTime, locale, t('timeUnavailable'))} · {t('forecastValid')} {formatUtc(data.forecastTime, locale, t('timeUnavailable'))} · {t('dataRetrieved')} {formatUtc(data.retrievedAt, locale, t('timeUnavailable'))}</p>}
   </section>
 }
