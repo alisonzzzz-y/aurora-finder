@@ -3,6 +3,7 @@ import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSO
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
+import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
@@ -24,6 +25,17 @@ function formatUtc(instant: string, locale: string) {
   return `${new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
   }).format(new Date(instant))} UTC`
+}
+
+function asSelectedLocationGeoJson(location: Location | null): FeatureCollection<Point, { name: string; timezone: string }> {
+  return {
+    type: 'FeatureCollection',
+    features: location ? [{
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
+      properties: { name: `${location.name}, ${location.country}`, timezone: location.timezone },
+    }] : [],
+  }
 }
 
 function asActivityGeoJson(points: AuroraMapPoint[]): FeatureCollection<Point, { index: number; auroraValue: number }> {
@@ -54,6 +66,7 @@ type Props = {
   activityPoints: AuroraMapPoint[]
   selectedActivityIndex: number | null
   onSelectActivity: (index: number) => void
+  selectedLocation?: Location | null
 }
 
 const baseMaps = [
@@ -63,7 +76,7 @@ const baseMaps = [
 ] as const
 const initialBaseMapId = baseMaps[0].id
 
-export function AuroraMap({ data, forecastError, forecastLoading, activityPoints, selectedActivityIndex, onSelectActivity }: Props) {
+export function AuroraMap({ data, forecastError, forecastLoading, activityPoints, selectedActivityIndex, onSelectActivity, selectedLocation = null }: Props) {
   const { language, t } = useI18n()
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY?.trim()
@@ -71,6 +84,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   const map = useRef<MapLibreMap | null>(null)
   const dataRef = useRef<AuroraMapData | null>(null)
   const activityPointsRef = useRef(activityPoints)
+  const selectedLocationRef = useRef(selectedLocation)
   const activityPopup = useRef<Popup | null>(null)
   const selectActivityRef = useRef(onSelectActivity)
   const translateRef = useRef(t)
@@ -92,6 +106,10 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   }, [activityPoints])
 
   useEffect(() => {
+    selectedLocationRef.current = selectedLocation
+  }, [selectedLocation])
+
+  useEffect(() => {
     selectActivityRef.current = onSelectActivity
   }, [onSelectActivity])
 
@@ -108,8 +126,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     const instance = new MapLibreMap({
       container: container.current,
       style: `https://api.maptiler.com/maps/${initialBaseMapId}/style.json?key=${encodeURIComponent(mapTilerKey)}`,
-      center: [0, 62],
-      zoom: 1.15,
+      center: selectedLocationRef.current ? [selectedLocationRef.current.longitude, selectedLocationRef.current.latitude] : [0, 62],
+      zoom: selectedLocationRef.current ? 3.2 : 1.15,
       minZoom: 0.6,
       maxZoom: 8,
     })
@@ -165,6 +183,41 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       if (!instance.getSource('strong-activity-points')) {
         instance.addSource('strong-activity-points', { type: 'geojson', data: asActivityGeoJson(activityPointsRef.current) })
       }
+      if (!instance.getSource('selected-location')) {
+        instance.addSource('selected-location', { type: 'geojson', data: asSelectedLocationGeoJson(selectedLocationRef.current) })
+      }
+      if (!instance.getLayer('selected-location-circle')) {
+        instance.addLayer({
+          id: 'selected-location-circle',
+          type: 'circle',
+          source: 'selected-location',
+          paint: {
+            'circle-radius': 9,
+            'circle-color': '#d8c5ff',
+            'circle-stroke-color': '#241d31',
+            'circle-stroke-width': 3,
+          },
+        })
+      }
+      if (!instance.getLayer('selected-location-label')) {
+        instance.addLayer({
+          id: 'selected-location-label',
+          type: 'symbol',
+          source: 'selected-location',
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 13,
+            'text-font': ['Open Sans Bold'],
+            'text-offset': [0, 1.5],
+            'text-allow-overlap': true,
+          },
+          paint: {
+            'text-color': '#f4edff',
+            'text-halo-color': '#241d31',
+            'text-halo-width': 1.5,
+          },
+        })
+      }
       if (!instance.getLayer('strong-activity-circles')) {
         instance.addLayer({
           id: 'strong-activity-circles',
@@ -215,6 +268,24 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
           .setDOMContent(createActivityPopup(properties.index + 1, properties.auroraValue ?? 0, translateRef.current('modelGridPoint'), translateRef.current('activityValue')))
           .addTo(instance)
       })
+      instance.on('click', 'selected-location-circle', event => {
+        const feature = event.features?.[0]
+        const coordinates = feature?.geometry.type === 'Point' ? feature.geometry.coordinates : null
+        const properties = feature?.properties as { name?: string; timezone?: string } | undefined
+        if (!coordinates || !properties) return
+        const content = document.createElement('div')
+        const name = document.createElement('strong')
+        name.textContent = properties.name ?? translateRef.current('selectedPlaceLabel')
+        const timezone = document.createElement('div')
+        timezone.textContent = properties.timezone ?? ''
+        content.append(name, timezone)
+        new Popup({ closeButton: true, closeOnClick: true })
+          .setLngLat(coordinates as [number, number])
+          .setDOMContent(content)
+          .addTo(instance)
+      })
+      instance.on('mouseenter', 'selected-location-circle', () => { instance.getCanvas().style.cursor = 'pointer' })
+      instance.on('mouseleave', 'selected-location-circle', () => { instance.getCanvas().style.cursor = '' })
       instance.on('mouseenter', 'strong-activity-circles', () => { instance.getCanvas().style.cursor = 'pointer' })
       instance.on('mouseleave', 'strong-activity-circles', () => { instance.getCanvas().style.cursor = '' })
       setTilesReady(true)
@@ -254,6 +325,19 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
 
   useEffect(() => {
     const instance = map.current
+    const source = instance?.getSource('selected-location') as GeoJSONSource | undefined
+    source?.setData(asSelectedLocationGeoJson(selectedLocation))
+    if (selectedLocation && instance) {
+      instance.flyTo({
+        center: [selectedLocation.longitude, selectedLocation.latitude],
+        zoom: Math.max(instance.getZoom(), 3.2),
+        duration: 700,
+      })
+    }
+  }, [selectedLocation])
+
+  useEffect(() => {
+    const instance = map.current
     const source = instance?.getSource('ovation-grid') as GeoJSONSource | undefined
     if (source) source.setData(geoJson ?? { type: 'FeatureCollection', features: [] })
   }, [geoJson])
@@ -278,7 +362,11 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     }
   }, [activityPoints, selectedActivityIndex, t])
 
-  return <section className="aurora-map-panel" aria-label={t('mapAria')}>
+  const mapLabel = selectedLocation
+    ? `${t('mapAria')}: ${selectedLocation.name}, ${selectedLocation.country}`
+    : t('mapAria')
+
+  return <section className="aurora-map-panel" aria-label={mapLabel}>
     <div className="aurora-map-canvas" ref={container} />
     <label className="map-style-picker">
       <span>{t('mapStyleLabel')}</span>

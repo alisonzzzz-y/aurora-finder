@@ -2,6 +2,10 @@ import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
 import { LocalAuroraActivityCard } from '../components/aurora/LocalAuroraActivityCard'
 import { CloudForecastCard } from '../components/weather/CloudForecastCard'
 import { useI18n } from '../i18n'
+import { useMemo, useState } from 'react'
+import { AuroraMap } from '../components/aurora/AuroraMap'
+import { useAuroraMapData } from '../hooks/useAuroraMapData'
+import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 import type { ObservationFacts } from '../types/observationFacts'
 import '../components/outlook/OutlookPage.css'
 
@@ -21,12 +25,30 @@ function formatLocalTimestamp(instant: string, timezone: string, locale: string)
 export function OutlookPage({ facts, onChangeLocation }: Props) {
   const { language, t } = useI18n()
   const { outlook } = facts
+  const auroraMap = useAuroraMapData()
+  const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
+  const activityPoints = useMemo(
+    () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
+    [auroraMap.data],
+  )
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   return <>
     <section className="outlook" aria-labelledby="outlook-title">
       <div className="section-heading">
         <div><p className="eyebrow">{t('localOutlook')}</p><h1 id="outlook-title">{outlook.location.name}, {outlook.location.country}</h1></div>
         <div className="place-actions"><span>{outlook.location.timezone}</span><button type="button" className="text-button" onClick={onChangeLocation}>{t('chooseAnotherPlace')}</button></div>
+      </div>
+      <div className="outlook-location-map">
+        <AuroraMap
+          data={auroraMap.data}
+          forecastError={auroraMap.error}
+          forecastLoading={auroraMap.loading}
+          activityPoints={activityPoints}
+          selectedActivityIndex={selectedActivityIndex}
+          onSelectActivity={setSelectedActivityIndex}
+          selectedLocation={outlook.location}
+        />
+        <p className="map-scope-note">{t('mapScopeNote')}</p>
       </div>
       <p className="rule-status">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidated')}</p>
       <p className={`source-status source-status-${facts.sourceStatus.toLowerCase()}`}>{t(facts.sourceStatus === 'CURRENT' ? 'allSourcesAvailable' : facts.sourceStatus === 'PARTIAL' ? 'someSourcesMissing' : 'noSourcesAvailable')}</p>
