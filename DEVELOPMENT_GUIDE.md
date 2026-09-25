@@ -210,6 +210,8 @@
 - NOAA 说明可基于 OVATION 强度假设线性关系推导“观看概率”，并提到以 NASA Polar 卫星的紫外成像仪数据验证该关系。该验证描述不是地面肉眼观测样本，也未验证本项目把网格值与本地黑暗、云量组合后的分档阈值。
 - NOAA 将 Kp 定义为全球行星地磁活动指标，按三小时区间计算；NOAA G1–G5 说明中的极光可见纬度是风暴影响的典型描述，不等于某城市或某一晚的肉眼观测保证。
 
+**OVATION 活动标签说明（2026-09-25）：**审阅 NOAA 官方说明后确认，OVATION 是短时极光位置与强度模型；NOAA 提到观看概率需假设强度与概率的线性关系，并描述与 NASA Polar 卫星紫外成像数据的验证。官方说明没有定义本项目采用的 `<18 / 18–49 / ≥50` 数值阈值。因此中英文地图位置列表和当地卡片现明确称这些标签为本站显示分档，不是 NOAA 官方类别或地面可见概率。该改动只提高数据表达透明度，没有验证这些阈值的预测能力，07 区仍未完成。参考：[NOAA Aurora - 30 Minute Forecast](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)。
+
 **当前决策：**这些来源支持展示有时间范围标注的短时模型活动事实和全球 Kp 活动事实，但不足以推出地点级整晚肉眼观测等级。不得将全球 Kp 等级、OVATION 网格色阶或 NOAA 的卫星验证关系直接改写为本站的当地高中低等级。远期夜晚、观测者实际看到与否、各输入源的新鲜度上限、空间匹配半径及云量门槛仍待单独验证；因此 07 区等级仍保持数据不足。
 
 参考：NOAA [Aurora - 30 Minute Forecast](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast)、[Planetary K-index](https://www.swpc.noaa.gov/products/planetary-k-index)、[NOAA Space Weather Scales](https://www.swpc.noaa.gov/noaa-scales-explanation)。
