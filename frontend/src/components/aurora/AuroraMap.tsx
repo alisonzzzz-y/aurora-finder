@@ -140,7 +140,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     })
     map.current = instance
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
-    instance.addControl(new AttributionControl({ compact: true }), 'bottom-right')
+    instance.addControl(new AttributionControl({ compact: false }), 'bottom-right')
 
     let keyRejected = false
     let initialStyleLoaded = false
