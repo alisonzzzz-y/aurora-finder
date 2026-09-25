@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getKpIndex } from '../../api/kpIndex'
+import { transientRetryDelay } from '../../api/requestError'
 import type { KpIndexData, KpIndexRecord } from '../../types/kpIndex'
 import { localizeError, useI18n } from '../../i18n'
 import './LatestAuroraForecast.css'
@@ -30,23 +31,52 @@ export function LatestAuroraForecast() {
   const locale = language === 'zh' ? 'zh-CN' : 'en'
 
   useEffect(() => {
-    const controller = new AbortController()
-    async function load() {
-      try {
-        setData(await getKpIndex(controller.signal))
+    let controller: AbortController | null = null
+    let retryTimer: number | undefined
+    let retryAttempt = 0
+    let hasLoadedData = false
+
+    async function load(isRetry = false) {
+      if (!isRetry) {
+        window.clearTimeout(retryTimer)
+        retryTimer = undefined
+        retryAttempt = 0
+      }
+      if (!hasLoadedData) {
+        setLoading(true)
         setError(null)
+      }
+      controller?.abort()
+      const current = new AbortController()
+      controller = current
+      try {
+        const response = await getKpIndex(current.signal)
+        if (current.signal.aborted) return
+        hasLoadedData = true
+        setData(response)
+        setError(null)
+        setLoading(false)
+        retryAttempt = 0
       } catch (cause) {
-        if (controller.signal.aborted) return
+        if (current.signal.aborted) return
         setError(cause)
-      } finally {
-        if (!controller.signal.aborted) setLoading(false)
+        setLoading(false)
+        const delay = transientRetryDelay(cause, retryAttempt)
+        if (delay !== null) {
+          retryAttempt += 1
+          retryTimer = window.setTimeout(() => {
+            retryTimer = undefined
+            void load(true)
+          }, delay)
+        }
       }
     }
     void load()
     const refresh = window.setInterval(() => { void load() }, 5 * 60 * 1000)
     return () => {
       window.clearInterval(refresh)
-      controller.abort()
+      window.clearTimeout(retryTimer)
+      controller?.abort()
     }
   }, [])
 

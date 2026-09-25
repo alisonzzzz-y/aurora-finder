@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getAuroraMap } from '../api/auroraMap'
+import { transientRetryDelay } from '../api/requestError'
 import type { AuroraMapData } from '../types/auroraMap'
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000
@@ -11,8 +12,16 @@ export function useAuroraMapData() {
   useEffect(() => {
     let controller: AbortController | null = null
     let expiryTimer: number | undefined
+    let retryTimer: number | undefined
+    let retryAttempt = 0
 
-    async function refresh() {
+    async function refresh(isRetry = false) {
+      if (!isRetry) {
+        window.clearTimeout(retryTimer)
+        retryTimer = undefined
+        retryAttempt = 0
+      }
+      setError('')
       controller?.abort()
       window.clearTimeout(expiryTimer)
       const current = new AbortController()
@@ -30,6 +39,7 @@ export function useAuroraMapData() {
           : response
         setData(freshResponse)
         setError('')
+        retryAttempt = 0
 
         if (freshResponse.status === 'CURRENT' && Number.isFinite(forecastDeadline)) {
           const delay = forecastDeadline - Date.now() + 100
@@ -46,6 +56,14 @@ export function useAuroraMapData() {
         if (current.signal.aborted) return
         setData(null)
         setError(cause instanceof Error ? cause.message : 'Aurora forecast data could not be loaded.')
+        const delay = transientRetryDelay(cause, retryAttempt)
+        if (delay !== null) {
+          retryAttempt += 1
+          retryTimer = window.setTimeout(() => {
+            retryTimer = undefined
+            void refresh(true)
+          }, delay)
+        }
       }
     }
 
@@ -54,6 +72,7 @@ export function useAuroraMapData() {
     return () => {
       window.clearInterval(interval)
       window.clearTimeout(expiryTimer)
+      window.clearTimeout(retryTimer)
       controller?.abort()
     }
   }, [])

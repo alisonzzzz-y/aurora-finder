@@ -188,6 +188,8 @@
 
 **正式站地图浏览器验收（2026-09-25）：**在 Vercel 正式域名用 Chrome 检查首页地图和地点流程。MapTiler 样式、瓦片及标志资源均返回 HTTP 200；NOAA 地图与 Kp 接口首次请求曾返回 504，随后重新加载均返回 HTTP 200，需在 10 区继续留意 Render 冷启动与首次响应时间。无 JavaScript 页面异常。搜索并选择 Tromsø（`Europe/Oslo`）、Ushuaia（`America/Argentina/Ushuaia`）和 Apia（`Pacific/Apia`），地图辅助标签显示所选地点，Apia 标记弹窗显示地点名与时区；缩放控件触发更高层级瓦片请求（z1、z3、z4）。390px 手机视口无横向溢出，图例仍在左下角，MapTiler/OpenStreetMap 署名文字显示在右下角。该检查覆盖南北半球、日期线附近、缩放和窄屏交互；未核验 MapTiler 部署用途许可与配额，也未形成跨时段 SLA 结论。
 
+**临时上游失败恢复验收（2026-09-25）：**前端对 NOAA 地图与 Kp 请求新增有限重试：网络错误、HTTP 408 和 5xx 按 10、30、60 秒间隔最多重试三次；4xx（包括 429）不重试，避免加剧额度或参数问题。Chrome 端到端模拟两接口首次返回 504、重试返回 200：两个请求均各发出 2 次，Kp 内容恢复显示，页面无 JavaScript 异常。`npm run lint` 与 `npm run build` 通过。该验证证明客户端可从短时 504 自行恢复，不证明 Render 504 的根因已消除；线上延迟、冷启动和供应商故障仍需观察。实现位于 `frontend/src/api/requestError.ts`、`frontend/src/api/auroraMap.ts`、`frontend/src/api/kpIndex.ts`、`frontend/src/hooks/useAuroraMapData.ts` 和 `frontend/src/components/aurora/LatestAuroraForecast.tsx`。
+
 ## 07 区：观测等级规则
 
 **本区有明确门槛：**数据接入成功不代表高、中、低的科学依据已经成立。没有足够依据时，完成规则研究记录，并保持“数据不足”；不能为了勾选任务随意制定百分比或阈值。
