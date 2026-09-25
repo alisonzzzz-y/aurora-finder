@@ -6,7 +6,7 @@
 .map-style-picker select:disabled { opacity: .7; cursor: wait; }
 .map-style-picker option { background: #171522; color: #e1dcec; }
 .map-message { position: absolute; z-index: 2; top: 18px; left: 18px; max-width: min(440px, calc(100% - 36px)); padding: 11px 14px; border-left: 3px solid var(--accent); background: #15131ff0; color: #e1dcec; font-size: 13px; line-height: 1.5; }
-.map-key { position: absolute; z-index: 2; left: 18px; bottom: 44px; width: 190px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 11px; }
+.map-key { position: absolute; z-index: 2; left: 14px; bottom: 14px; width: 190px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 11px; }
 .map-key-gradient { height: 7px; margin-top: 9px; border-radius: 7px; background: linear-gradient(90deg, #20d29d 0%, #49ebae 36%, #e1ea6b 68%, #ff875e 100%); }
 .map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #aaa2ba; }
 .map-credit { position: absolute; z-index: 3; right: 76px; bottom: 31px; padding: 3px 5px; background: rgb(21 19 31 / 88%); color: #cbc5d7; font-size: 10px; line-height: 1.3; }
@@ -20,4 +20,4 @@
 .maplibregl-ctrl-attrib-button { opacity: .9; }
 .maplibregl-ctrl-group { overflow: hidden; border: 1px solid #514765 !important; border-radius: 7px !important; background: #15131fe8 !important; }
 .maplibregl-ctrl-group button { filter: invert(.82) sepia(.16) hue-rotate(220deg); }
-@media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { bottom: 48px; }.map-timestamps { top: 54px; left: 12px; right: 12px; max-width: none; text-align: left; }.map-credit { right: 72px; bottom: 30px; font-size: 10px; }.maptiler-logo { right: 6px; bottom: 27px; }.maptiler-logo img { width: 50px; } }
+@media (max-width: 720px) { .aurora-map-panel { height: 430px; border-radius: 9px; }.map-key { left: 12px; bottom: 12px; }.map-timestamps { top: 54px; left: 12px; right: 12px; max-width: none; text-align: left; }.map-credit { right: 72px; bottom: 30px; font-size: 10px; }.maptiler-logo { right: 6px; bottom: 27px; }.maptiler-logo img { width: 50px; } }
