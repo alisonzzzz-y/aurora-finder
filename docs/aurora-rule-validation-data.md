@@ -17,7 +17,7 @@ Zenodo 发布了 2014-08-01 至 2025-08-02 的 Aurorasaurus 网页观测 CSV，�
 ## 使用前置检查
 
 - [ ] 对照检查 transformed 与 cleaned 两个 CSV 的列、类型和处理差异。
-- [ ] 联系数据发布方，确认 Zenodo 数据记录中空白的 Rights/License 栏是否允许本项目所需的下载、离线分析、衍生评估和公开展示。官方 notebook 仓库的 Apache-2.0 LICENSE 与 `.zenodo.json` 授权对象是清理/分析软件，不能据此推断其关联 CSV 数据也采用 Apache-2.0。Frontiers 论文的 CC BY 条款同样只明确适用于论文。确认前不将文件提交仓库、不重新分发、不用于线上产品。
+- [x] 按用户明确决定，将数据用于个人、非商业项目的本地离线分析。Zenodo 数据记录的 Rights/License 栏仍为空；此决定不改变数据发布页的权利信息。原始文件及逐行衍生数据不提交仓库、不重新分发；若后续要公开展示或再发布记录，再核对来源条款。官方 notebook 仓库的 Apache-2.0 LICENSE 与 `.zenodo.json` 授权对象是清理/分析软件，不能据此推断其关联 CSV 数据也采用 Apache-2.0。Frontiers 论文的 CC BY 条款同样只明确适用于论文。
 - [x] 核实负面标签边界：仅把 `see_aurora=False` 且 `sky_id=clea` 的记录作为候选负样本；天空字段为空的 1,683 条未看到报告排除。没有报告不能作为负例。
 - [ ] 将报告位置、时间与 NOAA/云量数据匹配，并量化时间误差、空间误差、地区与事件覆盖偏差。
 - [ ] 先预注册/冻结评估切分和指标，再查看留出集结果，避免用同一批样本调阈值又报告准确度。
@@ -40,9 +40,26 @@ Zenodo 发布了 2014-08-01 至 2025-08-02 的 Aurorasaurus 网页观测 CSV，�
 - 按官方 notebook 的候选重复签名找到 714 组、1,994 条候选记录。这只是供人工复核的筛选结果；其中 429 组的最小坐标间距低于约 2 km，坐标不同本身不能证明重复，也不能直接删除。`raw_row_num` 在本文件中无重复。
 - 该审计只验证了 cleaned 文件的结构与标签可用性，不是 OVATION 预测能力验证，也没有确定任何阈值、等级或概率。
 
+## 2026-09-26 历史模型网格试配对
+
+用户已明确决定将该 CSV 用于个人、非商业项目。本节记录按用户决定完成的本地分析。原始观测 CSV 与下载的模型网格都只放在系统临时目录，没有提交或重新分发。Zenodo 记录的 Rights/License 栏仍为空；用户的项目用途决定不改变数据发布页的权利信息。
+
+从 NASA CCMC iSWA OVATION Prime `e_data` 历史目录下载了 2024-05-11 和 2024-10-10 对应的 15 分钟快照。样例文件有 7,680 个数值网格点；坐标覆盖 MLT 0–23.75 小时、磁纬 50–89.5 度，步长分别为 0.25 小时和 0.5 度。文件第三列作为模型输出数值读取。CCMC 说明 OVATION Prime 的统计分布按磁地方时和磁纬度分箱；样例文件没有独立列标题，本试验不据此宣称第三列的单位已核实。[历史档案目录](https://iswa.gsfc.nasa.gov/iswa_data_tree/model/ionosphere/ovation_prime/e_data/)、[CCMC OVATION Prime 说明](https://ccmc.gsfc.nasa.gov/models/Ovation-Prime~1.0/)。
+
+试验匹配方法：只纳入明确看到报告和 `sky_id=clea` 的明确未看到报告；排除天空未知的未看到报告。按 `time_start` 与 `time_end` 中点选择最近的 15 分钟 UTC 快照，再分别在周期 MLT 轴与磁纬轴取最近网格点。只匹配样例档案覆盖的正磁纬 50–89.5 度；低于 50 度的报告不外推。此为单点最近邻诊断，不是最终匹配规则。可用 `python3 scripts/audit_aurorasaurus_ovation_match.py --observations <cleaned.csv> --grids <snapshot-directory> --dates 2024-05-11 2024-10-10` 在本地复跑；脚本只打印按日期和标签汇总的数字，不导出逐行观测内容。
+
+| UTC 中点日期 | 标签 | 报告数 | 进入网格匹配 | 网格值中位数 | 25–75 百分位 | 网格值为 0 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 2024-05-11 | 看见 | 2,792 | 1,286 | 0.055 | 0.02–0.23 | 13.5% |
+| 2024-05-11 | 未看见且晴空 | 306 | 67 | 0.03 | 0.01–0.07 | 7.5% |
+| 2024-10-10 | 看见 | 875 | 203 | 0.04 | 0.01–0.17 | 5.4% |
+| 2024-10-10 | 未看见且晴空 | 45 | 11 | 0.02 | 0.02–0.15 | 0% |
+
+两日样例中，看见与晴空未看见的网格值分布有明显重叠。只有两个事件日，样本不是独立、均衡的全球观测；两天分别有 1,506/2,792、672/875 条看见报告低于 50 度磁纬而无法匹配。未看见且晴空的可匹配样本仅 67 和 11 条。报告聚集、重复候选、晴空标签的代表性、模型版本/单位以及南半球网格语义均未解决。因此这组数据只能证明历史快照在时间和部分空间坐标上可试配，不支持挑选阈值、等级或概率，也不能用于线上宣传准确率。
+
 ## 当前结论
 
-Aurorasaurus cleaned 文件已按用户要求用于一次本地离线质量审计，但数据许可仍未由发布方明确确认，文件未加入仓库或重新分发。数据可用于继续设计受限的回溯评估：仅把明确报告看到极光作为候选正样本，把明确未看到且天空字段为 `clea` 的报告作为候选负样本，排除天空状况未知的负报告，并对重复候选组进行人工/规则复核。强烈的事件和地区选择偏差仍未解决。当前线上规则继续保持 `NOT_VALIDATED`，接口继续返回 `INSUFFICIENT_DATA`；没有生成极光概率。
+Aurorasaurus cleaned 文件已按用户决定用于本地离线质量审计和两日 OVATION 网格试配；原始文件未加入仓库或重新分发。数据发布页未填写 License，但本项目按用户决定继续进行非商业的本地验证。后续公开展示或重新发布原始记录仍需单独核对来源条款。候选正标签是明确报告看到极光，候选负标签仅是明确未看到且天空字段为 `clea`；天空状况未知的未看到报告排除。强烈的事件、地区和纬度覆盖偏差仍未解决。当前线上规则继续保持 `NOT_VALIDATED`，接口继续返回 `INSUFFICIENT_DATA`；没有生成极光概率或高、中、低观测等级。
 
 ## 来源
 
@@ -54,3 +71,6 @@ Aurorasaurus cleaned 文件已按用户要求用于一次本地离线质量审�
 - 软件许可证记录：[Aurorasaurus_on_Jupyter, LICENSE](https://github.com/aurorasaurus/Aurorasaurus_on_Jupyter/blob/main/LICENSE)（仅用于确认代码许可范围）。
 - 方法与局限：[Kosar et al. (2018), NOAA Central Library copy](https://repository.library.noaa.gov/view/noaa/21676/noaa_21676_DS1.pdf)。
 - 数据使用条款：[Aurorasaurus Privacy Policy and Terms](https://blog.aurorasaurus.org/?page_id=1064)。
+
+- 历史模型样例目录：[NASA CCMC iSWA OVATION Prime e_data](https://iswa.gsfc.nasa.gov/iswa_data_tree/model/ionosphere/ovation_prime/e_data/)。
+- 模型坐标说明：[NASA CCMC OVATION Prime](https://ccmc.gsfc.nasa.gov/models/Ovation-Prime~1.0/)。
