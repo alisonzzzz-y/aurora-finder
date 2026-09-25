@@ -223,11 +223,15 @@ def main() -> int:
     matched: Dict[str, List[float]] = defaultdict(list)
     event_values: Dict[Tuple[int, str], List[float]] = defaultdict(list)
     missing_grid = Counter()
-    out_of_range = Counter()
+    negative_mlat = Counter()
+    positive_mlat_outside = Counter()
     invalid_snapshot = Counter()
     for event_id, timestamp, label, mlt, mlat in report_rows:
+        if mlat < 0.0:
+            negative_mlat[label] += 1
+            continue
         if not 50.0 <= mlat <= 89.5:
-            out_of_range[label] += 1
+            positive_mlat_outside[label] += 1
             continue
         snap = rounded_snapshot(timestamp)
         relative = archive.get(snap)
@@ -260,8 +264,8 @@ def main() -> int:
         expected = counts[label]["reports"]
         values = matched[label]
         q25, q75 = quartiles(values)
-        print("{}: reports={} outside_MLat={} archive_index_missing={} grid_not_downloaded={} matched={} median={} p25={} p75={} zero_pct={}".format(
-            label, expected, out_of_range[label], invalid_snapshot[label], missing_grid[label], len(values),
+        print("{}: reports={} negative_MLat_unmatched={} positive_MLat_outside_grid={} archive_index_missing={} grid_not_downloaded={} matched={} median={} p25={} p75={} zero_pct={}".format(
+            label, expected, negative_mlat[label], positive_mlat_outside[label], invalid_snapshot[label], missing_grid[label], len(values),
             fmt(statistics.median(values) if values else None), fmt(q25), fmt(q75),
             fmt(100.0 * sum(value == 0 for value in values) / len(values) if values else None),
         ))
