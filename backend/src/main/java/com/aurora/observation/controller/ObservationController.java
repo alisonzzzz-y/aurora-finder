@@ -11,7 +11,9 @@ import com.aurora.observation.dto.KpIndexResponse;
 import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import com.aurora.observation.dto.WeatherForecastResponse;
 import com.aurora.observation.dto.ObservationFactsResponse;
+import com.aurora.observation.dto.GeomagneticStormForecastResponse;
 import com.aurora.observation.service.ObservationFactsService;
+import com.aurora.observation.service.GeomagneticStormForecastService;
 import com.aurora.observation.service.WeatherService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,15 +32,18 @@ public class ObservationController {
     private final KpIndexService kpIndex;
     private final WeatherService weather;
     private final ObservationFactsService facts;
+    private final GeomagneticStormForecastService geomagneticStormForecast;
 
     public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
-                                 KpIndexService kpIndex, WeatherService weather, ObservationFactsService facts) {
+                                 KpIndexService kpIndex, WeatherService weather, ObservationFactsService facts,
+                                 GeomagneticStormForecastService geomagneticStormForecast) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
         this.kpIndex = kpIndex;
         this.weather = weather;
         this.facts = facts;
+        this.geomagneticStormForecast = geomagneticStormForecast;
     }
 
     @GetMapping("/locations")
@@ -69,6 +74,11 @@ public class ObservationController {
     @GetMapping("/kp-index")
     public KpIndexResponse kpIndex() {
         return kpIndex.latest();
+    }
+
+    @GetMapping("/geomagnetic-storm-forecast")
+    public GeomagneticStormForecastResponse geomagneticStormForecast() {
+        return geomagneticStormForecast.latest();
     }
 
     @GetMapping("/weather-forecast")
