@@ -43,9 +43,9 @@
 - [x] 适度拆分前端 API 调用、类型、地点搜索和三晚卡片；开启 TypeScript 严格检查并处理实际报错；整理难读的 JSX 和 CSS。
 - [x] 初始化 Git 并建立基线提交，检查忽略规则，清理不再使用的模板资源。
 - [x] 配置并验证本地检查命令。
-- [ ] 远程仓库建立并推送后，接入 CI。
+- [x] 远程仓库建立并推送后，接入 CI；GitHub Actions 首轮执行通过。
 
-**01 区进度记录（2026-09-25）：**本区实现项和本地验收已完成。补充了注入式 HTTP 客户端及连接/请求超时配置、固定时钟三晚回归测试、TypeScript `strict` 检查和本地构建/lint/test 命令；移除了未引用的 React/Vite 模板图片。远程仓库 `alisonzzzz-y/aurora-finder` 已建立。新增 `.github/workflows/ci.yml`，为 `main` 推送、针对 `main` 的 Pull Request 和手动触发分别运行 Java 21 后端测试与 Node 22 前端 lint/构建；待首轮 GitHub Actions 执行通过后勾选 CI 验收项。
+**01 区进度记录（2026-09-25）：**本区实现项和本地验收已完成。补充了注入式 HTTP 客户端及连接/请求超时配置、固定时钟三晚回归测试、TypeScript `strict` 检查和本地构建/lint/test 命令；移除了未引用的 React/Vite 模板图片。远程仓库 `alisonzzzz-y/aurora-finder` 已建立。新增 `.github/workflows/ci.yml`，为 `main` 推送、针对 `main` 的 Pull Request 和手动触发分别运行 Java 21 后端测试与 Node 22 前端 lint/构建；GitHub Actions 首轮执行已于 2026-09-25 通过（run 36138595096），01 区 CI 验收完成。
 
 **涉及位置：**backend 的 controller、service、provider、config 包；frontend/src 中的 API、类型和组件文件。类名和目录可按实际复杂度调整，不要求先建大量空文件。
 
