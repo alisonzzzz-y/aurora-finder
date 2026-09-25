@@ -90,3 +90,53 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 @media (max-width: 720px) {
   .home-page-shell .aurora-map-panel { height: clamp(390px, calc(100svh - 235px), 560px); }
 }
+
+/* Long-form home page sections: content stays in the reading column below the map. */
+.home-content-sections { display: grid; gap: 34px; margin: 36px clamp(16px, 3vw, 56px) 0; }
+.home-content-sections .current-activity-areas,
+.home-content-sections .latest-aurora-forecast { margin: 0; }
+.home-content-sections .current-activity-areas { padding: 22px 0 0; }
+.home-content-sections .current-activity-areas h2,
+.forecast-guide > h2,
+.upcoming-features > h2 { font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -.025em; }
+.home-content-sections .activity-areas-hint { font-size: 13px; }
+.home-content-sections .activity-area-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 26px; }
+.home-content-sections .activity-area-select { min-height: 70px; }
+.forecast-guide, .upcoming-features { padding: 24px 0 4px; border-top: 1px solid var(--line); }
+.forecast-guide > .eyebrow, .upcoming-features > .eyebrow { margin-bottom: 8px; }
+.forecast-guide > h2, .upcoming-features > h2 { margin: 0; }
+.forecast-guide-intro, .upcoming-features-intro { max-width: 760px; margin: 10px 0 0; color: #b7b1c6; font-size: 14px; line-height: 1.65; }
+.forecast-guide-list, .upcoming-feature-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; list-style: none; margin: 25px 0 0; padding: 0; }
+.forecast-guide-list li, .upcoming-feature-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+.forecast-guide-number, .upcoming-feature-number { color: var(--accent); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.forecast-guide-list h3, .upcoming-feature-list h3 { margin: 0; font-size: 15px; line-height: 1.45; }
+.forecast-guide-list p, .upcoming-feature-list p { margin: 7px 0 0; color: #b7b1c6; font-size: 13px; line-height: 1.65; }
+.upcoming-feature-state { display: inline-block; margin-top: 10px; color: #c9bbeb; font-size: 11px; font-weight: 650; }
+.kp-trend { grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid var(--line); }
+.kp-trend-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.kp-trend-heading h3 { margin: 0; font-size: 15px; font-weight: 620; }
+.kp-trend-heading > span { color: var(--muted); font-size: 11px; }
+.kp-trend-layout { display: grid; grid-template-columns: minmax(180px, .55fr) minmax(0, 1.45fr); gap: 22px; margin-top: 16px; }
+.kp-latest-reported { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding-right: 18px; border-right: 1px solid var(--line); }
+.kp-latest-reported > span, .kp-latest-reported small { color: var(--muted); font-size: 11px; }
+.kp-latest-reported strong { font-size: 23px; font-weight: 620; }
+.kp-period-list { display: grid; grid-template-columns: repeat(6, minmax(65px, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.kp-period-list li { min-width: 0; }
+.kp-period-meta { display: flex; justify-content: space-between; gap: 6px; color: var(--muted); font-size: 11px; }
+.kp-period-meta time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kp-period-meta strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.kp-period-track { display: block; height: 5px; margin-top: 9px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--line-strong) 58%, transparent); }
+.kp-period-track > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+@media (max-width: 900px) {
+  .home-content-sections .activity-area-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .forecast-guide-list, .upcoming-feature-list { grid-template-columns: 1fr; gap: 14px; }
+  .kp-trend-layout { grid-template-columns: 1fr; }
+  .kp-latest-reported { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+  .kp-period-list { grid-template-columns: repeat(3, minmax(72px, 1fr)); row-gap: 14px; }
+}
+@media (max-width: 560px) {
+  .home-content-sections { margin-top: 26px; gap: 26px; }
+  .home-content-sections .activity-area-list { grid-template-columns: 1fr; }
+  .kp-trend-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .kp-period-list { grid-template-columns: repeat(2, minmax(80px, 1fr)); }
+}
