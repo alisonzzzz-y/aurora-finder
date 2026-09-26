@@ -52,7 +52,7 @@ class AssistantServiceTest {
 
         when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
                 .thenReturn(firstResponse, secondResponse);
-        when(openAi.model()).thenReturn("gpt-5-mini");
+        when(openAi.model()).thenReturn("gpt-6-luna");
         when(tools.searchPlaces("Dublin")).thenReturn(List.of(
                 new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland",
                         53.33306, -6.24889, "Europe/Dublin")));
@@ -61,7 +61,7 @@ class AssistantServiceTest {
                 "How is Dublin tonight?", "en", null, List.of()));
 
         assertEquals("Please choose the Dublin in Ireland.", response.answer());
-        assertEquals("gpt-5-mini", response.model());
+        assertEquals("gpt-6-luna", response.model());
         verify(tools).searchPlaces("Dublin");
     }
 

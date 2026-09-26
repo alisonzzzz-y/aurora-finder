@@ -27,7 +27,7 @@ public class OpenAiAssistantProvider {
 
     public OpenAiAssistantProvider(HttpClient httpClient, ObjectMapper objectMapper,
                                    @Value("${app.openai.api-key:}") String apiKey,
-                                   @Value("${app.openai.model:gpt-5-mini}") String model,
+                                   @Value("${app.openai.model:gpt-6-luna}") String model,
                                    @Value("${app.openai.base-url:https://api.openai.com/v1}") String baseUrl,
                                    @Value("${app.openai.request-timeout:35s}") Duration requestTimeout) {
         this.httpClient = httpClient;
