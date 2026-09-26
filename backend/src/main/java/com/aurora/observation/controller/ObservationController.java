@@ -12,8 +12,10 @@ import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import com.aurora.observation.dto.WeatherForecastResponse;
 import com.aurora.observation.dto.ObservationFactsResponse;
 import com.aurora.observation.dto.GeomagneticStormForecastResponse;
+import com.aurora.observation.dto.GeomagneticWarningsResponse;
 import com.aurora.observation.service.ObservationFactsService;
 import com.aurora.observation.service.GeomagneticStormForecastService;
+import com.aurora.observation.service.GeomagneticWarningsService;
 import com.aurora.observation.service.WeatherService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,10 +35,12 @@ public class ObservationController {
     private final WeatherService weather;
     private final ObservationFactsService facts;
     private final GeomagneticStormForecastService geomagneticStormForecast;
+    private final GeomagneticWarningsService geomagneticWarnings;
 
     public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
                                  KpIndexService kpIndex, WeatherService weather, ObservationFactsService facts,
-                                 GeomagneticStormForecastService geomagneticStormForecast) {
+                                 GeomagneticStormForecastService geomagneticStormForecast,
+                                 GeomagneticWarningsService geomagneticWarnings) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
@@ -44,6 +48,7 @@ public class ObservationController {
         this.weather = weather;
         this.facts = facts;
         this.geomagneticStormForecast = geomagneticStormForecast;
+        this.geomagneticWarnings = geomagneticWarnings;
     }
 
     @GetMapping("/locations")
@@ -79,6 +84,11 @@ public class ObservationController {
     @GetMapping("/geomagnetic-storm-forecast")
     public GeomagneticStormForecastResponse geomagneticStormForecast() {
         return geomagneticStormForecast.latest();
+    }
+
+    @GetMapping("/geomagnetic-warnings")
+    public GeomagneticWarningsResponse geomagneticWarnings() {
+        return geomagneticWarnings.latest();
     }
 
     @GetMapping("/weather-forecast")
