@@ -70,10 +70,10 @@ function ForecastGuide() {
 function UpcomingFeatures() {
   const { t } = useI18n()
   const items = [
-    ['nextStormTitle', 'nextStormCopy'],
-    ['nextSpotsTitle', 'nextSpotsCopy'],
-    ['nextAiTitle', 'nextAiCopy'],
-    ['nextCompareTitle', 'nextCompareCopy'],
+    ['nextStormTitle', 'nextStormCopy', 'inDevelopment'],
+    ['nextSpotsTitle', 'nextSpotsCopy', 'inDevelopment'],
+    ['nextAiTitle', 'nextAiCopy', 'availableNow'],
+    ['nextCompareTitle', 'nextCompareCopy', 'inDevelopment'],
   ] as const
 
   return <section className="upcoming-features" aria-labelledby="upcoming-features-title">
@@ -81,9 +81,9 @@ function UpcomingFeatures() {
     <h2 id="upcoming-features-title">{t('upcomingFeaturesTitle')}</h2>
     <p className="upcoming-features-intro">{t('upcomingFeaturesIntro')}</p>
     <ol className="upcoming-feature-list">
-      {items.map(([title, copy], index) => <li key={title}>
+      {items.map(([title, copy, state], index) => <li key={title}>
         <span className="upcoming-feature-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><p>{t(copy)}</p><span className="upcoming-feature-state">{t('inDevelopment')}</span></div>
+        <div><h3>{t(title)}</h3><p>{t(copy)}</p><span className="upcoming-feature-state">{t(state)}</span></div>
       </li>)}
     </ol>
   </section>

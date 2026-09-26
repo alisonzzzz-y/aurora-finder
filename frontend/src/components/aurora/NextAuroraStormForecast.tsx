@@ -66,7 +66,7 @@ export function NextAuroraStormForecast() {
     {warningsError && <p className="storm-outlook-message">{t('geomagneticWarningsUnavailable')}</p>}
     {!warningsError && warnings && <div className="geomagnetic-warning-list" aria-label={t('geomagneticWarningsTitle')}>
       <h3>{t('geomagneticWarningsTitle')}</h3>
-      <p className="geomagnetic-warning-checked">{t('warningChecked')}: {localDateTime(warnings.retrievedAt, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}</p>
+      <p className="geomagnetic-warning-checked">{t('warningChecked')}: {localDateTime(warnings.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
       {warnings.warnings.length === 0 && <p>{t('noActiveGeomagneticWarnings')}</p>}
       <div className="storm-watch">
         <h4>{t('stormWatchTitle')}</h4>
@@ -85,7 +85,7 @@ export function NextAuroraStormForecast() {
       </div>
       {warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
         <strong>{warning.noaaScale ?? `K-index ${warning.expectedKIndex}`}</strong>
-        <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}</span>
+        <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
       </article>)}
     </div>}
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
@@ -109,7 +109,7 @@ export function NextAuroraStormForecast() {
           </article>
         })}
       </div>
-      <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}</p>
+      <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
     </>}
     <div className="storm-best-places">
       <h3>{t('bestViewingPlacesTitle')}</h3>

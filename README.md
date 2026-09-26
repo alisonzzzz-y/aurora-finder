@@ -18,7 +18,7 @@ The global map shows modelled aurora activity. It does not tell you the exact ch
 - See the latest global activity outlook and the time and source behind the data.
 - Switch between English and Simplified Chinese.
 
-The AI chat feature is not available yet. Aurora Finder is an ongoing project, so some information and features are still being checked and improved.
+The bilingual AI chat can answer questions using the same current source data shown by Aurora Finder. It is read-only and does not create a viewing probability. Chat history stays in the current browser session.
 
 ### Run it locally
 
@@ -36,6 +36,8 @@ npm run dev
 ```
 
 To show the map locally, add a restricted MapTiler key as `VITE_MAPTILER_KEY` in `frontend/.env.local`. Setup details are in [API access instructions](docs/api-access.md). Do not commit this local key file.
+
+To enable AI chat, set `OPENAI_API_KEY` on the backend. You can optionally set `OPENAI_MODEL`; the default is `gpt-5-mini`. Keep the API key in the backend or Render environment only, never in Vercel or frontend files.
 
 ### Data and credits
 
@@ -57,7 +59,7 @@ Aurora Finder 帮助普通观测者了解当前极光活动，并查看指定地
 - 查看最新的全球活动趋势，以及数据来源和更新时间。
 - 在英文和简体中文之间切换。
 
-AI 对话功能目前尚未开放。项目仍在持续开发，部分数据和功能还在核查与完善中。
+中英双语 AI 对话可以基于 Aurora Finder 页面使用的实时来源数据回答问题。它是只读功能，不会生成个人观测概率；聊天记录只保留在当前浏览器页面中。
 
 ### 本地运行
 
@@ -75,6 +77,8 @@ npm run dev
 ```
 
 如需在本地显示地图，请在 `frontend/.env.local` 中设置受来源限制的 MapTiler key，变量名为 `VITE_MAPTILER_KEY`。具体说明见 [API 获取说明](docs/api-access.md)。不要将本地 key 文件提交到 Git。
+
+如需启用 AI 对话，请在后端设置 `OPENAI_API_KEY`。也可以用 `OPENAI_MODEL` 更换模型，默认使用 `gpt-5-mini`。API key 只能放在后端或 Render 的环境变量中，不要放进 Vercel 或前端文件。
 
 ### 数据与署名
 
