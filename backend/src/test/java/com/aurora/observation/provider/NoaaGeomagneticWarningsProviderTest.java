@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NoaaGeomagneticWarningsProviderTest {
     private final AtomicReference<Reply> reply = new AtomicReference<>();
@@ -52,6 +53,32 @@ class NoaaGeomagneticWarningsProviderTest {
         assertEquals("K05W", result.warnings().getFirst().productId());
         assertEquals("G1 - Minor", result.warnings().getFirst().noaaScale());
         assertEquals(Instant.parse("2026-09-26T12:00:00Z"), result.warnings().getFirst().validTo());
+    }
+
+    @Test
+    void parsesTheLatestDailyStormWatchAndDropsPastUtcDates() {
+        reply.set(new Reply(200, """
+                [
+                  {"product_id":"A20F","issue_datetime":"2026-09-25 19:00:00.000","message":"WATCH: Geomagnetic Storm Category G2 Predicted\\nHighest Storm Level Predicted by Day:\\nSep 24: G1 (Minor) Sep 25: None (Below G1) Sep 26: G2 (Moderate) Sep 27: G1 (Minor)"},
+                  {"product_id":"A20F","issue_datetime":"2026-09-24 19:00:00.000","message":"WATCH: older\\nSep 25: G1"}
+                ]
+                """));
+        var days = provider.latest().stormWatchDays();
+        assertEquals(3, days.size());
+        assertEquals("2026-09-25", days.get(0).date().toString());
+        assertNull(days.get(0).noaaScale());
+        assertEquals("G2", days.get(1).noaaScale());
+    }
+
+    @Test
+    void latestCancellationClearsAnEarlierStormWatch() {
+        reply.set(new Reply(200, """
+                [
+                  {"product_id":"A20F","issue_datetime":"2026-09-25 20:00:00.000","message":"CANCEL WATCH: Geomagnetic Storm Category G1 Predicted"},
+                  {"product_id":"A20F","issue_datetime":"2026-09-25 19:00:00.000","message":"WATCH: Geomagnetic Storm Category G1 Predicted\\nSep 26: G1 (Minor)"}
+                ]
+                """));
+        assertEquals(0, provider.latest().stormWatchDays().size());
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.aurora.observation.provider;
 
 import com.aurora.observation.dto.GeomagneticWarning;
+import com.aurora.observation.dto.GeomagneticStormWatchDay;
 import com.aurora.observation.dto.GeomagneticWarningsResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +26,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +38,10 @@ public class NoaaGeomagneticWarningsProvider {
     private static final Pattern VALID_TO = Pattern.compile("(?m)^(?:Valid To|Now Valid Until):\\s*(\\d{4}\\s+[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4})\\s+UTC");
     private static final Pattern K_INDEX = Pattern.compile("K-index of (4|5) expected", Pattern.CASE_INSENSITIVE);
     private static final Pattern NOAA_SCALE = Pattern.compile("(?im)^Noaa Scale:\\s*(G[1-5]\\s*-\\s*[^\\r\\n]+)");
+    private static final Pattern WATCH_DAY = Pattern.compile("(?i)([A-Z]{3})\\s+(\\d{1,2}):\\s*(G[1-5]|None)");
+    private static final DateTimeFormatter ISSUE_TIME = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS", Locale.US);
+    private static final DateTimeFormatter WATCH_DATE = new DateTimeFormatterBuilder().parseCaseInsensitive()
+            .appendPattern("uuuu MMM d").toFormatter(Locale.US).withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter NOAA_TIME = new DateTimeFormatterBuilder().parseCaseInsensitive()
             .appendPattern("uuuu MMM d HHmm").toFormatter(Locale.US).withResolverStyle(ResolverStyle.STRICT);
     private final HttpClient client;
@@ -79,14 +86,29 @@ public class NoaaGeomagneticWarningsProvider {
         if (root == null || !root.isArray()) throw invalid("NOAA alerts response is not an array", null);
         Instant now = clock.instant();
         List<GeomagneticWarning> warnings = new ArrayList<>();
+        JsonNode latestWatch = null;
+        Instant latestWatchIssue = Instant.MIN;
         for (JsonNode item : root) {
             if (!item.isObject()) throw invalid("NOAA alerts contain an invalid item", null);
             JsonNode productNode = item.path("product_id");
             JsonNode messageNode = item.path("message");
             if (!productNode.isTextual() || !messageNode.isTextual()) throw invalid("NOAA alert is missing its product or message", null);
             String productId = productNode.asText();
-            if (!productId.matches("K0[45]W")) continue;
             String message = messageNode.asText();
+            if (productId.matches("A[2-6]0F")) {
+                JsonNode issueNode = item.path("issue_datetime");
+                if (!issueNode.isTextual()) throw invalid("NOAA storm watch is missing its issue time", null);
+                try {
+                    Instant issuedAt = LocalDateTime.parse(issueNode.asText(), ISSUE_TIME).toInstant(ZoneOffset.UTC);
+                    if (issuedAt.isAfter(latestWatchIssue)) {
+                        latestWatchIssue = issuedAt;
+                        latestWatch = item;
+                    }
+                } catch (RuntimeException error) {
+                    throw invalid("NOAA storm watch has an invalid issue time", error);
+                }
+            }
+            if (!productId.matches("K0[45]W")) continue;
             Matcher kMatcher = K_INDEX.matcher(message);
             Matcher startMatcher = VALID_FROM.matcher(message);
             Matcher endMatcher = VALID_TO.matcher(message);
@@ -105,7 +127,33 @@ public class NoaaGeomagneticWarningsProvider {
                 throw invalid("NOAA warning has an invalid time", error);
             }
         }
-        return new GeomagneticWarningsResponse(now, SOURCE_URL, List.copyOf(warnings));
+        return new GeomagneticWarningsResponse(now, SOURCE_URL, List.copyOf(warnings),
+                parseLatestWatch(latestWatch, now));
+    }
+
+    private List<GeomagneticStormWatchDay> parseLatestWatch(JsonNode watch, Instant now) {
+        if (watch == null) return List.of();
+        String message = watch.path("message").asText();
+        if (message.toUpperCase(Locale.ROOT).contains("CANCEL WATCH")) return List.of();
+        JsonNode issueNode = watch.path("issue_datetime");
+        LocalDate issueDate = LocalDateTime.parse(issueNode.asText(), ISSUE_TIME).toLocalDate();
+        Matcher matcher = WATCH_DAY.matcher(message);
+        List<GeomagneticStormWatchDay> days = new ArrayList<>();
+        LocalDate todayUtc = now.atZone(ZoneOffset.UTC).toLocalDate();
+        while (matcher.find()) {
+            try {
+                int year = issueDate.getYear();
+                LocalDate date = LocalDate.parse(year + " " + matcher.group(1) + " " + matcher.group(2), WATCH_DATE);
+                if (date.isBefore(issueDate.minusMonths(6))) date = date.plusYears(1);
+                else if (date.isAfter(issueDate.plusMonths(6))) date = date.minusYears(1);
+                if (date.isBefore(todayUtc)) continue;
+                String category = matcher.group(3);
+                days.add(new GeomagneticStormWatchDay(date, category.equalsIgnoreCase("None") ? null : category));
+            } catch (RuntimeException error) {
+                throw invalid("NOAA storm watch contains an invalid forecast day", error);
+            }
+        }
+        return days.stream().distinct().sorted(Comparator.comparing(GeomagneticStormWatchDay::date)).toList();
     }
 
     private ProviderUnavailableException invalid(String message, Throwable cause) {
