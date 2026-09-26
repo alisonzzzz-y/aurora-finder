@@ -5,6 +5,7 @@ import type { ObservationFacts } from './types/observationFacts'
 import { LocationSearchPage } from './pages/LocationSearchPage'
 import { OutlookPage } from './pages/OutlookPage'
 import { I18nProvider, localizeError, useI18n } from './i18n'
+import { AssistantChatPanel } from './components/assistant/AssistantChatPanel'
 import './App.css'
 import { isProductionApiConfigured } from './api/apiUrl'
 
@@ -93,8 +94,8 @@ function AppContent() {
         ? <OutlookPage facts={facts} onChangeLocation={changeLocation} />
         : <LocationSearchPage busy={busy} onSelect={selectLocation} />}
       {error && !facts && <p className="error page-error" role="alert">{localizeError(new Error(error), t)}</p>}
-      {!facts && <button className="agent-button" type="button" disabled title={t('askUnavailable')}>{t('askAboutNight')} <span>✦</span></button>}
     </main>
+    <AssistantChatPanel />
     <footer>{t('footer')}</footer>
   </div>
 }
