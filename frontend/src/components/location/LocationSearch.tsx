@@ -85,10 +85,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
 
   return (
     <section className="search-panel" aria-labelledby="search-title">
-      <div>
-        <h2 id="search-title">{t('findPlace')}</h2>
-        <p>{t('selectPlaceHelp')}</p>
-      </div>
+      <h2 id="search-title">{t('findPlace')}</h2>
       <form className="search-form" onSubmit={submitSearch}>
         <div className="search-field-wrap">
           <label htmlFor="place-search" className="sr-only">{t('placeNameLabel')}</label>
