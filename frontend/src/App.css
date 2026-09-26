@@ -161,3 +161,10 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 .storm-best-places h3 { margin: 0; font-size: 17px; }
 .storm-best-places p { max-width: 780px; margin: 8px 0 0; color: #b7b1c6; font-size: 13px; line-height: 1.65; }
 @media (max-width: 720px) { .storm-day-list { grid-template-columns: 1fr; gap: 15px; } }
+
+.geomagnetic-warning-list { margin-top: 18px; padding: 14px 16px; border-left: 3px solid #c78ae8; background: color-mix(in srgb, #9d6fc4 9%, transparent); }
+.geomagnetic-warning-list h3 { margin: 0; font-size: 15px; }
+.geomagnetic-warning-list > p { margin: 8px 0 0; color: #b7b1c6; font-size: 13px; }
+.geomagnetic-warning-list article { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 13px; }
+.geomagnetic-warning-list article span { color: #b7b1c6; }
+.geomagnetic-warning-checked { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
