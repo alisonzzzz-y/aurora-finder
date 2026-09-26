@@ -8,3 +8,7 @@ backend/target/
 .env*
 !.env.example
 *.log
+
+# Local planning documents
+/PROJECT_PLAN.md
+/DEVELOPMENT_GUIDE.md
