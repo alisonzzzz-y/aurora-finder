@@ -21,7 +21,7 @@ export function AuroraResources() {
       >
         <span className="aurora-resource-title">{t(resource.title)} <span aria-hidden="true">↗</span></span>
         <span className="aurora-resource-copy">{t(resource.copy)}</span>
-        <span className="aurora-resource-source">NOAA / NWS Space Weather Prediction Center</span>
+        <span className="aurora-resource-source">{t('noaaSource')}</span>
       </a>)}
     </div>
   </section>

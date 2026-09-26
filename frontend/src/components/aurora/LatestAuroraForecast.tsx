@@ -111,10 +111,8 @@ export function LatestAuroraForecast() {
         <p className="eyebrow">{t('latestForecast')}</p>
         <h2 id="latest-forecast-title">{t('globalKpActivity')}</h2>
       </div>
-      <a href="https://www.spaceweather.gov/content/tips-viewing-aurora" target="_blank" rel="noreferrer">
-        NOAA SWPC ↗
-      </a>
     </div>
+    <p className="forecast-source-note"><a href="https://www.spaceweather.gov/products/planetary-k-index" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>
     {loading && <p className="latest-forecast-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="latest-forecast-message error">{localizeError(error, t)}</p>}
     {!loading && error === null && !forecast && <p className="latest-forecast-message">{t('noUpcomingForecast')}</p>}
@@ -136,6 +134,7 @@ export function LatestAuroraForecast() {
         </div>}
       </div>
       <p className="latest-forecast-note">{t('globalKpNote')}</p>
+      <p className="storm-scale-note">{t('geomagneticScaleNote')}</p>
       <div className="kp-trend">
         <div className="kp-trend-heading"><h3>{t('kpTrendTitle')}</h3><span>{t('kpTrendLocalTime')}</span></div>
         <div className="kp-trend-layout">
