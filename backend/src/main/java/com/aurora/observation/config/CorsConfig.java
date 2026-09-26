@@ -17,7 +17,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(origins)
-                        .allowedMethods("GET", "OPTIONS")
+                        .allowedMethods("GET", "POST", "OPTIONS")
                         .maxAge(3600);
             }
         };
