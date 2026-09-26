@@ -1,19 +1,28 @@
 import { LocationSearch } from '../components/location/LocationSearch'
 import { AuroraMap } from '../components/aurora/AuroraMap'
+import { LocalAuroraActivityCard } from '../components/aurora/LocalAuroraActivityCard'
+import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
+import { CloudForecastCard } from '../components/weather/CloudForecastCard'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
 import { NextAuroraStormForecast } from '../components/aurora/NextAuroraStormForecast'
 import { AuroraResources } from '../components/aurora/AuroraResources'
 import type { Location } from '../types/location'
-import { useI18n } from '../i18n'
+import type { ObservationFacts } from '../types/observationFacts'
+import { localizeError, useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
 import { useMemo, useState } from 'react'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 
-type Props = { busy: boolean; onSelect: (location: Location) => void }
+type Props = {
+  busy: boolean
+  facts: ObservationFacts | null
+  error: string
+  onSelect: (location: Location) => void
+}
 
-export function LocationSearchPage({ busy, onSelect }: Props) {
-  const { t } = useI18n()
+export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
+  const { language, t } = useI18n()
   const auroraMap = useAuroraMapData()
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
   const activityPoints = useMemo(
@@ -33,6 +42,9 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
           <span>{t('shortRange')}</span>
         </div>
         <LocationSearch busy={busy} onSelect={onSelect} />
+        {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
+        {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
+        {facts && <SelectedLocationOutlook facts={facts} language={language} />}
       </aside>
     </section>
     <div className="home-content-sections">
@@ -44,6 +56,33 @@ export function LocationSearchPage({ busy, onSelect }: Props) {
     </div>
     <AuroraResources />
   </>
+}
+
+function SelectedLocationOutlook({ facts, language }: { facts: ObservationFacts; language: 'en' | 'zh' }) {
+  const { t } = useI18n()
+  const { outlook } = facts
+  const locale = language === 'zh' ? 'zh-CN' : 'en'
+  const generatedAt = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: outlook.location.timezone,
+  }).format(new Date(facts.generatedAtUtc))
+
+  return <section className="selected-location-outlook" aria-labelledby="selected-location-title" aria-live="polite">
+    <div className="selected-location-heading">
+      <p className="eyebrow">{t('localOutlook')}</p>
+      <h2 id="selected-location-title">{outlook.location.name}, {outlook.location.country}</h2>
+      <p>{outlook.location.timezone}</p>
+    </div>
+    <p className={`source-status source-status-${facts.sourceStatus.toLowerCase()}`}>
+      {t(facts.sourceStatus === 'CURRENT' ? 'allSourcesAvailable' : facts.sourceStatus === 'PARTIAL' ? 'someSourcesMissing' : 'noSourcesAvailable')}
+    </p>
+    <p className="rule-status">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidated')}</p>
+    <div className="selected-night-list">
+      {outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} timezone={outlook.location.timezone} key={night.localDate} />)}
+    </div>
+    <p className="timestamp">{t('generatedAt')} {generatedAt}. {t('localTimeNote')}</p>
+    <LocalAuroraActivityCard fact={facts.auroraActivity} timezone={outlook.location.timezone} />
+    <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} />
+  </section>
 }
 
 function ForecastGuide() {
