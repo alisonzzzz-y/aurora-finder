@@ -3,6 +3,7 @@ package com.aurora.observation.service;
 import com.aurora.observation.dto.AssistantChatRequest;
 import com.aurora.observation.dto.AssistantChatResponse;
 import com.aurora.observation.dto.AssistantMessage;
+import com.aurora.observation.dto.Location;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -11,7 +12,9 @@ import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class AssistantService {
@@ -22,9 +25,14 @@ public class AssistantService {
             Do not rely on remembered forecast data. Never invent observations, dates, source status, or a person's
             probability of seeing aurora. The OVATION value is a model signal, not a calibrated viewing probability.
             Explain uncertainty plainly. Distinguish global geomagnetic activity from local viewing conditions.
-            When a place name is ambiguous, show the matching candidates and ask the user to choose one before using
-            a location ID. Use local dates and include the UTC offset when the tool data provides it. Keep answers
-            concise and practical. Mention unavailable or incomplete source data instead of filling gaps.
+            Search for a place before using local tools unless the application supplied a selected location ID.
+            Use only an application-selected location ID or a unique candidate returned by search_places in this
+            request. If multiple candidates match, show them and ask the user to choose; do not query any candidate
+            until the user has clarified. For local dates, call get_local_night_facts first and use only the exact
+            localDate values returned for that place. Map tonight/tomorrow to a returned date only when unambiguous;
+            otherwise ask the user to choose a date. Never guess a date or use the server's date. Include the place's
+            UTC offset when tool data provides it. Keep answers concise and practical. Mention unavailable or
+            incomplete source data instead of filling gaps.
             """;
 
     private final OpenAiAssistantProvider openAi;
@@ -52,6 +60,11 @@ public class AssistantService {
         }
         input.add(message("user", userMessage.toString()));
 
+        ToolContext toolContext = new ToolContext();
+        if (request.locationId() != null && request.locationId() > 0) {
+            toolContext.permittedLocationIds.add(request.locationId());
+        }
+
         for (int turn = 0; turn < MAX_MODEL_TURNS; turn++) {
             JsonNode response = openAi.respond(INSTRUCTIONS, input, toolDefinitions);
             JsonNode output = response.path("output");
@@ -64,7 +77,7 @@ public class AssistantService {
                 input.add(item.deepCopy());
                 if ("function_call".equals(item.path("type").asText())) {
                     calledTool = true;
-                    input.add(toolOutput(item));
+                    input.add(toolOutput(item, toolContext));
                 }
             }
             if (!calledTool) {
@@ -78,13 +91,20 @@ public class AssistantService {
         throw new AssistantUnavailableException("The AI assistant used too many tool steps.");
     }
 
-    private ObjectNode toolOutput(JsonNode call) {
+    private ObjectNode toolOutput(JsonNode call, ToolContext context) {
         ObjectNode output = objectMapper.createObjectNode();
         output.put("type", "function_call_output");
         output.put("call_id", call.path("call_id").asText());
         try {
             JsonNode arguments = objectMapper.readTree(call.path("arguments").asText("{}"));
-            output.put("output", objectMapper.writeValueAsString(runTool(call.path("name").asText(), arguments)));
+            output.put("output", objectMapper.writeValueAsString(
+                    runTool(call.path("name").asText(), arguments, context)));
+        } catch (LocationSelectionRequiredException error) {
+            ObjectNode selection = objectMapper.createObjectNode();
+            selection.put("status", "location_selection_required");
+            selection.put("message", "Ask the user to choose a matching place before requesting local facts.");
+            selection.set("candidates", objectMapper.valueToTree(error.candidates));
+            output.put("output", selection.toString());
         } catch (RuntimeException error) {
             ObjectNode failure = objectMapper.createObjectNode();
             failure.put("status", "unavailable");
@@ -94,18 +114,38 @@ public class AssistantService {
         return output;
     }
 
-    private Object runTool(String name, JsonNode arguments) {
+    private Object runTool(String name, JsonNode arguments, ToolContext context) {
         return switch (name) {
-            case "search_places" -> tools.searchPlaces(requiredText(arguments, "query"));
-            case "get_local_night_facts" -> tools.getLocalNightFacts(requiredPositiveLong(arguments, "location_id"));
-            case "get_night_outlook" -> tools.getNightOutlook(
-                    requiredPositiveLong(arguments, "location_id"),
-                    LocalDate.parse(requiredText(arguments, "local_date")));
+            case "search_places" -> {
+                List<Location> candidates = tools.searchPlaces(requiredText(arguments, "query"));
+                context.latestCandidates = candidates;
+                if (candidates.size() == 1) {
+                    context.permittedLocationIds.add(candidates.getFirst().id());
+                }
+                yield candidates;
+            }
+            case "get_local_night_facts" -> {
+                long locationId = requiredPositiveLong(arguments, "location_id");
+                requirePermittedLocation(locationId, context);
+                yield tools.getLocalNightFacts(locationId);
+            }
+            case "get_night_outlook" -> {
+                long locationId = requiredPositiveLong(arguments, "location_id");
+                requirePermittedLocation(locationId, context);
+                yield tools.getNightOutlook(locationId,
+                        LocalDate.parse(requiredText(arguments, "local_date")));
+            }
             case "get_global_kp_forecast" -> tools.getGlobalKpForecast();
             case "get_three_day_storm_forecast" -> tools.getThreeDayStormForecast();
             case "get_active_geomagnetic_warnings" -> tools.getActiveGeomagneticWarnings();
             default -> throw new IllegalArgumentException("Unknown read-only tool.");
         };
+    }
+
+    private void requirePermittedLocation(long locationId, ToolContext context) {
+        if (!context.permittedLocationIds.contains(locationId)) {
+            throw new LocationSelectionRequiredException(context.latestCandidates);
+        }
     }
 
     private String extractText(JsonNode output) {
@@ -149,17 +189,30 @@ public class AssistantService {
         return "The requested source data is currently unavailable.";
     }
 
+    private static final class ToolContext {
+        private final Set<Long> permittedLocationIds = new HashSet<>();
+        private List<Location> latestCandidates = List.of();
+    }
+
+    private static final class LocationSelectionRequiredException extends RuntimeException {
+        private final List<Location> candidates;
+
+        private LocationSelectionRequiredException(List<Location> candidates) {
+            this.candidates = candidates;
+        }
+    }
+
     private ArrayNode buildToolDefinitions() {
         ArrayNode definitions = objectMapper.createArrayNode();
         definitions.add(tool("search_places", "Search matching places before selecting a location ID.",
                 properties("query", "string", "City or place name"), List.of("query")));
-        definitions.add(tool("get_local_night_facts", "Get source-backed aurora, cloud, darkness, and outlook facts for a selected location ID.",
+        definitions.add(tool("get_local_night_facts", "Get source-backed local facts and supported localDate values for an application-selected location or a unique search result.",
                 properties("location_id", "integer", "Selected provider location ID"), List.of("location_id")));
 
         ObjectNode nightProperties = objectMapper.createObjectNode();
         nightProperties.set("location_id", property("integer", "Selected provider location ID"));
         nightProperties.set("local_date", property("string", "Local calendar date in YYYY-MM-DD format"));
-        definitions.add(tool("get_night_outlook", "Get one supported local night outlook by location ID and local date.",
+        definitions.add(tool("get_night_outlook", "Get one local night outlook using a permitted location ID and an exact localDate returned by get_local_night_facts.",
                 nightProperties, List.of("location_id", "local_date")));
         definitions.add(tool("get_global_kp_forecast", "Get the latest source-backed global Kp forecast.",
                 objectMapper.createObjectNode(), List.of()));
