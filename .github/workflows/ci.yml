@@ -23,9 +23,9 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Run backend tests
+      - name: Run backend tests and package
         working-directory: backend
-        run: ./mvnw --batch-mode test
+        run: ./mvnw --batch-mode verify
 
   frontend:
     name: Frontend lint and build
