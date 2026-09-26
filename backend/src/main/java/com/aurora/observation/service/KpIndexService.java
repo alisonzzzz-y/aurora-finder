@@ -3,6 +3,7 @@ package com.aurora.observation.service;
 import com.aurora.observation.dto.KpIndexResponse;
 import com.aurora.observation.dto.KpIndexRecord;
 import com.aurora.observation.dto.AuroraActivityLevel;
+import com.aurora.observation.dto.NoaaGeomagneticStormScale;
 import com.aurora.observation.provider.KpIndexProvider;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,8 @@ public class KpIndexService {
         KpIndexResponse upstream = provider.latest();
         List<KpIndexRecord> records = upstream.records().stream()
                 .map(record -> new KpIndexRecord(record.periodStart(), record.kp(), record.type(),
-                        record.noaaScale(), activityLevel(record.kp())))
+                        record.noaaScale(), activityLevel(record.kp()),
+                        NoaaGeomagneticStormScale.fromKp(record.kp())))
                 .toList();
         KpIndexResponse response = new KpIndexResponse(upstream.retrievedAt(), upstream.source(), records);
         cache = new CacheEntry(response, now.plus(CACHE_TTL));

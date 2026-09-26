@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NoaaKpIndexProviderTest {
     private final AtomicReference<Reply> reply = new AtomicReference<>();
@@ -57,6 +59,10 @@ class NoaaKpIndexProviderTest {
         assertEquals("ESTIMATED", result.records().getFirst().type().name());
         assertEquals(2.33, result.records().getFirst().kp());
         assertEquals("G1", result.records().get(1).noaaScale());
+        assertNull(result.records().get(1).geomagneticStormScale(),
+                "provider parsing leaves Kp threshold classification to the service layer");
+        assertNull(result.records().get(1).geomagneticStormScale(),
+                "provider parsing leaves Kp threshold classification to the service layer");
         assertEquals("OBSERVED", result.records().getLast().type().name());
     }
 
