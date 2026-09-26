@@ -37,7 +37,7 @@ npm run dev
 
 To show the map locally, add a restricted MapTiler key as `VITE_MAPTILER_KEY` in `frontend/.env.local`. Setup details are in [API access instructions](docs/api-access.md). Do not commit this local key file.
 
-To enable AI chat, set `OPENAI_API_KEY` on the backend. You can optionally set `OPENAI_MODEL`; the default is `gpt-5-mini`. Keep the API key in the backend or Render environment only, never in Vercel or frontend files.
+To enable AI chat, set `OPENAI_API_KEY` on the backend. You can optionally set `OPENAI_MODEL`; the default is `gpt-6-luna`. Keep the API key in the backend or Render environment only, never in Vercel or frontend files.
 
 ### Data and credits
 
@@ -78,7 +78,7 @@ npm run dev
 
 如需在本地显示地图，请在 `frontend/.env.local` 中设置受来源限制的 MapTiler key，变量名为 `VITE_MAPTILER_KEY`。具体说明见 [API 获取说明](docs/api-access.md)。不要将本地 key 文件提交到 Git。
 
-如需启用 AI 对话，请在后端设置 `OPENAI_API_KEY`。也可以用 `OPENAI_MODEL` 更换模型，默认使用 `gpt-5-mini`。API key 只能放在后端或 Render 的环境变量中，不要放进 Vercel 或前端文件。
+如需启用 AI 对话，请在后端设置 `OPENAI_API_KEY`。也可以用 `OPENAI_MODEL` 更换模型，默认使用 `gpt-6-luna`。API key 只能放在后端或 Render 的环境变量中，不要放进 Vercel 或前端文件。
 
 ### 数据与署名
 
