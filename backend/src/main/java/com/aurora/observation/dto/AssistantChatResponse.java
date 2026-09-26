@@ -1,3 +1,9 @@
 package com.aurora.observation.dto;
 
-public record AssistantChatResponse(String answer, String model) {}
+import java.util.List;
+
+public record AssistantChatResponse(String answer, String model, List<Location> locationCandidates) {
+    public AssistantChatResponse(String answer, String model) {
+        this(answer, model, List.of());
+    }
+}

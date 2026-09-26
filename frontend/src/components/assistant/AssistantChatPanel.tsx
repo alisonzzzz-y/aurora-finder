@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { askAssistant, type AssistantMessage } from '../../api/assistant'
+import type { Location } from '../../types/location'
 import { useI18n } from '../../i18n'
 
 const exampleQuestions = [
@@ -20,9 +21,16 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  async function submitQuestion(event: FormEvent<HTMLFormElement>) {
+  async function submitQuestion(event: FormEvent<HTMLFormElement>, selectedLocation?: Location) {
     event.preventDefault()
-    const question = draft.trim()
+    await sendQuestion(selectedLocation ? selectionLabel(selectedLocation) : draft.trim(), selectedLocation)
+  }
+
+  function selectionLabel(location: Location) {
+    return [location.name, location.region, location.subregion, location.country].filter(Boolean).join(', ')
+  }
+
+  async function sendQuestion(question: string, selectedLocation?: Location) {
     if (!question || busy) return
     const history = messages
     setMessages(current => [...current, { role: 'user', content: question }])
@@ -30,8 +38,11 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     setError('')
     setBusy(true)
     try {
-      const response = await askAssistant(question, language, history, locationId)
-      setMessages(current => [...current, { role: 'assistant', content: response.answer }])
+      const response = await askAssistant(question, language, history, selectedLocation?.id ?? locationId)
+      setMessages(current => [...current, {
+        role: 'assistant', content: response.answer,
+        ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),
+      }])
     } catch {
       setError(t('assistantRequestFailed'))
     } finally {
@@ -53,10 +64,15 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         {exampleQuestions.map(key => <button type="button" key={key} onClick={() => { setDraft(t(key)); setError('') }}>{t(key)}</button>)}
       </div>}
       {messages.length > 0 && <div className="assistant-messages" aria-live="polite">
-        {messages.map((message, index) => <p key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
+        {messages.map((message, index) => <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
           <span>{message.role === 'assistant' ? t('assistantRole') : t('assistantYou')}</span>
-          {message.content}
-        </p>)}
+          <div>{message.content}</div>
+          {message.role === 'assistant' && message.locationCandidates?.map((candidate, candidateIndex) => <button
+            type="button" className="assistant-location-choice" key={candidate.id} disabled={busy}
+            onClick={() => void sendQuestion(selectionLabel(candidate), candidate)}>
+            {candidateIndex + 1}. {selectionLabel(candidate)}
+          </button>)}
+        </div>)}
         {busy && <p className="assistant-message assistant pending"><span>{t('assistantRole')}</span>{t('assistantWorking')}</p>}
       </div>}
       {error && <p className="assistant-notice error" role="alert">{error}</p>}

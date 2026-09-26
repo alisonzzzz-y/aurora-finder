@@ -1,14 +1,17 @@
 import { apiUrl } from './apiUrl'
 import { ApiRequestError } from './requestError'
+import type { Location } from '../types/location'
 
 export type AssistantMessage = {
   role: 'user' | 'assistant'
   content: string
+  locationCandidates?: Location[]
 }
 
 type AssistantChatResponse = {
   answer: string
   model: string
+  locationCandidates: Location[]
 }
 
 export async function askAssistant(

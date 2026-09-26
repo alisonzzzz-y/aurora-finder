@@ -12,8 +12,10 @@ import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -58,12 +60,23 @@ public class AssistantService {
         if (request.locationId() != null && request.locationId() > 0) {
             userMessage.append("\nSelected Aurora Finder location ID: ").append(request.locationId());
         }
-        input.add(message("user", userMessage.toString()));
-
         ToolContext toolContext = new ToolContext();
         if (request.locationId() != null && request.locationId() > 0) {
             toolContext.permittedLocationIds.add(request.locationId());
+        } else {
+            toolContext.latestCandidates = lastLocationCandidates(history);
+            if (!toolContext.latestCandidates.isEmpty()) {
+                Location selected = resolveCandidate(request.message(), toolContext.latestCandidates);
+                if (selected == null) {
+                    return new AssistantChatResponse(selectionPrompt(toolContext.latestCandidates,
+                            "zh".equalsIgnoreCase(request.language())), openAi.model(), toolContext.latestCandidates);
+                }
+                toolContext.permittedLocationIds.add(selected.id());
+                userMessage.append("\nUser selected this matching location: ")
+                        .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
+            }
         }
+        input.add(message("user", userMessage.toString()));
 
         for (int turn = 0; turn < MAX_MODEL_TURNS; turn++) {
             JsonNode response = openAi.respond(INSTRUCTIONS, input, toolDefinitions);
@@ -85,10 +98,94 @@ public class AssistantService {
                 if (answer.isBlank()) {
                     throw new AssistantUnavailableException("The AI service returned no answer.");
                 }
-                return new AssistantChatResponse(answer, openAi.model());
+                List<Location> choices = toolContext.latestCandidates.size() > 1
+                        ? toolContext.latestCandidates : List.of();
+                return new AssistantChatResponse(answer, openAi.model(), choices);
             }
         }
         throw new AssistantUnavailableException("The AI assistant used too many tool steps.");
+    }
+
+    private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
+        for (int i = history.size() - 1; i >= 0; i--) {
+            AssistantMessage message = history.get(i);
+            if ("assistant".equals(message.role()) && message.locationCandidates() != null
+                    && message.locationCandidates().size() > 1) {
+                return message.locationCandidates();
+            }
+        }
+        return List.of();
+    }
+
+    private Location resolveCandidate(String reply, List<Location> candidates) {
+        String value = normalize(reply);
+        if (value.matches("[1-9][0-9]*")) {
+            int index = Integer.parseInt(value) - 1;
+            return index < candidates.size() ? candidates.get(index) : null;
+        }
+
+        String translatedBuilder = value;
+        if (value.contains("都柏林机场")) translatedBuilder += " dublin airport";
+        if (value.contains("南都柏林")) translatedBuilder += " south dublin";
+        if (value.contains("都柏林市")) translatedBuilder += " dublin city";
+        if (value.contains("科克郡")) translatedBuilder += " cork";
+        final String translated = translatedBuilder;
+
+        String country = countryMention(value);
+        List<Location> narrowed = country == null ? candidates : candidates.stream()
+                .filter(candidate -> normalize(candidate.country()).equals(country)).toList();
+        if (country != null && narrowed.size() == 1) return narrowed.getFirst();
+
+        List<Location> exact = narrowed.stream().filter(candidate -> {
+            String name = normalize(candidate.name());
+            String query = normalize(translated);
+            return !name.isEmpty() && (query.equals(name) || query.contains(name + " ")
+                    || query.endsWith(" " + name));
+        }).toList();
+        if (exact.size() == 1) return exact.getFirst();
+        if (exact.size() > 1) narrowed = exact;
+
+        List<Location> qualified = narrowed.stream()
+                .filter(candidate -> allDistinctiveWordsPresent(translated, candidate)).toList();
+        return qualified.size() == 1 ? qualified.getFirst() : null;
+    }
+
+    private boolean allDistinctiveWordsPresent(String reply, Location candidate) {
+        String normalizedReply = normalize(reply);
+        for (String field : new String[]{candidate.region(), candidate.subregion(), candidate.country()}) {
+            String normalizedField = normalize(field);
+            if (normalizedField.length() > 3 && normalizedReply.contains(normalizedField)) return true;
+        }
+        return false;
+    }
+
+    private String countryMention(String value) {
+        if (value.contains("ireland") || value.contains("爱尔兰")) return "ireland";
+        if (value.contains("united states") || value.contains("usa") || value.contains("美国")) return "united states";
+        if (value.contains("new zealand") || value.contains("新西兰")) return "new zealand";
+        if (value.contains("canada") || value.contains("加拿大")) return "canada";
+        return null;
+    }
+
+    private String normalize(String value) {
+        if (value == null) return "";
+        return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+    }
+
+    private String locationDescription(Location location) {
+        return java.util.Arrays.stream(new String[]{location.name(), location.region(), location.subregion(), location.country()})
+                .filter(value -> value != null && !value.isBlank()).distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    private String selectionPrompt(List<Location> candidates, boolean chinese) {
+        String options = java.util.stream.IntStream.range(0, candidates.size())
+                .mapToObj(index -> (index + 1) + ". " + locationDescription(candidates.get(index)))
+                .collect(java.util.stream.Collectors.joining("\n"));
+        return chinese
+                ? "我找到几个匹配地点，请回复序号或更具体的地点名称：\n" + options
+                : "I found several matching places. Reply with a number or a more specific place name:\n" + options;
     }
 
     private ObjectNode toolOutput(JsonNode call, ToolContext context) {
