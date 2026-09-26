@@ -48,13 +48,25 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       </aside>
     </section>
     <div className="home-content-sections">
-      <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
-      <NextAuroraStormForecast />
-      <LatestAuroraForecast />
-      <ForecastGuide />
-      <UpcomingFeatures />
+      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('currentAreasTitle')}>
+        <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
+      </div>
+      <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
+        <NextAuroraStormForecast />
+      </div>
+      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
+        <LatestAuroraForecast />
+      </div>
+      <div className="home-section-band home-section-band-even" role="region" aria-label={t('forecastGuideTitle')}>
+        <ForecastGuide />
+      </div>
+      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('upcomingFeaturesTitle')}>
+        <UpcomingFeatures />
+      </div>
     </div>
-    <AuroraResources />
+    <div className="home-section-band home-section-band-even resources-band" role="region" aria-label={t('sourceNotesTitle')}>
+      <AuroraResources />
+    </div>
   </>
 }
 
