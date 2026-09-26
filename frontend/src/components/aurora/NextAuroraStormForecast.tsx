@@ -68,6 +68,21 @@ export function NextAuroraStormForecast() {
       <h3>{t('geomagneticWarningsTitle')}</h3>
       <p className="geomagnetic-warning-checked">{t('warningChecked')}: {localDateTime(warnings.retrievedAt, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}</p>
       {warnings.warnings.length === 0 && <p>{t('noActiveGeomagneticWarnings')}</p>}
+      <div className="storm-watch">
+        <h4>{t('stormWatchTitle')}</h4>
+        <p>{t('stormWatchExplanation')}</p>
+        {(warnings.stormWatchDays ?? []).length === 0
+          ? <p>{t('stormWatchNone')}</p>
+          : <ul>{(warnings.stormWatchDays ?? []).map(day => {
+            const date = new Date(`${day.date}T12:00:00Z`)
+            const scaleNames = t('noaaScaleName').split('|')
+            const level = day.noaaScale ? Number(day.noaaScale.slice(1)) : 0
+            return <li key={day.date}>
+              <time dateTime={day.date}>{new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date)}</time>
+              <strong>{day.noaaScale ? `${day.noaaScale} · ${scaleNames[level - 1]}` : t('belowG1')}</strong>
+            </li>
+          })}</ul>}
+      </div>
       {warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
         <strong>{warning.noaaScale ?? `K-index ${warning.expectedKIndex}`}</strong>
         <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { dateStyle: 'medium', timeStyle: 'short', timeZoneName: 'short' })}</span>

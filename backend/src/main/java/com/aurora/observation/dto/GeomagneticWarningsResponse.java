@@ -4,4 +4,5 @@ import java.time.Instant;
 import java.util.List;
 
 public record GeomagneticWarningsResponse(Instant retrievedAt, String source,
-                                         List<GeomagneticWarning> warnings) {}
+                                         List<GeomagneticWarning> warnings,
+                                         List<GeomagneticStormWatchDay> stormWatchDays) {}
