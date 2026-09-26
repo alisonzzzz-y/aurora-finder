@@ -64,6 +64,7 @@ class AssistantServiceTest {
                 List.of(new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", candidates))));
 
         assertEquals("Cloud data for Dublin, Ireland.", response.answer());
+        assertTrue(response.locationCandidates().isEmpty());
         verify(tools).getLocalNightFacts(2964574);
     }
 
@@ -104,6 +105,7 @@ class AssistantServiceTest {
                 new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", List.of(ireland, georgia)))));
 
         assertEquals("Here is the cloud forecast for Dublin, Ireland.", response.answer());
+        assertTrue(response.locationCandidates().isEmpty());
         verify(tools).getLocalNightFacts(2964574);
         verify(tools, never()).getLocalNightFacts(4192510);
         verify(openAi, times(2)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
@@ -126,6 +128,40 @@ class AssistantServiceTest {
         assertTrue(response.answer().contains("2."));
         assertEquals(2, response.locationCandidates().size());
         verify(openAi, never()).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+    }
+
+    @Test
+    void doesNotReuseCandidatesFromBeforeTheMostRecentUserReply() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode response = mapper.createObjectNode();
+        ArrayNode output = mapper.createArrayNode();
+        ObjectNode answer = mapper.createObjectNode();
+        answer.put("type", "message");
+        ArrayNode content = mapper.createArrayNode();
+        ObjectNode text = mapper.createObjectNode();
+        text.put("type", "output_text");
+        text.put("text", "Hello.");
+        content.add(text);
+        answer.set("content", content);
+        output.add(answer);
+        response.set("output", output);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class))).thenReturn(response);
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        List<Location> oldCandidates = List.of(
+                new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                        53.33306, -6.24889, "Europe/Dublin"),
+                new Location(4192510, "Dublin", "Georgia", "Laurens", "United States",
+                        32.54044, -82.90375, "America/New_York"));
+        AssistantChatResponse result = new AssistantService(openAi, mock(ObservationToolsService.class), mapper)
+                .chat(new AssistantChatRequest("Hello", "en", null, List.of(
+                        new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", oldCandidates),
+                        new com.aurora.observation.dto.AssistantMessage("user", "Ireland", null),
+                        new com.aurora.observation.dto.AssistantMessage("assistant", "Here are the facts.", null))));
+
+        assertEquals("Hello.", result.answer());
+        assertTrue(result.locationCandidates().isEmpty());
     }
 
     @Test

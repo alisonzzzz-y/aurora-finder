@@ -28,9 +28,10 @@ public class AssistantService {
             probability of seeing aurora. The OVATION value is a model signal, not a calibrated viewing probability.
             Explain uncertainty plainly. Distinguish global geomagnetic activity from local viewing conditions.
             Search for a place before using local tools unless the application supplied a selected location ID.
-            Use only an application-selected location ID or a unique candidate returned by search_places in this
-            request. If multiple candidates match, show them and ask the user to choose; do not query any candidate
-            until the user has clarified. For local dates, call get_local_night_facts first and use only the exact
+            Use only an application-selected location ID, a unique candidate returned by search_places, or a
+            location explicitly selected by the application from the previous turn's candidate list. If multiple
+            candidates match, show them and ask the user to choose; do not query any candidate until the user has
+            clarified. For local dates, call get_local_night_facts first and use only the exact
             localDate values returned for that place. Map tonight/tomorrow to a returned date only when unambiguous;
             otherwise ask the user to choose a date. Never guess a date or use the server's date. Include the place's
             UTC offset when tool data provides it. Keep answers concise and practical. Mention unavailable or
@@ -72,6 +73,7 @@ public class AssistantService {
                             "zh".equalsIgnoreCase(request.language())), openAi.model(), toolContext.latestCandidates);
                 }
                 toolContext.permittedLocationIds.add(selected.id());
+                toolContext.latestCandidates = List.of();
                 userMessage.append("\nUser selected this matching location: ")
                         .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
             }
@@ -109,6 +111,9 @@ public class AssistantService {
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
         for (int i = history.size() - 1; i >= 0; i--) {
             AssistantMessage message = history.get(i);
+            if ("user".equals(message.role())) {
+                break;
+            }
             if ("assistant".equals(message.role()) && message.locationCandidates() != null
                     && message.locationCandidates().size() > 1) {
                 return message.locationCandidates();
