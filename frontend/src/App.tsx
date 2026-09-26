@@ -3,8 +3,7 @@ import { getObservationFacts } from './api/observationFacts'
 import type { Location } from './types/location'
 import type { ObservationFacts } from './types/observationFacts'
 import { LocationSearchPage } from './pages/LocationSearchPage'
-import { OutlookPage } from './pages/OutlookPage'
-import { I18nProvider, localizeError, useI18n } from './i18n'
+import { I18nProvider, useI18n } from './i18n'
 import { AssistantChatPanel } from './components/assistant/AssistantChatPanel'
 import './App.css'
 import { isProductionApiConfigured } from './api/apiUrl'
@@ -24,6 +23,7 @@ function AppContent() {
     outlookRequest.current = controller
     setBusy(true)
     setError('')
+    setFacts(null)
     try {
       const result = await getObservationFacts(location.id, controller.signal)
       if (!controller.signal.aborted && outlookRequest.current === controller) setFacts(result)
@@ -70,15 +70,7 @@ function AppContent() {
     }
   }, [selectedLocationId])
 
-  function changeLocation() {
-    outlookRequest.current?.abort()
-    outlookRequest.current = null
-    setFacts(null)
-    setError('')
-    setBusy(false)
-  }
-
-  return <div className={`page-shell${facts ? '' : ' home-page-shell'}`}>
+  return <div className="page-shell home-page-shell">
     <header className="site-header">
       <div className="brand"><span className="brand-mark">✦</span> {t('brand')}</div>
       <div className="header-tools">
@@ -90,10 +82,7 @@ function AppContent() {
     </header>
     {!isProductionApiConfigured && <p className="deployment-config-alert" role="alert">{t('apiOriginMissing')}</p>}
     <main>
-      {facts
-        ? <OutlookPage facts={facts} onChangeLocation={changeLocation} />
-        : <LocationSearchPage busy={busy} onSelect={selectLocation} />}
-      {error && !facts && <p className="error page-error" role="alert">{localizeError(new Error(error), t)}</p>}
+      <LocationSearchPage busy={busy} facts={facts} error={error} onSelect={selectLocation} />
     </main>
     <AssistantChatPanel locationId={selectedLocationId} />
     <footer>{t('footer')}</footer>
