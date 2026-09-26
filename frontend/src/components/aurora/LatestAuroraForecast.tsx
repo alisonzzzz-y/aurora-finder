@@ -35,6 +35,12 @@ function nearbyPeriods(records: KpIndexRecord[]) {
   return { reported, upcoming }
 }
 
+function geomagneticScaleForKp(kp: number, scaleNames: string[], belowG1: string) {
+  const level = Math.min(5, Math.floor(kp))
+  if (level < 5) return belowG1
+  return `G${level} · ${scaleNames[level - 1]}`
+}
+
 export function LatestAuroraForecast() {
   const { language, t } = useI18n()
   const [data, setData] = useState<KpIndexData | null>(null)
@@ -141,6 +147,7 @@ export function LatestAuroraForecast() {
           <ol className="kp-period-list" aria-label={t('kpTrendTitle')}>
             {periods.upcoming.map(record => <li key={record.periodStart}>
               <div className="kp-period-meta"><time dateTime={record.periodStart}>{new Intl.DateTimeFormat(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(record.periodStart))}</time><strong>{record.kp.toFixed(1)}</strong></div>
+              <small className="kp-period-scale">{t('noaaScaleLabel')}: {geomagneticScaleForKp(record.kp, t('noaaScaleName').split('|'), t('belowG1'))}</small>
               <span className="kp-period-track"><span style={{ width: `${Math.min(record.kp / 9, 1) * 100}%` }} /></span>
             </li>)}
           </ol>
