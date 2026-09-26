@@ -60,9 +60,10 @@ export function NextAuroraStormForecast() {
   return <section className="storm-outlook" aria-labelledby="storm-outlook-title" aria-live="polite">
     <div className="storm-outlook-heading">
       <div><p className="eyebrow">{t('stormOutlookEyebrow')}</p><h2 id="storm-outlook-title">{t('stormOutlookTitle')}</h2></div>
-      <a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">NOAA ↗</a>
     </div>
     <p className="storm-outlook-intro">{t('stormOutlookIntro')}</p>
+    <p className="forecast-source-note"><a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>
+    <p className="storm-scale-note">{t('geomagneticScaleNote')}</p>
     {warningsError && <p className="storm-outlook-message">{t('geomagneticWarningsUnavailable')}</p>}
     {!warningsError && warnings && <div className="geomagnetic-warning-list" aria-label={t('geomagneticWarningsTitle')}>
       <h3>{t('geomagneticWarningsTitle')}</h3>
@@ -84,7 +85,7 @@ export function NextAuroraStormForecast() {
           })}</ul>}
       </div>
       {warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
-        <strong>{warning.noaaScale ?? `K-index ${warning.expectedKIndex}`}</strong>
+        <strong>{warning.noaaScale ?? `${t('expectedKIndex')}: ${warning.expectedKIndex}`}</strong>
         <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
       </article>)}
     </div>}

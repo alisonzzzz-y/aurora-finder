@@ -41,7 +41,7 @@ export function NightOutlookCard({ night, index, timezone }: Props) {
     <section className="solar-darkness" aria-label={t('solarDarknessTitle')}>
       <h4>{t('solarDarknessTitle')}</h4>
       {night.solarDarkness.thresholds.map((window) => <div className="solar-threshold" key={window.threshold}>
-        <span>{thresholdLabels[window.threshold]} ({window.solarElevationDegrees}°)</span>
+        <span>{thresholdLabels[window.threshold]}</span>
         <span>{window.intervals.length
           ? window.intervals.map((interval) => `${localDateTime(interval.startUtc)} – ${localDateTime(interval.endUtc)}`).join(', ')
           : statusLabels[window.status]}</span>

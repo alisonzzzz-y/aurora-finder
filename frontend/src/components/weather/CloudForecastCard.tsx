@@ -19,7 +19,7 @@ export function CloudForecastCard({ fact, timezone }: Props) {
   return <section className="cloud-forecast-card" aria-labelledby="cloud-forecast-title" aria-live="polite">
     <div className="cloud-forecast-heading">
       <div><p className="eyebrow">{t('cloudForecast')}</p><h2 id="cloud-forecast-title">{t('cloudForecastTitle')}</h2></div>
-      <a href={fact.sourceUrl} target="_blank" rel="noreferrer">MET Norway ↗</a>
+      <a href={fact.sourceUrl} target="_blank" rel="noreferrer">{t('weatherSource')} ↗</a>
     </div>
     {fact.status === 'UNAVAILABLE' && <p className="cloud-forecast-message error">{t('sourceUnavailable')} {t(fact.failureCode === 'TIMEOUT' ? 'sourceTimeout' : fact.failureCode === 'RATE_LIMITED' ? 'sourceRateLimited' : fact.failureCode === 'FORBIDDEN' ? 'sourceForbidden' : 'sourceFailed')}</p>}
     {fact.status === 'NO_COVERAGE' && !data && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
