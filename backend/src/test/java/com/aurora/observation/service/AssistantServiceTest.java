@@ -23,6 +23,51 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void resolvesExactFullLocationLabelFromAmbiguousResults() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        AssistantService service = new AssistantService(openAi, tools, mapper);
+        List<Location> candidates = List.of(
+                new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland", 53.33306, -6.24889, "Europe/Dublin"),
+                new Location(1, "Dublin", "Georgia", "Laurens", "United States", 32.5, -82.9, "America/New_York"),
+                new Location(2, "Dublin", "California", "Alameda", "United States", 37.7, -121.9, "America/Los_Angeles"),
+                new Location(3, "Dublin", "Ohio", "Franklin", "United States", 40.1, -83.1, "America/New_York"),
+                new Location(4, "Dublin", "Texas", "Erath", "United States", 32.1, -98.3, "America/Chicago"),
+                new Location(5, "Dublin", "Virginia", "Pulaski", "United States", 37.1, -80.7, "America/New_York"),
+                new Location(6, "Dublin", "Pennsylvania", "Bucks", "United States", 40.3, -75.1, "America/New_York"),
+                new Location(7, "Dublin", "New Hampshire", "Cheshire County", "United States", 42.9, -72.1, "America/New_York"),
+                new Location(8, "Resaca", "Georgia", "Gordon", "United States", 34.5, -84.9, "America/New_York"),
+                new Location(9, "Dublin", "Indiana", "Wayne", "United States", 39.8, -84.9, "America/Indiana/Indianapolis"));
+        ObjectNode factsResponse = mapper.createObjectNode();
+        ArrayNode factsOutput = mapper.createArrayNode();
+        factsOutput.add(functionCall(mapper, "get_local_night_facts", "{\"location_id\":2964574}"));
+        factsResponse.set("output", factsOutput);
+        ObjectNode answerResponse = mapper.createObjectNode();
+        ArrayNode answerOutput = mapper.createArrayNode();
+        ObjectNode answer = mapper.createObjectNode();
+        answer.put("type", "message");
+        ArrayNode content = mapper.createArrayNode();
+        ObjectNode text = mapper.createObjectNode();
+        text.put("type", "output_text");
+        text.put("text", "Cloud data for Dublin, Ireland.");
+        content.add(text);
+        answer.set("content", content);
+        answerOutput.add(answer);
+        answerResponse.set("output", answerOutput);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(factsResponse, answerResponse);
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        AssistantChatResponse response = service.chat(new AssistantChatRequest(
+                "Dublin, Leinster, Dublin City, Ireland", "en", null,
+                List.of(new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", candidates))));
+
+        assertEquals("Cloud data for Dublin, Ireland.", response.answer());
+        verify(tools).getLocalNightFacts(2964574);
+    }
+
+    @Test
     void resolvesChineseCountryAndPlaceReplyFromPreviousCandidateList() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);

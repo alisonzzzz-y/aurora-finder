@@ -124,6 +124,13 @@ public class AssistantService {
             return index < candidates.size() ? candidates.get(index) : null;
         }
 
+        List<Location> fullLocationMatches = candidates.stream()
+                .filter(candidate -> {
+                    String description = normalize(locationDescription(candidate));
+                    return !description.isEmpty() && (value.equals(description) || value.contains(description));
+                }).toList();
+        if (fullLocationMatches.size() == 1) return fullLocationMatches.getFirst();
+
         String translatedBuilder = value;
         if (value.contains("都柏林机场")) translatedBuilder += " dublin airport";
         if (value.contains("南都柏林")) translatedBuilder += " south dublin";
