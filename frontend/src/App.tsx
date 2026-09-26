@@ -95,7 +95,7 @@ function AppContent() {
         : <LocationSearchPage busy={busy} onSelect={selectLocation} />}
       {error && !facts && <p className="error page-error" role="alert">{localizeError(new Error(error), t)}</p>}
     </main>
-    <AssistantChatPanel />
+    <AssistantChatPanel locationId={selectedLocationId} />
     <footer>{t('footer')}</footer>
   </div>
 }
