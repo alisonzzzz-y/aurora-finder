@@ -23,6 +23,67 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void resolvesChineseCountryAndPlaceReplyFromPreviousCandidateList() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        AssistantService service = new AssistantService(openAi, tools, mapper);
+        Location ireland = new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        Location georgia = new Location(4192510, "Dublin", "Georgia", "Laurens County", "United States",
+                32.54044, -82.90375, "America/New_York");
+
+        ObjectNode factsResponse = mapper.createObjectNode();
+        ArrayNode factsOutput = mapper.createArrayNode();
+        factsOutput.add(functionCall(mapper, "get_local_night_facts", "{\"location_id\":2964574}"));
+        factsResponse.set("output", factsOutput);
+        ObjectNode answerResponse = mapper.createObjectNode();
+        ArrayNode answerOutput = mapper.createArrayNode();
+        ObjectNode answer = mapper.createObjectNode();
+        answer.put("type", "message");
+        ArrayNode content = mapper.createArrayNode();
+        ObjectNode text = mapper.createObjectNode();
+        text.put("type", "output_text");
+        text.put("text", "Here is the cloud forecast for Dublin, Ireland.");
+        content.add(text);
+        answer.set("content", content);
+        answerOutput.add(answer);
+        answerResponse.set("output", answerOutput);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(factsResponse, answerResponse);
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getLocalNightFacts(2964574)).thenReturn(null);
+
+        AssistantChatResponse response = service.chat(new AssistantChatRequest("爱尔兰都柏林市", "zh", null, List.of(
+                new com.aurora.observation.dto.AssistantMessage("user", "都柏林目前有哪些云量数据？"),
+                new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", List.of(ireland, georgia)))));
+
+        assertEquals("Here is the cloud forecast for Dublin, Ireland.", response.answer());
+        verify(tools).getLocalNightFacts(2964574);
+        verify(tools, never()).getLocalNightFacts(4192510);
+        verify(openAi, times(2)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+    }
+
+    @Test
+    void keepsAskingWithNumberedChoicesInsteadOfCallingModelWhenReplyIsUnclear() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        AssistantService service = new AssistantService(openAi, mock(ObservationToolsService.class), mapper);
+        List<Location> candidates = List.of(
+                new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland", 53.33306, -6.24889, "Europe/Dublin"),
+                new Location(4192510, "Dublin", "Georgia", "Laurens County", "United States", 32.54044, -82.90375, "America/New_York"));
+
+        AssistantChatResponse response = service.chat(new AssistantChatRequest("确认", "zh", null,
+                List.of(new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", candidates))));
+
+        assertTrue(response.answer().contains("1."));
+        assertTrue(response.answer().contains("2."));
+        assertEquals(2, response.locationCandidates().size());
+        verify(openAi, never()).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+    }
+
+    @Test
     void executesReadOnlyToolCallBeforeReturningAnswer() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);
@@ -117,6 +178,7 @@ class AssistantServiceTest {
                 "How is Dublin tonight?", "en", null, List.of()));
 
         assertEquals("Which Dublin do you mean, Ireland or Georgia?", response.answer());
+        assertEquals(2, response.locationCandidates().size());
         verify(tools).searchPlaces("Dublin");
         verify(tools, never()).getLocalNightFacts(2964574);
         verify(openAi, times(3)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));

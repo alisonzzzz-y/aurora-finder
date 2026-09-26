@@ -104,6 +104,9 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 .assistant-message.assistant { margin-right: 20px; }
 .assistant-message.pending { color: #aaa2bb; }
 .assistant-message span { display: block; margin-bottom: 4px; color: #998cad; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.assistant-location-choice { display: block; width: 100%; margin-top: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #191522; color: var(--text); text-align: left; font: inherit; font-size: 12px; cursor: pointer; }
+.assistant-location-choice:hover { border-color: var(--accent); }
+.assistant-location-choice:disabled { opacity: .6; cursor: wait; }
 .assistant-composer-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .assistant-composer-actions small { color: #8f879f; font-size: 10px; }
 .assistant-composer-actions button { border: 0; border-radius: 7px; background: var(--accent); color: #191426; padding: 9px 16px; font-weight: 650; cursor: pointer; }
