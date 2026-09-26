@@ -14,7 +14,7 @@ class OpenAiAssistantProviderTest {
     void refusesRequestsWhenApiKeyIsNotConfigured() {
         ObjectMapper mapper = new ObjectMapper();
         OpenAiAssistantProvider provider = new OpenAiAssistantProvider(
-                HttpClient.newHttpClient(), mapper, " ", "gpt-5-mini",
+                HttpClient.newHttpClient(), mapper, " ", "gpt-6-luna",
                 "https://api.openai.com/v1", Duration.ofSeconds(1));
 
         assertThrows(AssistantUnavailableException.class, () -> provider.respond(

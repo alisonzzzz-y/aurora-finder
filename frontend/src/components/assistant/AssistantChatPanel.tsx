@@ -62,7 +62,11 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       {error && <p className="assistant-notice error" role="alert">{error}</p>}
       <form className="assistant-composer" onSubmit={submitQuestion}>
         <label className="sr-only" htmlFor="assistant-question">{t('assistantInputLabel')}</label>
-        <textarea id="assistant-question" rows={2} maxLength={1000} value={draft} disabled={busy} placeholder={t('assistantInputPlaceholder')} onChange={event => { setDraft(event.target.value); setError('') }} />
+        <textarea id="assistant-question" rows={2} maxLength={1000} value={draft} disabled={busy} placeholder={t('assistantInputPlaceholder')} onChange={event => { setDraft(event.target.value); setError('') }} onKeyDown={event => {
+          if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+          event.preventDefault()
+          event.currentTarget.form?.requestSubmit()
+        }} />
         <div className="assistant-composer-actions">
           <small>{t('assistantSourceNote')}</small>
           <button type="submit" disabled={!draft.trim() || busy}>{busy ? t('assistantWorkingShort') : t('assistantSend')}</button>
