@@ -96,14 +96,21 @@ export function NextAuroraStormForecast() {
         {forecast.days.map(day => {
           const peak = kp ? dayPeak(kp.records, day.date) : undefined
           const date = new Date(`${day.date}T12:00:00Z`)
+          const probabilities = [
+            [t('activeGeomagnetic'), day.activeChancePercent],
+            [t('minorStorm'), day.minorStormChancePercent],
+            [t('moderateStorm'), day.moderateStormChancePercent],
+            [t('strongStorm'), day.strongExtremeStormChancePercent],
+          ] as const
           return <article className="storm-day" key={day.date}>
             <h3>{new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date)}</h3>
-            <dl className="storm-probabilities">
-              <div><dt>{t('activeGeomagnetic')}</dt><dd>{day.activeChancePercent}%</dd></div>
-              <div><dt>{t('minorStorm')}</dt><dd>{day.minorStormChancePercent}%</dd></div>
-              <div><dt>{t('moderateStorm')}</dt><dd>{day.moderateStormChancePercent}%</dd></div>
-              <div><dt>{t('strongStorm')}</dt><dd>{day.strongExtremeStormChancePercent}%</dd></div>
-            </dl>
+            <ul className="storm-probability-chart">
+              {probabilities.map(([label, value]) => <li key={label}>
+                <span>{label}</span>
+                <progress max={100} value={value} aria-label={`${label}: ${value}%`}>{value}%</progress>
+                <strong>{value}%</strong>
+              </li>)}
+            </ul>
             <p className="storm-kp-peak">{peak
               ? <>{t('kpPeak')}: <strong>Kp {peak.kp.toFixed(2)}</strong> · {kpPeriodRange(peak.periodStart, locale)}</>
               : t('kpPeakUnavailable')}</p>
