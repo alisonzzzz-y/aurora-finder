@@ -73,6 +73,11 @@ export function HistoricalReportsChart() {
           })}
         </svg>
       </div>
+      <ol className="sr-only" aria-label={t('historicalReportsTitle')}>
+        {reportSummary.years.map(item => <li key={`summary-${item.year}`}>
+          {item.year}: {number.format(item.reports)} {t('historicalReportsCountLabel')}
+        </li>)}
+      </ol>
       <figcaption>
         <a href={reportSummary.sourceUrl} target="_blank" rel="noreferrer">{t('historicalReportsSource')} ↗</a>
         <span>{t('historicalReportsNote')}</span>
