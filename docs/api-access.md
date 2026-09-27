@@ -38,11 +38,11 @@ curl 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.js
 
 ## MapTiler 底图 Key
 
-本项目用开源 MapLibre GL JS 绘制交互地图，用 MapTiler Cloud 提供底图瓦片。MapLibre 本身不要求 Key，MapTiler 在线样式/瓦片需要 Key。个人或非商业原型可先查看 MapTiler 的 Free 方案和当前配额；公开部署或用途变化前，要重新核对其条款与限额。
+本项目用开源 MapLibre GL JS 绘制交互地图，用 MapTiler Cloud 提供底图瓦片。MapLibre 本身不要求 Key，MapTiler 在线样式/瓦片需要 Key。按 2026-09-27 查阅的 [MapTiler Cloud 条款](https://www.maptiler.com/terms/cloud/)，Free 方案限非商业用途，也可用于商业产品的研发；请在用途变化时重新确认适用方案。当前 [Free 方案页面](https://www.maptiler.com/cloud/pricing/)列出的月度额度为 5,000 个地图会话和 100,000 次 API 请求，并要求地图保留 MapTiler 标志。达到免费额度后，服务会暂停到下一个月，不会自动转为付费超额计费。额度和限制可能调整，应以账户中的 Analytics 和最新方案页面为准。
 
 1. 在 [MapTiler Cloud](https://cloud.maptiler.com/) 注册或登录。
 2. 打开 **API keys**，创建一个专供本项目使用的 Key。
-3. 为 Key 限制可用网站来源，先加入 `localhost`。部署后再加入实际域名，例如 `aurora-finder.vercel.app`；只填域名，不带协议或端口。
+3. 为 Key 限制可用网站来源，先加入 `localhost`。部署后再加入实际域名，例如 `aurora-finder.vercel.app`；只填域名，不带协议或端口。每个环境的域名都要加入允许列表。
 4. 将 Key 写入本地 `frontend/.env.local`：
 
 ~~~dotenv
@@ -51,7 +51,7 @@ VITE_MAPTILER_KEY=粘贴你的受限Key
 
 5. 重启 Vite 开发服务器。可从 `frontend/.env.example` 复制文件名模板。
 
-浏览器地图需要把这个 Key 发送给 MapTiler，因此它不是服务端秘密；通过来源限制保护它。不要把未受限 Key 提交到 Git、写入 README 或发送到聊天中。仓库 `.gitignore` 已排除 `.env.local`。
+浏览器地图需要把这个 Key 发送给 MapTiler，因此它不是服务端秘密；通过来源限制保护它。不要把未受限 Key 提交到 Git、写入 README 或发送到聊天中。仓库 `.gitignore` 已排除 `.env.local`。若页面报 403，检查请求网站域名是否在 Allowed HTTP origins、Key 是否仍启用，并在 MapTiler Cloud Analytics 中检查额度；Free 额度用尽时服务会暂停至下月。
 
 ## MET Norway 云量预报
 
