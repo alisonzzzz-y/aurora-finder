@@ -196,7 +196,7 @@ export function LatestAuroraForecast() {
                   const next = periods.trend[index + 1]
                   if (Date.parse(next.periodStart) - Date.parse(record.periodStart) > 4 * 60 * 60 * 1000) return null
                   return <path key={`${record.periodStart}-${next.periodStart}`} className={`kp-chart-segment ${record.type.toLowerCase()}`}
-                    d={`M ${xFor(record.periodStart)} ${yFor(record.kp)} H ${xFor(next.periodStart)} V ${yFor(next.kp)}`} />
+                    d={`M ${xFor(record.periodStart)} ${yFor(record.kp)} L ${xFor(next.periodStart)} ${yFor(next.kp)}`} />
                 })}
                 {periods.trend.map((record, index) => {
                   const x = xFor(record.periodStart)
