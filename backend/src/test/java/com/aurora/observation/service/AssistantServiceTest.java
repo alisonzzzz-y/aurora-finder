@@ -2,8 +2,21 @@ package com.aurora.observation.service;
 
 import com.aurora.observation.dto.AssistantChatRequest;
 import com.aurora.observation.dto.AssistantChatResponse;
+import com.aurora.observation.dto.FactFetchStatus;
+import com.aurora.observation.dto.FactTimeScope;
+import com.aurora.observation.dto.ForecastCoverage;
+import com.aurora.observation.dto.LocalAuroraActivityResponse;
 import com.aurora.observation.dto.Location;
+import com.aurora.observation.dto.NightOutlook;
+import com.aurora.observation.dto.ObservationFactsResponse;
+import com.aurora.observation.dto.OutlookLevel;
+import com.aurora.observation.dto.OutlookReasonCode;
+import com.aurora.observation.dto.OutlookResponse;
+import com.aurora.observation.dto.RuleStatus;
+import com.aurora.observation.dto.SourceFact;
+import com.aurora.observation.dto.WeatherForecastResponse;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
+import com.aurora.observation.provider.ProviderFailure;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -11,6 +24,7 @@ import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 import java.time.LocalDate;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -389,6 +403,54 @@ class AssistantServiceTest {
     }
 
     @Test
+    void passesLocalTimeAndSourceFreshnessFieldsToModelWithoutRecomputingThem() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        Instant retrievedAt = Instant.parse("2026-09-28T00:15:00Z");
+        LocalDate localDate = LocalDate.of(2026, 9, 28);
+        Location dublin = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        NightOutlook night = new NightOutlook(localDate, "+01:00", retrievedAt,
+                retrievedAt.plusSeconds(86400), OutlookLevel.INSUFFICIENT_DATA,
+                OutlookReasonCode.RULES_NOT_VALIDATED, null);
+        OutlookResponse outlook = new OutlookResponse(dublin, retrievedAt, RuleStatus.NOT_VALIDATED,
+                List.of(night));
+        SourceFact<LocalAuroraActivityResponse> aurora = new SourceFact<>(FactFetchStatus.EXPIRED,
+                FactTimeScope.SHORT_RANGE, retrievedAt, retrievedAt.minusSeconds(7200), retrievedAt,
+                retrievedAt.minusSeconds(3600), retrievedAt.plusSeconds(3600), "NOAA", "https://example.test/aurora",
+                ProviderFailure.UPSTREAM_ERROR, null);
+        SourceFact<WeatherForecastResponse> clouds = new SourceFact<>(FactFetchStatus.PARTIAL,
+                FactTimeScope.THREE_LOCAL_NIGHTS, retrievedAt, null, null, retrievedAt,
+                retrievedAt.plusSeconds(86400), "MET Norway", "https://example.test/weather", null, null);
+        ObservationFactsResponse localFacts = new ObservationFactsResponse(retrievedAt, outlook, aurora,
+                clouds, null, new ForecastCoverage(ForecastCoverage.Status.NO_OVERLAP,
+                FactTimeScope.SHORT_RANGE, FactTimeScope.THREE_LOCAL_NIGHTS, null, null, 0),
+                FactFetchStatus.PARTIAL);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":42}"))
+                .thenReturn(responseWithText(mapper, "The local outlook is incomplete and one source is expired."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getLocalNightFacts(42)).thenReturn(localFacts);
+        org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+
+        AssistantChatResponse response = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What is the outlook tonight?", "en", 42L, List.of()));
+
+        assertTrue(response.answer().contains("incomplete"));
+        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        String factsSentToModel = requestInputs.getAllValues().get(1).toString();
+        assertTrue(factsSentToModel.contains("Europe/Dublin"));
+        assertTrue(factsSentToModel.contains("2026-09-28"));
+        assertTrue(factsSentToModel.contains("+01:00"));
+        assertTrue(factsSentToModel.contains("EXPIRED"));
+        assertTrue(factsSentToModel.contains("PARTIAL"));
+        assertTrue(factsSentToModel.contains("NO_OVERLAP"));
+        assertTrue(factsSentToModel.contains("NOAA"));
+        assertTrue(factsSentToModel.contains("MET Norway"));
+    }
+
+    @Test
     void returnsSupportedLocalDatesToModelWhenRequestedNightIsOutOfRange() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);
@@ -396,22 +458,57 @@ class AssistantServiceTest {
         LocalDate requested = LocalDate.of(2026, 9, 27);
         List<LocalDate> available = List.of(requested.plusDays(1), requested.plusDays(2));
         when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":42}"))
                 .thenReturn(responseWithFunctionCall(mapper, "get_night_outlook",
                         "{\"location_id\":42,\"local_date\":\"2026-09-27\"}"))
                 .thenReturn(responseWithText(mapper, "That date is outside the available local forecast."));
         when(openAi.model()).thenReturn("gpt-6-luna");
-        when(tools.getNightOutlook(42, requested)).thenThrow(new UnsupportedNightDateException(requested, available));
+        when(tools.getLocalNightFacts(42)).thenReturn(factsForDates(available));
         org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
 
         AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
                 new AssistantChatRequest("What about tonight?", "en", 42L, List.of()));
 
         assertEquals("That date is outside the available local forecast.", result.answer());
-        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        verify(openAi, times(3)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
         String secondRequest = requestInputs.getAllValues().get(1).toString();
+        String thirdRequest = requestInputs.getAllValues().get(2).toString();
         assertTrue(secondRequest.contains("2026-09-28"));
         assertTrue(secondRequest.contains("2026-09-29"));
-        verify(tools).getNightOutlook(42, requested);
+        assertTrue(thirdRequest.contains("2026-09-28"));
+        assertTrue(thirdRequest.contains("2026-09-29"));
+        verify(tools, never()).getNightOutlook(42, requested);
+    }
+
+    @Test
+    void requiresLocalFactsBeforeAcceptingAModelSuppliedNightDate() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_night_outlook",
+                        "{\"location_id\":42,\"local_date\":\"2026-09-28\"}"))
+                .thenReturn(responseWithText(mapper, "I need to check the supported local dates first."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What about that night?", "en", 42L, List.of()));
+
+        assertTrue(result.answer().contains("supported local dates"));
+        verify(tools, never()).getNightOutlook(42, LocalDate.of(2026, 9, 28));
+        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        assertTrue(requestInputs.getAllValues().get(1).toString().contains("local_facts_required"));
+    }
+
+    private ObservationFactsResponse factsForDates(List<LocalDate> dates) {
+        Location location = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        List<NightOutlook> nights = dates.stream().map(date -> new NightOutlook(date, "+01:00",
+                Instant.EPOCH, Instant.EPOCH, OutlookLevel.INSUFFICIENT_DATA,
+                OutlookReasonCode.RULES_NOT_VALIDATED, null)).toList();
+        OutlookResponse outlook = new OutlookResponse(location, Instant.EPOCH, RuleStatus.NOT_VALIDATED, nights);
+        return new ObservationFactsResponse(Instant.EPOCH, outlook, null, null, null, null, null);
     }
 
     private ObjectNode responseWithFunctionCall(ObjectMapper mapper, String name, String arguments) {
