@@ -183,8 +183,8 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 .kp-trend-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .kp-trend-heading h3 { margin: 0; font-size: 15px; font-weight: 620; }
 .kp-trend-heading > span { color: var(--muted); font-size: 11px; }
-.kp-trend-layout { display: grid; grid-template-columns: minmax(180px, .55fr) minmax(0, 1.45fr); gap: 22px; margin-top: 16px; }
-.kp-latest-reported { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding-right: 18px; border-right: 1px solid var(--line); }
+.kp-trend-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.kp-latest-reported { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 14px; padding: 0 0 12px; border-bottom: 1px solid var(--line); }
 .kp-latest-reported > span, .kp-latest-reported small { color: var(--muted); font-size: 11px; }
 .kp-latest-reported strong { font-size: 23px; font-weight: 620; }
 .kp-chart-area { min-width: 0; }
@@ -211,8 +211,6 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 @media (max-width: 900px) {
   .home-content-sections .activity-area-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .forecast-guide-list, .upcoming-feature-list { grid-template-columns: 1fr; gap: 14px; }
-  .kp-trend-layout { grid-template-columns: 1fr; }
-  .kp-latest-reported { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
 }
 @media (max-width: 560px) {
   .home-content-sections { margin: 24px -18px 0; }
