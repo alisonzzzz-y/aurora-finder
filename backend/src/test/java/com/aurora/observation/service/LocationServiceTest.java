@@ -52,6 +52,41 @@ class LocationServiceTest {
     }
 
     @Test
+    void filtersFuzzyProviderResultsThatDoNotMatchThePlaceName() {
+        Location dublin = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        Location dublinPike = new Location(2964787, "Dublin Pike", "Munster", "County Cork", "Ireland",
+                51.9200, -8.4500, "Europe/Dublin");
+        Location unrelatedFuzzyMatch = new Location(4218450, "Resaca", "Georgia", "Gordon", "United States",
+                34.58036, -84.94328, "America/New_York");
+        when(provider.search("Dublin")).thenReturn(List.of(dublin, dublinPike, unrelatedFuzzyMatch));
+
+        assertEquals(List.of(dublin, dublinPike), service.search("Dublin"));
+        verify(provider).search("Dublin");
+        verify(provider, org.mockito.Mockito.never()).get(unrelatedFuzzyMatch.id());
+    }
+
+    @Test
+    void matchesEveryQueryWordAgainstPlaceAndAdministrativeNames() {
+        Location ireland = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        Location georgia = new Location(4192205, "Dublin", "Georgia", "Laurens", "United States",
+                32.54044, -82.90375, "America/New_York");
+        when(provider.search("Dublin Ireland")).thenReturn(List.of(ireland, georgia));
+
+        assertEquals(List.of(ireland), service.search("Dublin Ireland"));
+    }
+
+    @Test
+    void misspelledQueryDoesNotReturnUnrelatedFuzzyCandidates() {
+        Location dublin = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        when(provider.search("Dublni")).thenReturn(List.of(dublin));
+
+        assertTrue(service.search("Dublni").isEmpty());
+    }
+
+    @Test
     void coalescesConcurrentSearchesWithNormalizedQueryKeys() throws Exception {
         Location dublin = new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");
