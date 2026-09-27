@@ -128,7 +128,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   }
 
   return <div className="assistant-widget">
-    <section ref={panelRef} id="assistant-panel" className={`assistant-panel${position ? ' is-moved' : ''}`} aria-labelledby="assistant-title" style={{ ...(position ? { left: position.x, top: position.y } : {}), ...(size ?? {}) }} hidden={!open}>
+    {open && <section ref={panelRef} id="assistant-panel" className={`assistant-panel${position ? ' is-moved' : ''}`} aria-labelledby="assistant-title" style={{ ...(position ? { left: position.x, top: position.y } : {}), ...(size ?? {}) }}>
       <button type="button" className="assistant-resize-handle" aria-label={t('assistantResize')} title={t('assistantResize')} onPointerDown={startResizing} onPointerMove={resizeWindow} onPointerUp={stopResizing} onPointerCancel={stopResizing}><span /></button>
       <header className="assistant-panel-header">
         <div className="assistant-drag-handle" title={t('assistantDrag')} onPointerDown={startDragging} onPointerMove={dragWindow} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
@@ -166,7 +166,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
           <button type="submit" disabled={!draft.trim() || busy}>{busy ? t('assistantWorkingShort') : t('assistantSend')}</button>
         </div>
       </form>
-    </section>
-    <button className="agent-button" type="button" aria-expanded={open} aria-controls="assistant-panel" onClick={() => setOpen(value => !value)}>{open ? t('assistantClose') : t('askAboutNight')} <span>✦</span></button>
+    </section>}
+    <button className="agent-button" type="button" aria-expanded={open} aria-controls="assistant-panel" onClick={() => setOpen(!open)}>{open ? t('assistantClose') : t('askAboutNight')} <span>✦</span></button>
   </div>
 }
