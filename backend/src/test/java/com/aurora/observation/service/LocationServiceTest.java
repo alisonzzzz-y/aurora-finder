@@ -72,9 +72,25 @@ class LocationServiceTest {
                 53.33306, -6.24889, "Europe/Dublin");
         Location georgia = new Location(4192205, "Dublin", "Georgia", "Laurens", "United States",
                 32.54044, -82.90375, "America/New_York");
-        when(provider.search("Dublin Ireland")).thenReturn(List.of(ireland, georgia));
+        when(provider.search("Dublin Ireland")).thenReturn(List.of());
+        when(provider.search("dublin")).thenReturn(List.of(ireland, georgia));
 
         assertEquals(List.of(ireland), service.search("Dublin Ireland"));
+        verify(provider).search("Dublin Ireland");
+        verify(provider).search("dublin");
+    }
+
+    @Test
+    void supportsCountryBeforeCityWhenTheGeocoderOnlyFindsTheCityAlone() {
+        Location ireland = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, "Europe/Dublin");
+        Location georgia = new Location(4192205, "Dublin", "Georgia", "Laurens", "United States",
+                32.54044, -82.90375, "America/New_York");
+        when(provider.search("Ireland Dublin")).thenReturn(List.of());
+        when(provider.search("ireland")).thenReturn(List.of());
+        when(provider.search("dublin")).thenReturn(List.of(ireland, georgia));
+
+        assertEquals(List.of(ireland), service.search("Ireland Dublin"));
     }
 
     @Test

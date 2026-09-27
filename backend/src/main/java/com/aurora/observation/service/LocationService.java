@@ -58,13 +58,27 @@ public class LocationService {
         return loadCoalesced(key, searchesInFlight, () -> {
             List<Location> secondCheck = read(searches, key);
             if (secondCheck != null) return secondCheck;
-            List<Location> result = geocoding.search(cleaned).stream()
-                    .filter(location -> matchesQuery(cleaned, location))
-                    .toList();
+            List<Location> result = matchingProviderResults(cleaned);
             write(searches, key, result, searchTtl);
             for (Location location : result) write(locations, location.id(), location, locationTtl);
             return result;
         });
+    }
+
+    private List<Location> matchingProviderResults(String query) {
+        List<Location> matches = filterMatches(query, geocoding.search(query));
+        if (!matches.isEmpty()) return matches;
+
+        for (String token : searchTokens(query)) {
+            if (token.length() < 2) continue;
+            matches = filterMatches(query, geocoding.search(token));
+            if (!matches.isEmpty()) return matches;
+        }
+        return List.of();
+    }
+
+    private List<Location> filterMatches(String query, List<Location> candidates) {
+        return candidates.stream().filter(location -> matchesQuery(query, location)).toList();
     }
 
     private boolean matchesQuery(String query, Location location) {
