@@ -83,13 +83,13 @@ h1 { font-size: clamp(42px, 5vw, 68px); line-height: 1.05; letter-spacing: -.05e
 .coming-soon { margin-top: 8px; }
 footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px; padding-right: 160px; }
 .assistant-widget { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: grid; justify-items: end; gap: 12px; }
-.assistant-widget.is-moved { right: auto; bottom: auto; }
 .agent-button { box-shadow: 0 8px 24px #0006; border: 1px solid #76639b; border-radius: 8px; background: #49366f; color: #f6f2ff; font-weight: 650; padding: 14px 22px; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease; }
 .agent-button:hover { background: #58427f; }
 .agent-button[aria-expanded="true"] { background: #6f5a9e; border-color: #9a82c7; }
 .agent-button span { margin-left: 8px; }
 .agent-button:focus-visible, .assistant-panel button:focus-visible, .assistant-composer textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.assistant-panel { position: relative; box-sizing: border-box; display: flex; flex-direction: column; width: min(400px, calc(100vw - 24px)); min-width: min(300px, calc(100vw - 24px)); min-height: min(280px, calc(100vh - 100px)); max-width: min(720px, calc(100vw - 24px)); max-height: min(70vh, 760px, calc(100vh - 24px)); overflow: hidden; padding: 20px; border: 1px solid var(--line-strong); border-radius: 12px; background: #151220; box-shadow: 0 16px 48px #0009; }
+.assistant-panel { position: fixed; z-index: 20; right: 24px; bottom: 92px; box-sizing: border-box; display: flex; flex-direction: column; width: min(460px, calc(100vw - 24px)); height: min(78vh, 820px, calc(100vh - 132px)); min-width: min(320px, calc(100vw - 24px)); min-height: min(420px, calc(100vh - 132px)); max-width: min(960px, calc(100vw - 24px)); max-height: min(90vh, 920px, calc(100vh - 24px)); overflow: hidden; padding: 20px; border: 1px solid var(--line-strong); border-radius: 12px; background: #151220; box-shadow: 0 16px 48px #0009; }
+.assistant-panel.is-moved { right: auto; bottom: auto; }
 .assistant-resize-handle { position: absolute; z-index: 2; top: 8px; left: 8px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: #201a2b; cursor: nwse-resize; touch-action: none; }
 .assistant-resize-handle:hover { background: var(--accent-wash); }
 .assistant-resize-handle span { width: 11px; height: 11px; border-top: 2px solid var(--muted); border-left: 2px solid var(--muted); }
@@ -137,7 +137,7 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
   .aurora-resource-list { grid-template-columns: 1fr; gap: 18px; margin-top: 18px; }
   .map-sidebar { height: clamp(390px, calc(100svh - 235px), 560px); padding: 15px; gap: 13px; }
   .assistant-widget { right: 18px; bottom: 18px; }
-  .assistant-panel { width: min(400px, calc(100vw - 24px)); max-width: calc(100vw - 24px); min-height: min(280px, calc(100vh - 100px)); max-height: min(72vh, 760px, calc(100vh - 24px)); padding: 16px; }
+  .assistant-panel { right: 18px; bottom: 84px; width: min(460px, calc(100vw - 24px)); height: min(78vh, 820px, calc(100vh - 120px)); max-width: calc(100vw - 24px); min-height: min(360px, calc(100vh - 120px)); max-height: min(90vh, 920px, calc(100vh - 24px)); padding: 16px; }
   footer { padding-right: 0; }
 }
 @media (min-width: 721px) and (max-width: 960px) {

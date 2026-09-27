@@ -20,7 +20,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [messages, setMessages] = useState<AssistantMessage[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const widgetRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; width: number; height: number } | null>(null)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
@@ -33,8 +33,8 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
 
   useEffect(() => {
     function keepOnScreen() {
-      if (!positionRef.current || !widgetRef.current) return
-      const bounds = widgetRef.current.getBoundingClientRect()
+      if (!positionRef.current || !panelRef.current) return
+      const bounds = panelRef.current.getBoundingClientRect()
       setPosition(current => current ? {
         x: Math.max(8, Math.min(current.x, window.innerWidth - bounds.width - 8)),
         y: Math.max(8, Math.min(current.y, window.innerHeight - bounds.height - 8)),
@@ -46,7 +46,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
 
   function startDragging(event: ReactPointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest('button')) return
-    const bounds = widgetRef.current?.getBoundingClientRect()
+    const bounds = panelRef.current?.getBoundingClientRect()
     if (!bounds) return
     setPosition({ x: bounds.left, y: bounds.top })
     dragRef.current = { pointerId: event.pointerId, offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top }
@@ -55,7 +55,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
 
   function dragWindow(event: ReactPointerEvent<HTMLDivElement>) {
     const drag = dragRef.current
-    const bounds = widgetRef.current?.getBoundingClientRect()
+    const bounds = panelRef.current?.getBoundingClientRect()
     if (!drag || drag.pointerId !== event.pointerId || !bounds) return
     setPosition({
       x: Math.max(8, Math.min(event.clientX - drag.offsetX, window.innerWidth - bounds.width - 8)),
@@ -72,8 +72,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   function startResizing(event: ReactPointerEvent<HTMLButtonElement>) {
     event.preventDefault()
     event.stopPropagation()
-    const panel = event.currentTarget.closest('.assistant-panel')
-    const bounds = panel?.getBoundingClientRect()
+    const bounds = panelRef.current?.getBoundingClientRect()
     if (!bounds) return
     resizeRef.current = {
       pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
@@ -85,10 +84,10 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   function resizeWindow(event: ReactPointerEvent<HTMLButtonElement>) {
     const start = resizeRef.current
     if (!start || start.pointerId !== event.pointerId) return
-    const maxWidth = Math.min(720, window.innerWidth - 24)
-    const maxHeight = Math.min(760, window.innerHeight - 24)
-    const width = Math.max(Math.min(300, maxWidth), Math.min(maxWidth, start.width + start.startX - event.clientX))
-    const height = Math.max(Math.min(280, maxHeight), Math.min(maxHeight, start.height + start.startY - event.clientY))
+    const maxWidth = Math.min(960, window.innerWidth - 24)
+    const maxHeight = Math.min(920, window.innerHeight - 24)
+    const width = Math.max(Math.min(340, maxWidth), Math.min(maxWidth, start.width + start.startX - event.clientX))
+    const height = Math.max(Math.min(320, maxHeight), Math.min(maxHeight, start.height + start.startY - event.clientY))
     setSize({ width, height })
     setPosition({ x: Math.max(8, start.left + start.width - width), y: Math.max(8, start.top + start.height - height) })
   }
@@ -128,8 +127,8 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     }
   }
 
-  return <div ref={widgetRef} className={`assistant-widget${position ? ' is-moved' : ''}`} style={position ? { left: position.x, top: position.y } : undefined}>
-    <section id="assistant-panel" className="assistant-panel" aria-labelledby="assistant-title" style={size ?? undefined} hidden={!open}>
+  return <div className="assistant-widget">
+    <section ref={panelRef} id="assistant-panel" className={`assistant-panel${position ? ' is-moved' : ''}`} aria-labelledby="assistant-title" style={{ ...(position ? { left: position.x, top: position.y } : {}), ...(size ?? {}) }} hidden={!open}>
       <button type="button" className="assistant-resize-handle" aria-label={t('assistantResize')} title={t('assistantResize')} onPointerDown={startResizing} onPointerMove={resizeWindow} onPointerUp={stopResizing} onPointerCancel={stopResizing}><span /></button>
       <header className="assistant-panel-header">
         <div className="assistant-drag-handle" title={t('assistantDrag')} onPointerDown={startDragging} onPointerMove={dragWindow} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
