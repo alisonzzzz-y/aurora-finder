@@ -85,8 +85,10 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   function resizeWindow(event: ReactPointerEvent<HTMLButtonElement>) {
     const start = resizeRef.current
     if (!start || start.pointerId !== event.pointerId) return
-    const width = Math.max(300, Math.min(window.innerWidth - 24, start.width + start.startX - event.clientX))
-    const height = Math.max(280, Math.min(window.innerHeight - 100, start.height + start.startY - event.clientY))
+    const maxWidth = Math.min(720, window.innerWidth - 24)
+    const maxHeight = Math.min(760, window.innerHeight - 24)
+    const width = Math.max(Math.min(300, maxWidth), Math.min(maxWidth, start.width + start.startX - event.clientX))
+    const height = Math.max(Math.min(280, maxHeight), Math.min(maxHeight, start.height + start.startY - event.clientY))
     setSize({ width, height })
     setPosition({ x: Math.max(8, start.left + start.width - width), y: Math.max(8, start.top + start.height - height) })
   }
@@ -130,7 +132,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     <section id="assistant-panel" className="assistant-panel" aria-labelledby="assistant-title" style={size ?? undefined} hidden={!open}>
       <button type="button" className="assistant-resize-handle" aria-label={t('assistantResize')} title={t('assistantResize')} onPointerDown={startResizing} onPointerMove={resizeWindow} onPointerUp={stopResizing} onPointerCancel={stopResizing}><span /></button>
       <header className="assistant-panel-header">
-        <div className="assistant-drag-handle" onPointerDown={startDragging} onPointerMove={dragWindow} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
+        <div className="assistant-drag-handle" title={t('assistantDrag')} onPointerDown={startDragging} onPointerMove={dragWindow} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
           <p className="eyebrow">{t('assistantEyebrow')}</p>
           <h2 id="assistant-title">{t('assistantTitle')}</h2>
         </div>
