@@ -164,8 +164,10 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
   .home-dashboard-grid { grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); }
 }
 .home-page-shell .aurora-map-panel { height: clamp(480px, calc(100svh - 150px), 840px); }
+.home-page-shell .aurora-map-loading-placeholder { display: grid; height: clamp(480px, calc(100svh - 150px), 840px); min-width: 0; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #12111b; color: var(--muted); font-size: 13px; }
 @media (max-width: 720px) {
   .home-page-shell .aurora-map-panel { height: clamp(390px, calc(100svh - 235px), 560px); }
+  .home-page-shell .aurora-map-loading-placeholder { height: clamp(390px, calc(100svh - 235px), 560px); border-radius: 9px; }
 }
 
 /* Long-form home page sections: content stays in the reading column below the map. */

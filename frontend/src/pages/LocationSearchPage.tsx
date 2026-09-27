@@ -1,5 +1,4 @@
 import { LocationSearch } from '../components/location/LocationSearch'
-import { AuroraMap } from '../components/aurora/AuroraMap'
 import { LocalAuroraActivityCard } from '../components/aurora/LocalAuroraActivityCard'
 import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
 import { CloudForecastCard } from '../components/weather/CloudForecastCard'
@@ -12,8 +11,10 @@ import type { Location } from '../types/location'
 import type { ObservationFacts } from '../types/observationFacts'
 import { localizeError, useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
+
+const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
 
 type Props = {
   busy: boolean
@@ -41,7 +42,9 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   return <>
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
-        <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} />
+        <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
+          <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} />
+        </Suspense>
         <p className="map-scope-note">{t('mapScopeNote')}</p>
       </div>
       <aside className="map-sidebar">
