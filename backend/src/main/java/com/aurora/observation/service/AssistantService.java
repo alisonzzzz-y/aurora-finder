@@ -4,6 +4,8 @@ import com.aurora.observation.dto.AssistantChatRequest;
 import com.aurora.observation.dto.AssistantChatResponse;
 import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.Location;
+import com.aurora.observation.dto.NightOutlook;
+import com.aurora.observation.dto.ObservationFactsResponse;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -11,11 +13,13 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.text.Normalizer;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -218,6 +222,11 @@ public class AssistantService {
             selection.put("message", "Ask the user to choose a matching place before requesting local facts.");
             selection.set("candidates", objectMapper.valueToTree(error.candidates));
             output.put("output", selection.toString());
+        } catch (LocalFactsRequiredException error) {
+            ObjectNode failure = objectMapper.createObjectNode();
+            failure.put("status", "local_facts_required");
+            failure.put("message", "Read local night facts first and use one of the exact localDate values returned.");
+            output.put("output", failure.toString());
         } catch (RuntimeException error) {
             ObjectNode failure = objectMapper.createObjectNode();
             failure.put("status", "unavailable");
@@ -240,13 +249,25 @@ public class AssistantService {
             case "get_local_night_facts" -> {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
-                yield tools.getLocalNightFacts(locationId);
+                ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
+                List<LocalDate> availableDates = facts == null || facts.outlook() == null
+                        || facts.outlook().nights() == null
+                        ? List.of()
+                        : facts.outlook().nights().stream().map(NightOutlook::localDate)
+                                .filter(java.util.Objects::nonNull).toList();
+                context.supportedNightDates.put(locationId, availableDates);
+                yield facts;
             }
             case "get_night_outlook" -> {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
-                yield tools.getNightOutlook(locationId,
-                        LocalDate.parse(requiredText(arguments, "local_date")));
+                LocalDate localDate = LocalDate.parse(requiredText(arguments, "local_date"));
+                List<LocalDate> availableDates = context.supportedNightDates.get(locationId);
+                if (availableDates == null) throw new LocalFactsRequiredException();
+                if (!availableDates.contains(localDate)) {
+                    throw new UnsupportedNightDateException(localDate, availableDates);
+                }
+                yield tools.getNightOutlook(locationId, localDate);
             }
             case "get_global_kp_forecast" -> tools.getGlobalKpForecast();
             case "get_three_day_storm_forecast" -> tools.getThreeDayStormForecast();
@@ -305,6 +326,7 @@ public class AssistantService {
     private static final class ToolContext {
         private final Set<Long> permittedLocationIds = new HashSet<>();
         private List<Location> latestCandidates = List.of();
+        private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {
@@ -314,6 +336,8 @@ public class AssistantService {
             this.candidates = candidates;
         }
     }
+
+    private static final class LocalFactsRequiredException extends RuntimeException {}
 
     private ArrayNode buildToolDefinitions() {
         ArrayNode definitions = objectMapper.createArrayNode();
