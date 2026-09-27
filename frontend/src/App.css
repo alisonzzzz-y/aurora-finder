@@ -120,6 +120,10 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 .assistant-examples button { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--text); padding: 9px 11px; text-align: left; font-size: 12px; line-height: 1.4; cursor: pointer; }
 .assistant-examples button:hover { border-color: var(--accent); }
 .assistant-notice { flex: 0 0 auto; overflow-wrap: anywhere; color: #d7c7ef; font-size: 12px; line-height: 1.5; }
+.assistant-error-wrap { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; }
+.assistant-error-wrap .assistant-notice { margin: 0; }
+.assistant-retry { flex: 0 0 auto; border: 1px solid var(--accent); border-radius: 7px; background: transparent; color: var(--accent); padding: 7px 12px; cursor: pointer; }
+.assistant-retry:disabled { opacity: .5; cursor: not-allowed; }
 .assistant-composer { display: grid; flex: 0 0 auto; min-width: 0; gap: 9px; margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--line); }
 .assistant-composer textarea { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; resize: vertical; border: 1px solid var(--line-strong); border-radius: 7px; background: #0d0b14; color: var(--text); padding: 10px; font: inherit; font-size: 13px; }
 .assistant-messages { display: grid; flex: 1 1 auto; min-width: 0; min-height: 0; gap: 10px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; margin: 16px 0; }

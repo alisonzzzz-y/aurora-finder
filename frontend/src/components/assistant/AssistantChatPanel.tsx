@@ -20,6 +20,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [messages, setMessages] = useState<AssistantMessage[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [failedRequest, setFailedRequest] = useState<{ question: string; history: AssistantMessage[]; location?: Location } | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; width: number; height: number } | null>(null)
@@ -107,12 +108,18 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     return [location.name, location.region, location.subregion, location.country].filter(Boolean).join(', ')
   }
 
-  async function sendQuestion(question: string, selectedLocation?: Location) {
+  async function sendQuestion(
+    question: string,
+    selectedLocation?: Location,
+    historyOverride?: AssistantMessage[],
+    appendUserMessage = true,
+  ) {
     if (!question || busy) return
-    const history = messages
-    setMessages(current => [...current, { role: 'user', content: question }])
+    const history = historyOverride ?? messages
+    if (appendUserMessage) setMessages(current => [...current, { role: 'user', content: question }])
     setDraft('')
     setError('')
+    setFailedRequest(null)
     setBusy(true)
     try {
       const response = await askAssistant(question, language, history, selectedLocation?.id ?? locationId)
@@ -122,6 +129,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       }])
     } catch {
       setError(t('assistantRequestFailed'))
+      setFailedRequest({ question, history, ...(selectedLocation ? { location: selectedLocation } : {}) })
     } finally {
       setBusy(false)
     }
@@ -153,7 +161,11 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         </div>)}
         {busy && <p className="assistant-message assistant pending"><span>{t('assistantRole')}</span>{t('assistantWorking')}</p>}
       </div>}
-      {error && <p className="assistant-notice error" role="alert">{error}</p>}
+      {error && <div className="assistant-error-wrap"><p className="assistant-notice error" role="alert">{error}</p>
+        {failedRequest && <button type="button" className="assistant-retry" disabled={busy} onClick={() => void sendQuestion(
+          failedRequest.question, failedRequest.location, failedRequest.history, false,
+        )}>{t('assistantRetry')}</button>}
+      </div>}
       <form className="assistant-composer" onSubmit={submitQuestion}>
         <label className="sr-only" htmlFor="assistant-question">{t('assistantInputLabel')}</label>
         <textarea id="assistant-question" rows={2} maxLength={1000} value={draft} disabled={busy} placeholder={t('assistantInputPlaceholder')} onChange={event => { setDraft(event.target.value); setError('') }} onKeyDown={event => {
