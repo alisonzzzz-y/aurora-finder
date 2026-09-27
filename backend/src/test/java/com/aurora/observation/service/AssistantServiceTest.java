@@ -10,8 +10,10 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -313,5 +315,78 @@ class AssistantServiceTest {
         assertTrue(error.getMessage().contains("too many tool steps"));
         verify(openAi, times(5)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
         verify(tools, times(5)).getGlobalKpForecast();
+    }
+
+    @Test
+    void givesModelSafeUnavailableStatusWhenLocalFactsToolFails() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":42}"))
+                .thenReturn(responseWithText(mapper, "Cloud data is currently unavailable."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getLocalNightFacts(42)).thenThrow(new IllegalStateException("secret upstream URL and token"));
+        org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What are the clouds like?", "en", 42L, List.of()));
+
+        assertEquals("Cloud data is currently unavailable.", result.answer());
+        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        String secondRequest = requestInputs.getAllValues().get(1).toString();
+        assertTrue(secondRequest.contains("unavailable"));
+        assertTrue(secondRequest.contains("currently unavailable"));
+        assertFalse(secondRequest.contains("secret upstream URL"));
+    }
+
+    @Test
+    void returnsSupportedLocalDatesToModelWhenRequestedNightIsOutOfRange() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        LocalDate requested = LocalDate.of(2026, 9, 27);
+        List<LocalDate> available = List.of(requested.plusDays(1), requested.plusDays(2));
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_night_outlook",
+                        "{\"location_id\":42,\"local_date\":\"2026-09-27\"}"))
+                .thenReturn(responseWithText(mapper, "That date is outside the available local forecast."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getNightOutlook(42, requested)).thenThrow(new UnsupportedNightDateException(requested, available));
+        org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What about tonight?", "en", 42L, List.of()));
+
+        assertEquals("That date is outside the available local forecast.", result.answer());
+        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        String secondRequest = requestInputs.getAllValues().get(1).toString();
+        assertTrue(secondRequest.contains("2026-09-28"));
+        assertTrue(secondRequest.contains("2026-09-29"));
+        verify(tools).getNightOutlook(42, requested);
+    }
+
+    private ObjectNode responseWithFunctionCall(ObjectMapper mapper, String name, String arguments) {
+        ObjectNode response = mapper.createObjectNode();
+        ArrayNode output = mapper.createArrayNode();
+        output.add(functionCall(mapper, name, arguments));
+        response.set("output", output);
+        return response;
+    }
+
+    private ObjectNode responseWithText(ObjectMapper mapper, String textValue) {
+        ObjectNode response = mapper.createObjectNode();
+        ArrayNode output = mapper.createArrayNode();
+        ObjectNode message = mapper.createObjectNode();
+        message.put("type", "message");
+        ArrayNode content = mapper.createArrayNode();
+        ObjectNode text = mapper.createObjectNode();
+        text.put("type", "output_text");
+        text.put("text", textValue);
+        content.add(text);
+        message.set("content", content);
+        output.add(message);
+        response.set("output", output);
+        return response;
     }
 }
