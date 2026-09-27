@@ -44,15 +44,14 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <LocationSearch busy={busy} onSelect={onSelect} />
         {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
         {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
-        {facts && <SelectedLocationOutlook facts={facts} language={language} />}
+        {facts
+          ? <SelectedLocationOutlook facts={facts} language={language} />
+          : <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
       </aside>
     </section>
     <div className="home-content-sections">
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
         <LatestAuroraForecast />
-      </div>
-      <div className="home-section-band home-section-band-even" role="region" aria-label={t('currentAreasTitle')}>
-        <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
       </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('stormOutlookTitle')}>
         <NextAuroraStormForecast />
