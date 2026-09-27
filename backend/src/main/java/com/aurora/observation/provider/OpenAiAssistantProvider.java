@@ -7,6 +7,8 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.time.Duration;
 
 @Component
 public class OpenAiAssistantProvider {
+    private static final Logger log = LoggerFactory.getLogger(OpenAiAssistantProvider.class);
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String apiKey;
@@ -62,16 +65,27 @@ public class OpenAiAssistantProvider {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 429) {
+                log.warn("OpenAI Responses API rate limited the request (requestId={}).",
+                        response.headers().firstValue("x-request-id").orElse("unknown"));
                 throw new AssistantRateLimitException();
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.warn("OpenAI Responses API returned HTTP {} (requestId={}).",
+                        response.statusCode(), response.headers().firstValue("x-request-id").orElse("unknown"));
                 throw new AssistantUnavailableException("The AI service returned HTTP " + response.statusCode() + ".");
             }
-            return objectMapper.readTree(response.body());
+            try {
+                return objectMapper.readTree(response.body());
+            } catch (RuntimeException error) {
+                log.error("OpenAI Responses API returned invalid JSON (requestId={}).",
+                        response.headers().firstValue("x-request-id").orElse("unknown"), error);
+                throw new AssistantUnavailableException("The AI service returned an invalid response.", error);
+            }
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             throw new AssistantUnavailableException("The AI request was interrupted.", error);
         } catch (IOException | IllegalArgumentException error) {
+            log.warn("OpenAI Responses API request failed before a response was received: {}.", error.getClass().getSimpleName());
             throw new AssistantUnavailableException("The AI service could not be reached.", error);
         }
     }
