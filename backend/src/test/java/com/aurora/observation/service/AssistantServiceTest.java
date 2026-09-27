@@ -25,6 +25,27 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void tellsAssistantNotToInventLocalAuroraRecurrenceIntervals() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithText(mapper,
+                        "There is no validated local dataset from which to give a reliable interval."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        org.mockito.ArgumentCaptor<String> instructions = org.mockito.ArgumentCaptor.forClass(String.class);
+
+        AssistantChatResponse result = new AssistantService(openAi, mock(ObservationToolsService.class), mapper)
+                .chat(new AssistantChatRequest(
+                        "How often can people see aurora around Dublin or Cork?", "en", null, List.of()));
+
+        assertTrue(result.answer().contains("no validated local dataset"));
+        verify(openAi).respond(instructions.capture(), any(ArrayNode.class), any(ArrayNode.class));
+        assertTrue(instructions.getValue().contains("cannot give a reliable interval"));
+        assertTrue(instructions.getValue().contains("Never estimate that"));
+        assertTrue(instructions.getValue().contains("frequency from latitude, Kp"));
+    }
+
+    @Test
     void resolvesExactFullLocationLabelFromAmbiguousResults() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);
