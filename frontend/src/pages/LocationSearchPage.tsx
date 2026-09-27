@@ -45,9 +45,10 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <LocationSearch busy={busy} onSelect={onSelect} />
         {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
         {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
-        {facts
-          ? <SelectedLocationOutlook facts={facts} language={language} />
-          : <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
+        <div className="map-sidebar-content">
+          <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
+          {facts && <SelectedLocationOutlook facts={facts} language={language} />}
+        </div>
       </aside>
     </section>
     <div className="home-content-sections">
