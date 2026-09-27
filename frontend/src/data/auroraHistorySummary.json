@@ -1,0 +1,59 @@
+{
+  "source": "Aurorasaurus Web Observations (2014-2025), cleaned CSV",
+  "sourceUrl": "https://doi.org/10.5281/zenodo.16783265",
+  "sourceFile": "web_observations_2014-08-01_to_2025-08-02_cleaned.csv",
+  "sourceMd5": "2319009e2e2f3dfb596ad5368e719860",
+  "totalReports": 22280,
+  "coverageStart": "2014-08-28",
+  "coverageEnd": "2025-07-31",
+  "years": [
+    {
+      "year": 2014,
+      "reports": 184
+    },
+    {
+      "year": 2015,
+      "reports": 1350
+    },
+    {
+      "year": 2016,
+      "reports": 1701
+    },
+    {
+      "year": 2017,
+      "reports": 1440
+    },
+    {
+      "year": 2018,
+      "reports": 526
+    },
+    {
+      "year": 2019,
+      "reports": 45
+    },
+    {
+      "year": 2020,
+      "reports": 264
+    },
+    {
+      "year": 2021,
+      "reports": 379
+    },
+    {
+      "year": 2022,
+      "reports": 620
+    },
+    {
+      "year": 2023,
+      "reports": 1516
+    },
+    {
+      "year": 2024,
+      "reports": 11465
+    },
+    {
+      "year": 2025,
+      "reports": 2790
+    }
+  ]
+}
