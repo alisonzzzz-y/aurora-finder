@@ -26,10 +26,18 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const { language, t } = useI18n()
   const auroraMap = useAuroraMapData()
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
+  const [showLocalOutlook, setShowLocalOutlook] = useState(false)
   const activityPoints = useMemo(
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
   )
+  const hasLocationRequest = busy || Boolean(facts) || Boolean(error)
+
+  function selectLocation(location: Location) {
+    setShowLocalOutlook(true)
+    onSelect(location)
+  }
+
   return <>
     <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
@@ -42,12 +50,18 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           <h2>{t('auroraForecast')}</h2>
           <span>{t('shortRange')}</span>
         </div>
-        <LocationSearch busy={busy} onSelect={onSelect} />
-        {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
-        {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
+        <LocationSearch busy={busy} onSelect={selectLocation} />
         <div className="map-sidebar-content">
-          <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />
-          {facts && <SelectedLocationOutlook facts={facts} language={language} />}
+          {hasLocationRequest && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
+            <button type="button" aria-pressed={!showLocalOutlook} onClick={() => setShowLocalOutlook(false)}>{t('activityAreasTab')}</button>
+            <button type="button" aria-pressed={showLocalOutlook} onClick={() => setShowLocalOutlook(true)}>{t('localOutlook')}</button>
+          </div>}
+          {(!hasLocationRequest || !showLocalOutlook) && <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
+          {hasLocationRequest && showLocalOutlook && <div className="map-sidebar-location-panel">
+            {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
+            {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
+            {facts && <SelectedLocationOutlook facts={facts} language={language} />}
+          </div>}
         </div>
       </aside>
     </section>

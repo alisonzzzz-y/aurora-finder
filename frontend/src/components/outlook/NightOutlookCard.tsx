@@ -13,7 +13,9 @@ export function NightOutlookCard({ night, index, timezone }: Props) {
     HIGH: t('highLevel'),
     MEDIUM: t('mediumLevel'),
     LOW: t('lowLevel'),
-    INSUFFICIENT_DATA: t('insufficientData'),
+    INSUFFICIENT_DATA: night.reasonCode === 'RULES_NOT_VALIDATED'
+      ? t('rulesNotValidatedShort')
+      : t('insufficientData'),
   }
   const thresholdLabels: Record<NightOutlook['solarDarkness']['thresholds'][number]['threshold'], string> = {
     CIVIL_TWILIGHT: t('civilTwilight'),
