@@ -43,6 +43,10 @@ class AssistantServiceTest {
         assertTrue(instructions.getValue().contains("cannot give a reliable interval"));
         assertTrue(instructions.getValue().contains("Never estimate that"));
         assertTrue(instructions.getValue().contains("frequency from latitude, Kp"));
+        assertTrue(instructions.getValue().contains("use only the exact"));
+        assertTrue(instructions.getValue().contains("Never guess a date or use the server's date"));
+        assertTrue(instructions.getValue().contains("UTC offset"));
+        assertTrue(instructions.getValue().contains("Mention unavailable or"));
     }
 
     @Test
@@ -359,6 +363,29 @@ class AssistantServiceTest {
         assertTrue(secondRequest.contains("unavailable"));
         assertTrue(secondRequest.contains("currently unavailable"));
         assertFalse(secondRequest.contains("secret upstream URL"));
+    }
+
+    @Test
+    void rejectsModelSuppliedLocationIdThatDiffersFromApplicationSelection() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        org.mockito.ArgumentCaptor<ArrayNode> requestInputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":99}"))
+                .thenReturn(responseWithText(mapper, "Please use the selected place."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What are the local conditions?", "en", 42L, List.of()));
+
+        assertEquals("Please use the selected place.", result.answer());
+        verify(tools, never()).getLocalNightFacts(99);
+        verify(tools, never()).getLocalNightFacts(42);
+        verify(openAi, times(2)).respond(anyString(), requestInputs.capture(), any(ArrayNode.class));
+        String followUpInput = requestInputs.getAllValues().get(1).toString();
+        assertTrue(followUpInput.contains("location_selection_required"));
+        assertFalse(followUpInput.contains("\"location_id\":99"));
     }
 
     @Test
