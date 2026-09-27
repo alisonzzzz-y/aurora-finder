@@ -292,4 +292,26 @@ class AssistantServiceTest {
 
         assertTrue(error.getMessage().contains("invalid response"));
     }
+
+    @Test
+    void stopsAfterFiveModelToolRoundsToBoundAssistantCost() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode response = mapper.createObjectNode();
+        ArrayNode output = mapper.createArrayNode();
+        output.add(functionCall(mapper, "get_global_kp_forecast", "{}"));
+        response.set("output", output);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(response);
+
+        AssistantUnavailableException error = org.junit.jupiter.api.Assertions.assertThrows(
+                AssistantUnavailableException.class,
+                () -> new AssistantService(openAi, tools, mapper)
+                        .chat(new AssistantChatRequest("What is the current global activity?", "en", null, List.of())));
+
+        assertTrue(error.getMessage().contains("too many tool steps"));
+        verify(openAi, times(5)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+        verify(tools, times(5)).getGlobalKpForecast();
+    }
 }
