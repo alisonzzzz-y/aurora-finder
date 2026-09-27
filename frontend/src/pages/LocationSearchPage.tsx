@@ -5,6 +5,7 @@ import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
 import { CloudForecastCard } from '../components/weather/CloudForecastCard'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
+import { HistoricalReportsChart } from '../components/aurora/HistoricalReportsChart'
 import { NextAuroraStormForecast } from '../components/aurora/NextAuroraStormForecast'
 import { AuroraResources } from '../components/aurora/AuroraResources'
 import type { Location } from '../types/location'
@@ -53,8 +54,11 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
         <LatestAuroraForecast />
       </div>
-      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('stormOutlookTitle')}>
+      <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
         <NextAuroraStormForecast />
+      </div>
+      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('historicalReportsTitle')}>
+        <HistoricalReportsChart />
       </div>
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('forecastGuideTitle')}>
         <ForecastGuide />
