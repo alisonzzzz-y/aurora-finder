@@ -1,9 +1,11 @@
 import type { WeatherForecast } from '../../types/weatherForecast'
 import type { SourceFact } from '../../types/observationFacts'
+import type { NightOutlook } from '../../types/outlook'
 import { useI18n } from '../../i18n'
+import { CloudDarknessTimeline } from './CloudDarknessTimeline'
 import './CloudForecastCard.css'
 
-type Props = { fact: SourceFact<WeatherForecast>; timezone: string }
+type Props = { fact: SourceFact<WeatherForecast>; timezone: string; night?: NightOutlook }
 
 function formatTime(instant: string, timezone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -11,7 +13,7 @@ function formatTime(instant: string, timezone: string, locale: string) {
   }).format(new Date(instant))
 }
 
-export function CloudForecastCard({ fact, timezone }: Props) {
+export function CloudForecastCard({ fact, timezone, night }: Props) {
   const { language, t } = useI18n()
   const data = fact.data
   const locale = language === 'zh' ? 'zh-CN' : 'en'
@@ -23,6 +25,7 @@ export function CloudForecastCard({ fact, timezone }: Props) {
     </div>
     {fact.status === 'UNAVAILABLE' && <p className="cloud-forecast-message error">{t('sourceUnavailable')} {t(fact.failureCode === 'TIMEOUT' ? 'sourceTimeout' : fact.failureCode === 'RATE_LIMITED' ? 'sourceRateLimited' : fact.failureCode === 'FORBIDDEN' ? 'sourceForbidden' : 'sourceFailed')}</p>}
     {fact.status === 'NO_COVERAGE' && !data && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
+    {night && <CloudDarknessTimeline points={data?.cloudForecast ?? []} night={night} timezone={timezone} />}
     {data && <>
       <ul className="cloud-forecast-list">
         {data.cloudForecast.slice(0, 8).map(point => <li key={point.validAt}>

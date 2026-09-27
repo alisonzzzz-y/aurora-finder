@@ -93,7 +93,7 @@ function SelectedLocationOutlook({ facts, language }: { facts: ObservationFacts;
     </div>
     <p className="timestamp">{t('generatedAt')} {generatedAt}. {t('localTimeNote')}</p>
     <LocalAuroraActivityCard fact={facts.auroraActivity} timezone={outlook.location.timezone} />
-    <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} />
+    <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={outlook.nights[0]} />
   </section>
 }
 
