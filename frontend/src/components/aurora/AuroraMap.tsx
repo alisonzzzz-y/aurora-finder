@@ -362,7 +362,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       const point = activityPoints[selectedActivityIndex]
       if (!point) return
       activityPopup.current?.remove()
-      instance.flyTo({ center: [point.longitude, point.latitude], zoom: Math.max(instance.getZoom(), 3.2), duration: 900 })
+      instance.easeTo({ center: [point.longitude, point.latitude], zoom: Math.max(instance.getZoom(), 2.2), duration: 1500 })
       activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
         .setLngLat([point.longitude, point.latitude])
         .setDOMContent(createActivityPopup(selectedActivityIndex + 1, point.auroraValue, t('modelGridPoint'), t('activityValue')))
