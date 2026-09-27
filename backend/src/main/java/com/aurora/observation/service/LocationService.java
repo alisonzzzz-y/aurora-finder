@@ -5,6 +5,7 @@ import com.aurora.observation.provider.GeocodingProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,11 +58,34 @@ public class LocationService {
         return loadCoalesced(key, searchesInFlight, () -> {
             List<Location> secondCheck = read(searches, key);
             if (secondCheck != null) return secondCheck;
-            List<Location> result = List.copyOf(geocoding.search(cleaned));
+            List<Location> result = geocoding.search(cleaned).stream()
+                    .filter(location -> matchesQuery(cleaned, location))
+                    .toList();
             write(searches, key, result, searchTtl);
             for (Location location : result) write(locations, location.id(), location, locationTtl);
             return result;
         });
+    }
+
+    private boolean matchesQuery(String query, Location location) {
+        List<String> queryTokens = searchTokens(query);
+        if (queryTokens.isEmpty()) return false;
+        List<String> locationTokens = java.util.Arrays.stream(new String[]{
+                        location.name(), location.region(), location.subregion(), location.country()})
+                .filter(value -> value != null && !value.isBlank())
+                .flatMap(value -> searchTokens(value).stream())
+                .toList();
+        return queryTokens.stream().allMatch(queryToken -> locationTokens.stream()
+                .anyMatch(locationToken -> locationToken.startsWith(queryToken)));
+    }
+
+    private List<String> searchTokens(String value) {
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]+", " ")
+                .trim();
+        return normalized.isEmpty() ? List.of() : List.of(normalized.split("\\s+"));
     }
 
     public Location get(long id) {
