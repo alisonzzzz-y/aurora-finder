@@ -1,3 +1,4 @@
+import { StormComparisonChart, WarningTimeline } from './StormComparisonChart'
 import { useEffect, useState } from 'react'
 import { getGeomagneticStormForecast } from '../../api/geomagneticStorm'
 import { getKpIndex } from '../../api/kpIndex'
@@ -32,6 +33,7 @@ export function NextAuroraStormForecast() {
   const [warningsError, setWarningsError] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
+  const [now, setNow] = useState(() => Date.now())
   const locale = language === 'zh' ? 'zh-CN' : 'en-IE'
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function NextAuroraStormForecast() {
       if (kpResult.status === 'fulfilled') setKp(kpResult.value)
       if (warningsResult.status === 'fulfilled') { setWarnings(warningsResult.value); setWarningsError(false) }
       else setWarningsError(true)
+      setNow(Date.now())
       setLoading(false)
     }
     void load()
@@ -84,45 +87,26 @@ export function NextAuroraStormForecast() {
             </li>
           })}</ul>}
       </div>
-      {warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
+      <WarningTimeline warnings={warnings.warnings} now={now} />
+      <details className="visual-details"><summary>{t('warningValidWindow')}</summary>{warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
         <strong>{warning.noaaScale ?? `${t('expectedKIndex')}: ${warning.expectedKIndex}`}</strong>
         <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
-      </article>)}
+      </article>)}</details>
     </div>}
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="storm-outlook-message error">{localizeError(error, t)}</p>}
     {!loading && forecast && <>
-      <div className="storm-day-list">
-        {forecast.days.map(day => {
-          const peak = kp ? dayPeak(kp.records, day.date) : undefined
-          const date = new Date(`${day.date}T12:00:00Z`)
-          const probabilities = [
-            [t('activeGeomagnetic'), day.activeChancePercent],
-            [t('minorStorm'), day.minorStormChancePercent],
-            [t('moderateStorm'), day.moderateStormChancePercent],
-            [t('strongStorm'), day.strongExtremeStormChancePercent],
-          ] as const
-          return <article className="storm-day" key={day.date}>
-            <h3>{new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date)}</h3>
-            <ul className="storm-probability-chart">
-              {probabilities.map(([label, value]) => <li key={label}>
-                <span>{label}</span>
-                <progress max={100} value={value} aria-label={`${label}: ${value}%`}>{value}%</progress>
-                <strong>{value}%</strong>
-              </li>)}
-            </ul>
-            <p className="storm-kp-peak">{peak
-              ? <>{t('kpPeak')}: <strong>Kp {peak.kp.toFixed(2)}</strong> · {kpPeriodRange(peak.periodStart, locale)}</>
-              : t('kpPeakUnavailable')}</p>
-          </article>
-        })}
-      </div>
+      <StormComparisonChart days={forecast.days} />
+      <details className="visual-details"><summary>{t('kpPeak')}</summary>{forecast.days.map(day => {
+        const peak = kp ? dayPeak(kp.records, day.date) : undefined
+        return <p key={day.date}>{day.date} (UTC): {peak ? <>Kp {peak.kp.toFixed(2)} · {kpPeriodRange(peak.periodStart, locale)}</> : t('kpPeakUnavailable')}</p>
+      })}</details>
       <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
     </>}
-    <div className="storm-best-places">
+    <details className="visual-details"><summary>{t('bestViewingPlacesTitle')}</summary><div className="storm-best-places">
       <h3>{t('bestViewingPlacesTitle')}</h3>
       <p>{t('bestViewingPlacesPending')}</p>
     </div>
-    <p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
+    </details><p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
   </section>
 }
