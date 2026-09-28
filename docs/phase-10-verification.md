@@ -8,6 +8,7 @@ Updated: 2026-09-28
 
 | Scenario | Verification | Result and scope |
 | --- | --- | --- |
+| Search, local facts, map, and AI tool flow | `ObservationWorkflowIntegrationTest` uses real Spring controllers, services, solar calculations, and tools, with fixed time and mocked external providers. | Same-name candidates remain distinct; three local nights and map data agree with the selected place; AI receives the same facts JSON as the page API. Weather timeout remains partial in both paths. Model responses are scripted, so this does not evaluate model reasoning or a production browser. |
 | Weather provider timeout | `MetNoWeatherProviderTest.classifiesAnActualHttpRequestTimeout` delays a local HTTP response beyond the configured request timeout. | The provider reports `TIMEOUT`. This is a local integration test, not an outage test against MET Norway. |
 | Partial source outage | `ObservationFactsServiceTest` injects a weather timeout while NOAA activity is current. | The response remains `PARTIAL`; aurora and solar darkness remain available, while cloud data is unavailable. |
 | Expired aurora data | `AuroraMapServiceTest.expiresOvationAtForecastTimeAndSuppressesTheOldGrid`. | Expired grid values are suppressed and the local activity level becomes insufficient data. |
@@ -16,7 +17,7 @@ Updated: 2026-09-28
 | Request cost controls | `AssistantRequestLimiterTest`, `AssistantServiceTest`, and `OpenAiAssistantProviderTest` cover request limits, bounded tool interaction, and returned token usage. | Per-call controls and token reporting are tested. The app does not calculate dollar spend or provide an aggregate usage dashboard. |
 | Database failure | No database or Repository is part of the current MVP. | Not applicable to the current runtime; database outage behavior has not been tested. |
 
-The backend `./mvnw verify` run completed with 80 tests, 0 failures, 0 errors, and 0 skipped tests on 2026-09-28. Production browser checks recorded elsewhere confirm the normal user path; they do not demonstrate production fault injection.
+The backend `./mvnw verify` run completed with 82 tests, 0 failures, 0 errors, and 0 skipped tests on 2026-09-28. Production browser checks recorded elsewhere confirm the normal user path; they do not demonstrate production fault injection.
 
 ### Operational limits still to verify
 
@@ -31,6 +32,7 @@ The backend `./mvnw verify` run completed with 80 tests, 0 failures, 0 errors, a
 
 | 场景 | 验证方式 | 结果与范围 |
 | --- | --- | --- |
+| 搜索、当地事实、地图与 AI 工具流程 | `ObservationWorkflowIntegrationTest` 使用真实 Spring Controller、Service、太阳计算和工具，仅固定时间并模拟外部提供商。 | 同名地点保持区分，三晚日期和地图对应选中地点，AI 接收到的事实 JSON 与页面接口一致；天气超时在两条路径中均保持部分可用。模型响应由测试脚本提供，因此不代表模型推理评估或生产浏览器验收。 |
 | 天气服务超时 | `MetNoWeatherProviderTest.classifiesAnActualHttpRequestTimeout` 让本地 HTTP 测试服务延迟返回，超过配置的请求时限。 | Provider 正确返回 `TIMEOUT`。这是本地集成测试，不代表对 MET Norway 线上服务进行过故障测试。 |
 | 单一数据源故障 | `ObservationFactsServiceTest` 模拟天气请求超时，同时让 NOAA 极光数据保持有效。 | 总体状态为 `PARTIAL`；极光活动和太阳黑暗时段仍可用，云量数据标记为不可用。 |
 | 极光数据过期 | `AuroraMapServiceTest.expiresOvationAtForecastTimeAndSuppressesTheOldGrid`。 | 过期网格值会被隐藏，当地活动等级返回“数据不足”。 |
@@ -39,7 +41,7 @@ The backend `./mvnw verify` run completed with 80 tests, 0 failures, 0 errors, a
 | 请求成本控制 | `AssistantRequestLimiterTest`、`AssistantServiceTest` 和 `OpenAiAssistantProviderTest` 覆盖请求频率限制、工具交互上限和接口返回的 token 用量。 | 单次调用限制和 token 记录已测试。应用不会计算美元费用，也没有汇总用量面板。 |
 | 数据库故障 | 当前 MVP 没有数据库或 Repository。 | 现阶段不适用；尚未测试数据库故障行为。 |
 
-2026-09-28 的后端 `./mvnw verify` 全量检查通过：80 项测试，失败 0、错误 0、跳过 0。其他记录中的生产浏览器测试验证了正常使用流程，但不代表在生产环境注入过故障。
+2026-09-28 的后端 `./mvnw verify` 全量检查通过：82 项测试，失败 0、错误 0、跳过 0。其他记录中的生产浏览器测试验证了正常使用流程，但不代表在生产环境注入过故障。
 
 ### 仍需进行的运行环境核验
 
