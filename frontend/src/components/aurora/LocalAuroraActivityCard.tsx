@@ -33,12 +33,13 @@ export function LocalAuroraActivityCard({ fact, timezone }: Props) {
         <span className={`local-activity-badge local-activity-${data.level.toLowerCase()}`}>{t(levelKey)}</span>
         {data.modelValue !== null && <span>{t('noaaGridValue')} <strong>{data.modelValue}/100</strong></span>}
       </div>
-      <dl className="local-aurora-meta">
+      {fact.status === 'CURRENT' && data.status === 'CURRENT' && data.modelValue !== null && <div className="signal-ruler" role="meter" aria-label={t('noaaGridValue')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={data.modelValue}><span style={{ left: `${data.modelValue}%` }} /><small>0</small><small>100</small></div>}
+      <details className="visual-details"><summary>{t('nightDetails')}</summary><dl className="local-aurora-meta">
         <div><dt>{t('forecastValid')}</dt><dd>{formatTime(fact.sourceForecastAtUtc ?? data.forecastTime, timezone, locale)}</dd></div>
         <div><dt>{t('observed')}</dt><dd>{formatTime(fact.sourceObservedAtUtc ?? data.observationTime, timezone, locale)}</dd></div>
         <div><dt>{t('dataRetrieved')}</dt><dd>{formatTime(fact.retrievedAtUtc ?? data.retrievedAt, timezone, locale)}</dd></div>
       </dl>
-      <p className="local-aurora-note">{t(data.status === 'EXPIRED' ? 'localAuroraExpiredNote' : 'localAuroraNote')}</p>
+      <p className="local-aurora-note">{t(data.status === 'EXPIRED' ? 'localAuroraExpiredNote' : 'localAuroraNote')}</p></details>
     </div>}
   </section>
 }
