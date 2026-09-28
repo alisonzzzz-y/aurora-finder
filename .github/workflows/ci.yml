@@ -28,6 +28,8 @@ jobs:
         run: ./mvnw --batch-mode verify
       - name: Check assistant evaluation runner without network requests
         run: python3 -m unittest discover -s scripts -p test_evaluate_assistant.py
+      - name: Check production smoke runner without network requests
+        run: python3 -m unittest discover -s scripts -p test_smoke_production.py
 
   frontend:
     name: Frontend lint and build
