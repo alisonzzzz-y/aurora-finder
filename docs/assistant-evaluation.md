@@ -22,7 +22,7 @@ python3 scripts/evaluate_assistant.py --live \
   --output /tmp/aurora-assistant-evaluation.json
 ```
 
-Live mode can incur model costs. The runner makes at most six assistant requests per run, does not retry failed requests, and stops on HTTP 429. The application's limit of eight requests per client in ten minutes still applies across runs. Keep raw reports local; they are not uploaded automatically. Offline runner checks use:
+Live mode can incur model costs. The runner makes at most six assistant requests per run. It retries idempotent location/facts GET requests up to three attempts after network errors or HTTP 502/503/504, but never retries assistant POST requests or HTTP 429. The application's limit of eight requests per client in ten minutes still applies across runs. Keep raw reports local; they are not uploaded automatically. Offline runner checks use:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p test_evaluate_assistant.py
@@ -58,7 +58,7 @@ The backend verification still passes all 82 tests. Five offline runner tests al
 
 `scripts/evaluate_assistant.py` 用合成问题检查线上应用，保存选中地点、页面事实接口响应和 AI 回答，供人工对照。它不需要 OpenAI key，也不保存真实用户的聊天。
 
-上面的默认命令只列出场景，不发送请求；加上 `--live` 才会请求线上后端，并把报告保存到指定本地路径。线上调用可能产生模型费用。每次运行最多发出六次 AI 请求，不重试失败请求，遇到 HTTP 429 就停止。应用原有的每客户端十分钟八次限制仍然适用于多次运行。原始报告保留在本机，不会自动上传。上面的离线测试命令不发送网络请求。
+上面的默认命令只列出场景，不发送请求；加上 `--live` 才会请求线上后端，并把报告保存到指定本地路径。线上调用可能产生模型费用。每次运行最多发出六次 AI 请求。地点和事实的只读 GET 请求遇到网络错误或 HTTP 502/503/504 时最多尝试三次；AI 的 POST 请求和 HTTP 429 不重试。应用原有的每客户端十分钟八次限制仍然适用于多次运行。原始报告保留在本机，不会自动上传。上面的离线测试命令不发送网络请求。
 
 跨时区场景的英文问题含义是：“对于选中的地点，今晚对应哪个当地日期？请给出 UTC 偏移，以及可用的夜晚日期。”
 
