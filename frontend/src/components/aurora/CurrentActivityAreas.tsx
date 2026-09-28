@@ -42,7 +42,7 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
             <span className="activity-area-caption">{t('modelGridPoint')}</span>
             </span>
           <span className={`activity-area-level activity-area-level-${level.slice('activity'.length).toLowerCase()}`}>
-            {t(level)} <small>{t('activityValue')} {point.auroraValue}</small>
+            <span className="activity-mini-bar" aria-hidden="true"><i style={{ width: `${point.auroraValue}%` }} /></span>{t(level)} <small>{t('activityValue')} {point.auroraValue}</small>
           </span>
           </button>
         </li>
