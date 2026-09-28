@@ -16,6 +16,7 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(380)
+  const [selectedPointAt, setSelectedPointAt] = useState<string | null>(null)
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const start = Date.parse(night.evaluationWindowStartUtc)
   const end = Date.parse(night.evaluationWindowEndUtc)
@@ -24,6 +25,7 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
     return Number.isFinite(instant) && instant >= start && instant <= end
   })
   const validPoints = timelinePoints.filter(point => point.cloudCoverPercent !== null)
+  const selectedPoint = validPoints.find(point => point.validAt === selectedPointAt)
   const left = 110
   const right = 10
   const top = 25
@@ -80,7 +82,15 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
         })}
         {validPoints.map(point => {
           const instant = Date.parse(point.validAt)
-          return <circle className="cloud-darkness-point" key={point.validAt} cx={xFor(instant)} cy={yFor(point.cloudCoverPercent!)} r="3.5">
+          return <circle className="cloud-darkness-point" key={point.validAt} cx={xFor(instant)} cy={yFor(point.cloudCoverPercent!)} r="5" role="button" tabIndex={0}
+            aria-label={`${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}`}
+            onClick={() => setSelectedPointAt(point.validAt)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                setSelectedPointAt(point.validAt)
+              }
+            }}>
             <title>{`${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}`}</title>
           </circle>
         })}
@@ -106,6 +116,10 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
         {!validPoints.length && <text className="cloud-darkness-empty" x={left + 8} y={top + 16}>{t('cloudTimelineNoPoints')}</text>}
       </svg>
     </div>
+    {selectedPoint?.cloudCoverPercent !== null && selectedPoint && <p className="cloud-point-selection" role="status">
+      <strong>{timeLabel(Date.parse(selectedPoint.validAt))}</strong>
+      <span>{t('cloudCoverLegend')}: {selectedPoint.cloudCoverPercent}%</span>
+    </p>}
     <ol className="sr-only">
       {validPoints.map(point => <li key={`cloud-${point.validAt}`}>{timeLabel(Date.parse(point.validAt))}: {point.cloudCoverPercent}%</li>)}
       {thresholds.map((threshold, index) => <li key={`darkness-${thresholdOrder[index]}`}>
