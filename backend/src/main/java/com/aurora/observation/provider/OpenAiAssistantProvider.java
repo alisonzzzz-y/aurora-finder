@@ -80,8 +80,10 @@ public class OpenAiAssistantProvider {
             try {
                 JsonNode result = objectMapper.readTree(response.body());
                 JsonNode usage = result.path("usage");
-                log.info("OpenAI Responses API completed (model={}, durationMs={}, inputTokens={}, outputTokens={}, requestId={}).",
-                        model, durationMs, tokenCount(usage, "input_tokens"), tokenCount(usage, "output_tokens"), requestId);
+                log.info("OpenAI Responses API completed (model={}, durationMs={}, inputTokens={}, cachedInputTokens={}, outputTokens={}, requestId={}).",
+                        model, durationMs, tokenCount(usage, "input_tokens"),
+                        tokenCount(usage.path("input_tokens_details"), "cached_tokens"),
+                        tokenCount(usage, "output_tokens"), requestId);
                 return result;
             } catch (RuntimeException error) {
                 log.error("OpenAI Responses API returned invalid JSON (model={}, durationMs={}, requestId={}).",
