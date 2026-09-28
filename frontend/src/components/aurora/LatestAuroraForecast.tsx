@@ -1,16 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { getKpIndex } from '../../api/kpIndex'
 import { transientRetryDelay } from '../../api/requestError'
-import type { KpIndexData, KpIndexRecord } from '../../types/kpIndex'
+import type { KpIndexData } from '../../types/kpIndex'
+import { canConnectKpPeriods, selectKpPeriods } from './kpPeriods'
 import { localizeError, useI18n } from '../../i18n'
 import './LatestAuroraForecast.css'
-
-function nextPredictedPeriod(records: KpIndexRecord[]) {
-  const now = Date.now()
-  return records
-    .filter(record => record.type === 'PREDICTED' && Date.parse(record.periodStart) >= now)
-    .sort((left, right) => Date.parse(left.periodStart) - Date.parse(right.periodStart))[0]
-}
 
 function formatLocalTime(instant: string, locale: string) {
   const date = new Date(instant)
@@ -21,20 +15,6 @@ function formatLocalTime(instant: string, locale: string) {
     hour: '2-digit', timeZoneName: 'shortOffset',
   }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value
   return offset ? `${localTime} (${offset})` : localTime
-}
-
-function nearbyPeriods(records: KpIndexRecord[]) {
-  const now = Date.now()
-  const reportedPeriods = records
-    .filter(record => record.type !== 'PREDICTED' && Date.parse(record.periodStart) <= now)
-    .sort((left, right) => Date.parse(left.periodStart) - Date.parse(right.periodStart))
-  const reported = reportedPeriods.at(-1)
-  const recent = reportedPeriods.slice(-8)
-  const upcoming = records
-    .filter(record => record.type === 'PREDICTED' && Date.parse(record.periodStart) >= now)
-    .sort((left, right) => Date.parse(left.periodStart) - Date.parse(right.periodStart))
-    .slice(0, 8)
-  return { reported, trend: [...recent, ...upcoming] }
 }
 
 function formatAxisTime(instant: string, locale: string) {
@@ -107,7 +87,8 @@ export function LatestAuroraForecast() {
     }
   }, [])
 
-  const forecast = data ? nextPredictedPeriod(data.records) : undefined
+  const periods = selectKpPeriods(data?.records ?? [])
+  const forecast = periods.forecast
   useEffect(() => {
     const element = chartRef.current
     if (!element) return
@@ -119,7 +100,6 @@ export function LatestAuroraForecast() {
     return () => observer.disconnect()
   }, [forecast])
 
-  const periods = data ? nearbyPeriods(data.records) : { reported: undefined, trend: [] }
   const chartHeight = 230
   const chartPadding = { top: 14, right: 14, bottom: 34, left: 34 }
   const chartStart = chartPadding.left
@@ -160,7 +140,7 @@ export function LatestAuroraForecast() {
       <div className="latest-forecast-meta">
         <div>
           <span>{t('forecastPeriod')}</span>
-          <time dateTime={forecast.periodStart}>{formatLocalTime(forecast.periodStart, locale)}</time>
+          <time dateTime={forecast.periodStart}>{t(forecast.type === 'ESTIMATED' ? 'estimatedKp' : forecast.type === 'OBSERVED' ? 'observedKp' : 'predictedKp')} · {formatLocalTime(forecast.periodStart, locale)}</time>
         </div>
         {data && <div>
           <span>{t('dataRetrieved')}</span>
@@ -194,7 +174,7 @@ export function LatestAuroraForecast() {
                 <text className="kp-threshold-label" x={chartEnd} y={yFor(5) - 6} textAnchor="end">{t('kpThresholdLabel')}</text>
                 {periods.trend.slice(0, -1).map((record, index) => {
                   const next = periods.trend[index + 1]
-                  if (Date.parse(next.periodStart) - Date.parse(record.periodStart) > 4 * 60 * 60 * 1000) return null
+                  if (!canConnectKpPeriods(record, next)) return null
                   return <path key={`${record.periodStart}-${next.periodStart}`} className={`kp-chart-segment ${record.type.toLowerCase()}`}
                     d={`M ${xFor(record.periodStart)} ${yFor(record.kp)} L ${xFor(next.periodStart)} ${yFor(next.kp)}`} />
                 })}
