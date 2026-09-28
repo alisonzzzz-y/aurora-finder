@@ -92,6 +92,31 @@ class ObservationFactsServiceTest {
                 response.auroraActivity().sourceUrl());
     }
 
+    @Test
+    void keepsExpiredAuroraAndMissingCloudCoverageExplicitWithoutInventingClearSkies() {
+        OutlookService outlooks = mock(OutlookService.class);
+        AuroraMapService aurora = mock(AuroraMapService.class);
+        WeatherService weather = mock(WeatherService.class);
+        when(outlooks.forLocation(DUBLIN.id())).thenReturn(outlook());
+        when(aurora.forCoordinates(DUBLIN.latitude(), DUBLIN.longitude())).thenReturn(
+                new LocalAuroraActivityResponse(com.aurora.observation.dto.ForecastStatus.EXPIRED,
+                        LocalAuroraActivityLevel.INSUFFICIENT_DATA, null, -6.0, 53.0,
+                        NOW.minusSeconds(3600), NOW, NOW, "NOAA OVATION", "ovation-local-v1"));
+        when(weather.forecast(DUBLIN.latitude(), DUBLIN.longitude(), DUBLIN.timezone()))
+                .thenReturn(new WeatherForecastResponse(NOW, NOW.plusSeconds(3600), "MET Norway",
+                        DUBLIN.latitude(), DUBLIN.longitude(), List.of()));
+
+        ObservationFactsResponse response = service(outlooks, aurora, weather).forLocation(DUBLIN.id());
+
+        assertEquals(FactFetchStatus.UNAVAILABLE, response.sourceStatus());
+        assertEquals(FactFetchStatus.EXPIRED, response.auroraActivity().status());
+        assertEquals(FactFetchStatus.NO_COVERAGE, response.cloudForecast().status());
+        assertEquals(List.of(), response.cloudForecast().data().cloudForecast());
+        assertEquals(com.aurora.observation.dto.ForecastCoverage.Status.CANNOT_CHECK,
+                response.coverage().status());
+        assertEquals(FactFetchStatus.CURRENT, response.solarDarkness().status());
+    }
+
     private ObservationFactsService service(OutlookService outlooks, AuroraMapService aurora, WeatherService weather) {
         return new ObservationFactsService(outlooks, aurora, weather, Clock.fixed(NOW, ZoneOffset.UTC));
     }
