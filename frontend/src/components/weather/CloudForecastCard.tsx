@@ -16,6 +16,7 @@ function formatTime(instant: string, timezone: string, locale: string) {
 export function CloudForecastCard({ fact, timezone, night }: Props) {
   const { language, t } = useI18n()
   const data = fact.data
+  const points = (data?.cloudForecast ?? []).filter(point => !night || (Date.parse(point.validAt) >= Date.parse(night.evaluationWindowStartUtc) && Date.parse(point.validAt) < Date.parse(night.evaluationWindowEndUtc)))
   const locale = language === 'zh' ? 'zh-CN' : 'en'
 
   return <section className="cloud-forecast-card" aria-labelledby="cloud-forecast-title" aria-live="polite">
@@ -25,21 +26,22 @@ export function CloudForecastCard({ fact, timezone, night }: Props) {
     </div>
     {fact.status === 'UNAVAILABLE' && <p className="cloud-forecast-message error">{t('sourceUnavailable')} {t(fact.failureCode === 'TIMEOUT' ? 'sourceTimeout' : fact.failureCode === 'RATE_LIMITED' ? 'sourceRateLimited' : fact.failureCode === 'FORBIDDEN' ? 'sourceForbidden' : 'sourceFailed')}</p>}
     {fact.status === 'NO_COVERAGE' && !data && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
+    {night && points.length === 0 && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
     {night && <CloudDarknessTimeline points={data?.cloudForecast ?? []} night={night} timezone={timezone} />}
     {data && <>
-      <ul className="cloud-forecast-list">
-        {data.cloudForecast.slice(0, 8).map(point => <li key={point.validAt}>
+      <details className="visual-details"><summary>{t('cloudDetails')}</summary><ul className="cloud-forecast-list">
+        {points.map(point => <li key={point.validAt}>
           <time dateTime={point.validAt}>{formatTime(point.validAt, timezone, locale)}</time>
           <strong>{point.cloudCoverPercent === null ? t('cloudMissing') : `${point.cloudCoverPercent}%`}</strong>
         </li>)}
       </ul>
-      {data.cloudForecast.length === 0 && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
+      {points.length === 0 && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
       <dl className="cloud-forecast-meta">
         {fact.retrievedAtUtc && <div><dt>{t('dataRetrieved')}</dt><dd>{formatTime(fact.retrievedAtUtc, timezone, locale)}</dd></div>}
         {data.expiresAt && <div><dt>{t('forecastCacheExpires')}</dt><dd>{formatTime(data.expiresAt, timezone, locale)}</dd></div>}
       </dl>
       <p className="cloud-forecast-note">{t('cloudForecastNote')}</p>
-      <p className="cloud-forecast-credit">{t('metNoAttribution')} <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>. {t('metNoChanges')}</p>
+      </details><p className="cloud-forecast-credit">{t('metNoAttribution')} <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>. {t('metNoChanges')}</p>
     </>}
   </section>
 }
