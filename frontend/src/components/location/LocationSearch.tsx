@@ -18,40 +18,52 @@ export function LocationSearch({ busy, onSelect }: Props) {
   const [error, setError] = useState<unknown>(null)
   const [state, setState] = useState<SearchState>('idle')
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const searchRequest = useRef<AbortController | null>(null)
   const normalizedQuery = query.trim()
 
   useEffect(() => () => searchRequest.current?.abort(), [])
 
+  useEffect(() => {
+    if (normalizedQuery.length < 2 || selectedLocation?.name === normalizedQuery) return
+    const controller = new AbortController()
+    searchRequest.current?.abort()
+    searchRequest.current = controller
+    const timer = window.setTimeout(async () => {
+      setState('loading')
+      setResults([])
+      setError(null)
+      setActiveIndex(-1)
+      try {
+        const locations = await searchLocations(normalizedQuery, controller.signal)
+        if (controller.signal.aborted || searchRequest.current !== controller) return
+        setResults(locations)
+        setState(locations.length === 0 ? 'empty' : 'results')
+      } catch (cause) {
+        if (controller.signal.aborted || searchRequest.current !== controller) return
+        setError(cause)
+        setState('error')
+      } finally {
+        if (searchRequest.current === controller) searchRequest.current = null
+      }
+    }, 300)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [normalizedQuery, selectedLocation])
+
   async function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (normalizedQuery.length < 2 || state === 'loading') return
-
-    searchRequest.current?.abort()
-    const controller = new AbortController()
-    searchRequest.current = controller
-    setState('loading')
-    setResults([])
-    setError(null)
-    setActiveIndex(-1)
-    try {
-      const locations = await searchLocations(normalizedQuery, controller.signal)
-      if (controller.signal.aborted || searchRequest.current !== controller) return
-      setResults(locations)
-      setState(locations.length === 0 ? 'empty' : 'results')
-    } catch (cause) {
-      if (controller.signal.aborted || searchRequest.current !== controller) return
-      setError(cause)
-      setState('error')
-    } finally {
-      if (searchRequest.current === controller) searchRequest.current = null
-    }
+    if (!selectedLocation || state === 'loading') return
+    onSelect(selectedLocation)
   }
 
   function updateQuery(value: string) {
     searchRequest.current?.abort()
     searchRequest.current = null
     setQuery(value)
+    setSelectedLocation(null)
     setResults([])
     setError(null)
     setState('idle')
@@ -61,7 +73,8 @@ export function LocationSearch({ busy, onSelect }: Props) {
   function choose(location: Location) {
     setResults([])
     setState('idle')
-    onSelect(location)
+    setSelectedLocation(location)
+    setQuery(location.name)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -106,7 +119,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
             disabled={busy}
           />
         </div>
-        <button className="location-search-button" type="submit" disabled={busy || state === 'loading' || normalizedQuery.length < 2}>
+        <button className="location-search-button" type="submit" disabled={busy || state === 'loading' || !selectedLocation}>
           {state === 'loading' ? t('loading') : t('search')}
         </button>
       </form>
