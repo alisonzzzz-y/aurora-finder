@@ -16,7 +16,7 @@ Updated: 2026-09-28
 | Request cost controls | `AssistantRequestLimiterTest`, `AssistantServiceTest`, and `OpenAiAssistantProviderTest` cover request limits, bounded tool interaction, and returned token usage. | Per-call controls and token reporting are tested. The app does not calculate dollar spend or provide an aggregate usage dashboard. |
 | Database failure | No database or Repository is part of the current MVP. | Not applicable to the current runtime; database outage behavior has not been tested. |
 
-The backend `./mvnw verify` run completed with 78 tests, 0 failures, 0 errors, and 0 skipped tests on 2026-09-28. Production browser checks recorded elsewhere confirm the normal user path; they do not demonstrate production fault injection.
+The backend `./mvnw verify` run completed with 80 tests, 0 failures, 0 errors, and 0 skipped tests on 2026-09-28. Production browser checks recorded elsewhere confirm the normal user path; they do not demonstrate production fault injection.
 
 ### Operational limits still to verify
 
