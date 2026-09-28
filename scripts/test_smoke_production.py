@@ -3,10 +3,14 @@
 import unittest
 from unittest.mock import patch
 
-from smoke_production import SmokeCheck
+from smoke_production import DEFAULT_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS, SmokeCheck
 
 
 class SmokeCheckTest(unittest.TestCase):
+    def test_timeout_allows_for_free_instance_wake_up(self):
+        self.assertGreaterEqual(DEFAULT_TIMEOUT_SECONDS, 50)
+        self.assertLessEqual(DEFAULT_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS)
+
     def test_happy_path_checks_facts_for_the_unique_irish_city_without_calling_ai(self):
         check = SmokeCheck("https://api.example")
         place = {"id": 42, "name": "Dublin", "country": "Ireland"}
