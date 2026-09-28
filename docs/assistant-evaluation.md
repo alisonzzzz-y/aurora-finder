@@ -85,3 +85,24 @@ The backend verification still passes all 82 tests. Five offline runner tests al
 - 页面基线和模型工具可能在不同时间获取数据，判断数值差异前需要比较来源时间和有效时段。
 - HTTP 200 本身不是通过标准，仍需按事实和场景要求人工核对回答。脚本把质量核验状态保持为 `PENDING`。
 - 公开聊天响应没有 token 或美元汇总，因此本次没有确认账单总额，也没有持久化工具调用轨迹。
+
+
+## Targeted recheck / 定向复验
+
+Checked on / 核验日期: 2026-09-29
+
+### English
+
+A synthetic two-turn Dublin check was repeated after the cloud-summary instruction change. The first answer asked the user to choose among Dublin candidates. After selecting "Dublin, Leinster, Dublin City, Ireland", the assistant returned the local cloud forecast and included the lowest available value, 20.3%, in the stated range (20.3%–100%). This resolves the specific omission seen in the September 28 sample; it does not establish consistent behavior across other dates or prompts.
+
+The Render health endpoint returned `UP`. An earlier location request returned HTTP 504 and an assistant request returned HTTP 502; subsequent location, health, and assistant requests succeeded. This records a brief failure followed by recovery, but does not identify the cause or establish service reliability. No real user conversation was used or stored.
+
+In an isolated copy of the current working tree, backend verification passed 80 tests and the frontend lint, six unit tests, and production build passed. The build emitted the existing large map chunk warning. These local checks do not replace production browser testing. Further real-model review is still needed for polar day, missing or expired source data, tool failures, and repeated English and Chinese summaries.
+
+### 简体中文
+
+2026年9月29日，在调整云量摘要要求后，用合成问题重新检查了两轮 Dublin 对话。第一轮先要求用户从多个 Dublin 候选中选择；用户回复“Dublin, Leinster, Dublin City, Ireland”后，助手返回当地云量预报，并在区间（20.3%–100%）中包含最低值 20.3%。这说明9月28日发现的“摘要漏掉最低值”在本次案例中已修复，但不能证明其他日期和问法都持续正确。
+
+Render 健康检查返回 `UP`。此前一次地点请求返回 HTTP 504、一次助手请求返回 HTTP 502；之后的地点、健康检查和助手请求均成功。这记录了短暂失败后恢复，但无法据此确定根因或服务稳定性。本次使用合成问题，没有使用或保存真实用户对话。
+
+在当前工作树的隔离副本中，后端验证通过80项测试；前端 lint、6项单元测试和生产构建通过。构建仍提示地图资源包较大。这些本地检查不能代替正式站浏览器验收。真实模型仍需评估极昼、数据缺失或过期、工具故障，以及中英文数值摘要的重复一致性。
