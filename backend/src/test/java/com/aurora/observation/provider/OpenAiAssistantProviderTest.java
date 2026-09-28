@@ -35,7 +35,7 @@ class OpenAiAssistantProviderTest {
         HttpClient httpClient = mock(HttpClient.class);
         HttpResponse<String> response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(200);
-        when(response.body()).thenReturn("{\"id\":\"resp_test\",\"usage\":{\"input_tokens\":45,\"output_tokens\":12}}");
+        when(response.body()).thenReturn("{\"id\":\"resp_test\",\"usage\":{\"input_tokens\":45,\"input_tokens_details\":{\"cached_tokens\":10},\"output_tokens\":12}}");
         when(response.headers()).thenReturn(HttpHeaders.of(Map.of("x-request-id", List.of("req_test")),
                 (name, value) -> true));
         when(httpClient.send(any(java.net.http.HttpRequest.class), any(HttpResponse.BodyHandler.class)))
@@ -47,6 +47,7 @@ class OpenAiAssistantProviderTest {
 
         assertEquals("resp_test", result.path("id").asText());
         assertEquals(45, result.path("usage").path("input_tokens").asInt());
+        assertEquals(10, result.path("usage").path("input_tokens_details").path("cached_tokens").asInt());
         assertEquals(12, result.path("usage").path("output_tokens").asInt());
     }
 }
