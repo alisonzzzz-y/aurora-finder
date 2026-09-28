@@ -126,6 +126,9 @@ export function LocationSearch({ busy, onSelect }: Props) {
       {state === 'loading' && <p className="search-status" role="status">{t('loading')}</p>}
       {state === 'error' && error !== null && <p id="place-search-error" className="error search-status" role="alert">{localizeError(error, t)}</p>}
       {state === 'empty' && <p id="place-search-status" className="hint search-status" role="status">{t('emptySearch')}</p>}
+      {selectedLocation && <p className="selected-place-confirmation" role="status">
+        {t('selectedPlace')}: {[selectedLocation.name, selectedLocation.region, selectedLocation.subregion, selectedLocation.country].filter(Boolean).join(', ')}
+      </p>}
       {state === 'results' && <ul id="place-search-results" className="results" role="listbox" aria-label={t('matchingLocations')}>
         {results.map((location, index) => {
           const administrativeArea = [location.region, location.subregion].filter(Boolean).join(', ')
