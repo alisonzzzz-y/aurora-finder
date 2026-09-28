@@ -5,6 +5,23 @@ export type Language = 'en' | 'zh'
 
 const messages = {
   en: {
+    warningNowMarker: 'The yellow line marks the current time. Times use your device time zone.',
+    historyCoverage: 'Dates covered by the reports',
+    historyPartialYears: '* Partial year. Report counts are not counts of aurora events.',
+    guideDetails: 'What this tells you',
+
+    threeNightDarkness: 'Darkness over three nights',
+    deepDarkness: 'Astronomical darkness',
+    hoursShort: 'h',
+    nightComparisonNote: 'Each row runs from local noon to the following noon. Shading shows solar darkness, not an aurora forecast.',
+    nearbyActivityShort: 'Nearby activity',
+    dataStatusShort: 'Source status',
+    sourcesCurrentShort: 'Available',
+    sourcesPartialShort: 'Partly available',
+    chooseNight: 'Choose a night',
+    nightDetails: 'Night details and calculation notes',
+    cloudDetails: 'Hourly values and source details',
+
     documentTitle: 'Aurora Finder | Aurora forecasts',
     metaDescription: 'Explore local nights and the data behind aurora viewing conditions.',
     brand: 'Aurora Finder',
@@ -236,6 +253,23 @@ const messages = {
     apiOriginMissing: 'This deployment has no backend API address configured. Set VITE_API_BASE_URL in Vercel to the deployed Spring Boot API origin.',
   },
   zh: {
+    warningNowMarker: '黄色线标出当前时间。时间按你的设备时区显示。',
+    historyCoverage: '报告覆盖日期',
+    historyPartialYears: '* 不完整年份。报告数量不等于极光事件次数。',
+    guideDetails: '这项数据能说明什么',
+
+    threeNightDarkness: '三晚天黑时段比较',
+    deepDarkness: '天文黑暗',
+    hoursShort: '小时',
+    nightComparisonNote: '每行从当地中午到次日中午。阴影表示太阳位置对应的黑暗时段，不是极光预报。',
+    nearbyActivityShort: '附近活动',
+    dataStatusShort: '数据状态',
+    sourcesCurrentShort: '可用',
+    sourcesPartialShort: '部分可用',
+    chooseNight: '选择夜晚',
+    nightDetails: '夜晚详情与计算说明',
+    cloudDetails: '逐小时数值与来源详情',
+
     documentTitle: 'Aurora Finder｜极光预报',
     metaDescription: '查看全球极光活动地图、当地夜晚时间和预报数据来源。',
     brand: 'Aurora Finder',
