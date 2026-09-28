@@ -57,6 +57,7 @@ class SmokeCheck:
             matches = [place for place in locations["body"]
                        if isinstance(place, dict) and isinstance(place.get("name"), str)
                        and isinstance(place.get("country"), str)
+                       and isinstance(place.get("id"), int)
                        and place["name"].casefold() == "dublin"
                        and place["country"].casefold() == "ireland"]
             if len(matches) == 1:
