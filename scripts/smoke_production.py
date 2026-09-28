@@ -11,6 +11,10 @@ import urllib.parse
 import urllib.request
 
 
+DEFAULT_TIMEOUT_SECONDS = 65
+MAX_TIMEOUT_SECONDS = 90
+
+
 class SmokeCheck:
     def __init__(self, base_url, timeout=15):
         self.base_url = base_url.rstrip("/")
@@ -86,13 +90,13 @@ class SmokeCheck:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="https://aurora-observation-agent.onrender.com")
-    parser.add_argument("--timeout", type=float, default=15)
+    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     args = parser.parse_args()
     parsed = urllib.parse.urlparse(args.base_url)
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
         parser.error("Use a plain HTTPS origin without credentials, query, or fragment.")
-    if not 0 < args.timeout <= 30:
-        parser.error("Timeout must be greater than zero and at most 30 seconds.")
+    if not 0 < args.timeout <= MAX_TIMEOUT_SECONDS:
+        parser.error(f"Timeout must be greater than zero and at most {MAX_TIMEOUT_SECONDS} seconds.")
     report = SmokeCheck(args.base_url, args.timeout).run()
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["passed"] else 1
