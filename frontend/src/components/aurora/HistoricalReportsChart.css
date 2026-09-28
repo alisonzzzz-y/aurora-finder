@@ -2,6 +2,7 @@
 .historical-reports > .eyebrow { margin-bottom: 7px; }
 .historical-reports > h2 { margin: 0; font-size: clamp(22px, 2.2vw, 30px); letter-spacing: -.025em; }
 .historical-reports-intro { max-width: 760px; margin: 9px 0 0; color: #b7b1c6; font-size: 13px; line-height: 1.6; }
+.historical-reports .history-coverage-range { font-size: 1rem; font-weight: 500; }
 .historical-reports-figure { margin: 18px 0 0; }
 .historical-reports-chart-wrap { width: 100%; min-width: 0; }
 .historical-reports-chart { display: block; width: 100%; height: auto; overflow: visible; }
