@@ -47,6 +47,9 @@ jobs:
       - name: Run lint
         working-directory: frontend
         run: npm run lint
+      - name: Run chart regression tests
+        working-directory: frontend
+        run: npm test
       - name: Build frontend
         working-directory: frontend
         run: npm run build
