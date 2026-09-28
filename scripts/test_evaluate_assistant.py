@@ -54,6 +54,20 @@ class EvaluationRunnerTest(unittest.TestCase):
         self.assertEqual(1, result["attempts"])
         urlopen.assert_called_once()
 
+    def test_does_not_retry_a_malformed_read_response(self):
+        api = Api("https://example.test", 1)
+        response = unittest.mock.MagicMock()
+        response.status = 200
+        response.read.return_value = b"not json"
+        response.__enter__.return_value = response
+        with patch("evaluate_assistant.urllib.request.urlopen", return_value=response) as urlopen:
+            result = api.request("/places")
+
+        self.assertEqual(200, result["status"])
+        self.assertEqual("JSONDecodeError", result["error"])
+        self.assertEqual(1, result["attempts"])
+        urlopen.assert_called_once()
+
     def test_failed_facts_baseline_does_not_spend_a_model_request(self):
         api = Api("http://localhost:8080", 1)
         with patch.object(api, "request", side_effect=[
