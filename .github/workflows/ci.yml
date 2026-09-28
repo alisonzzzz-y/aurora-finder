@@ -26,6 +26,8 @@ jobs:
       - name: Run backend tests and package
         working-directory: backend
         run: ./mvnw --batch-mode verify
+      - name: Check assistant evaluation runner without network requests
+        run: python3 -m unittest discover -s scripts -p test_evaluate_assistant.py
 
   frontend:
     name: Frontend lint and build
