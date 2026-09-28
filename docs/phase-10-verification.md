@@ -12,7 +12,7 @@ Updated: 2026-09-28
 | Partial source outage | `ObservationFactsServiceTest` injects a weather timeout while NOAA activity is current. | The response remains `PARTIAL`; aurora and solar darkness remain available, while cloud data is unavailable. |
 | Expired aurora data | `AuroraMapServiceTest.expiresOvationAtForecastTimeAndSuppressesTheOldGrid`. | Expired grid values are suppressed and the local activity level becomes insufficient data. |
 | Missing cloud values | `MetNoWeatherProviderTest` parses missing cloud fields; `ObservationFactsServiceTest` checks empty forecast coverage. | Missing values remain missing and are not converted to clear skies. |
-| AI unavailable and rate limited | `AssistantControllerTest` exercises the safe `503` response and the `429` application limit. | The client receives a stable error shape; rate-limited requests do not call the assistant. This does not simulate an OpenAI account outage. |
+| AI unavailable and rate limited | `OpenAiAssistantProviderTest` mocks upstream `429`, `503`, and malformed JSON; `AssistantControllerTest` exercises the safe `503` response and the `429` application limit. | Upstream errors map to safe application exceptions without exposing the upstream body; application-limited requests do not call the assistant. This does not simulate an OpenAI account outage. |
 | Request cost controls | `AssistantRequestLimiterTest`, `AssistantServiceTest`, and `OpenAiAssistantProviderTest` cover request limits, bounded tool interaction, and returned token usage. | Per-call controls and token reporting are tested. The app does not calculate dollar spend or provide an aggregate usage dashboard. |
 | Database failure | No database or Repository is part of the current MVP. | Not applicable to the current runtime; database outage behavior has not been tested. |
 
@@ -35,11 +35,11 @@ The backend `./mvnw verify` run completed with 78 tests, 0 failures, 0 errors, a
 | 单一数据源故障 | `ObservationFactsServiceTest` 模拟天气请求超时，同时让 NOAA 极光数据保持有效。 | 总体状态为 `PARTIAL`；极光活动和太阳黑暗时段仍可用，云量数据标记为不可用。 |
 | 极光数据过期 | `AuroraMapServiceTest.expiresOvationAtForecastTimeAndSuppressesTheOldGrid`。 | 过期网格值会被隐藏，当地活动等级返回“数据不足”。 |
 | 云量缺失 | `MetNoWeatherProviderTest` 验证云量字段缺失；`ObservationFactsServiceTest` 验证预报没有覆盖数据。 | 缺失值保持缺失，不会被转换成晴空。 |
-| AI 服务不可用与限流 | `AssistantControllerTest` 验证安全的 `503` 响应和应用侧 `429` 限流。 | 前端得到稳定的错误格式；被限流的请求不会调用 AI。此测试没有模拟 OpenAI 账户或服务整体故障。 |
+| AI 服务不可用与限流 | `OpenAiAssistantProviderTest` 模拟上游 `429`、`503` 和无效 JSON；`AssistantControllerTest` 验证安全的 `503` 响应和应用侧 `429` 限流。 | 上游错误映射为安全的应用异常，不会把上游响应正文透传给用户；应用侧限流时不会调用 AI。此测试没有模拟 OpenAI 账户或服务整体故障。 |
 | 请求成本控制 | `AssistantRequestLimiterTest`、`AssistantServiceTest` 和 `OpenAiAssistantProviderTest` 覆盖请求频率限制、工具交互上限和接口返回的 token 用量。 | 单次调用限制和 token 记录已测试。应用不会计算美元费用，也没有汇总用量面板。 |
 | 数据库故障 | 当前 MVP 没有数据库或 Repository。 | 现阶段不适用；尚未测试数据库故障行为。 |
 
-2026-09-28 的后端 `./mvnw verify` 全量检查通过：78 项测试，失败 0、错误 0、跳过 0。其他记录中的生产浏览器测试验证了正常使用流程，但不代表在生产环境注入过故障。
+2026-09-28 的后端 `./mvnw verify` 全量检查通过：80 项测试，失败 0、错误 0、跳过 0。其他记录中的生产浏览器测试验证了正常使用流程，但不代表在生产环境注入过故障。
 
 ### 仍需进行的运行环境核验
 
