@@ -1,7 +1,5 @@
 import { LocationSearch } from '../components/location/LocationSearch'
-import { LocalAuroraActivityCard } from '../components/aurora/LocalAuroraActivityCard'
-import { NightOutlookCard } from '../components/outlook/NightOutlookCard'
-import { CloudForecastCard } from '../components/weather/CloudForecastCard'
+import { LocalOutlookDashboard } from '../components/outlook/LocalOutlookDashboard'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
 import { CurrentActivityAreas } from '../components/aurora/CurrentActivityAreas'
 import { HistoricalReportsChart } from '../components/aurora/HistoricalReportsChart'
@@ -24,7 +22,7 @@ type Props = {
 }
 
 export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
-  const { language, t } = useI18n()
+  const { t } = useI18n()
   const auroraMap = useAuroraMapData()
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
   const [showLocalOutlook, setShowLocalOutlook] = useState(false)
@@ -63,7 +61,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           {hasLocationRequest && showLocalOutlook && <div className="map-sidebar-location-panel">
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
-            {facts && <SelectedLocationOutlook facts={facts} language={language} />}
+            {facts && <LocalOutlookDashboard key={facts.outlook.location.id} facts={facts} />}
           </div>}
         </div>
       </aside>
@@ -82,40 +80,13 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <ForecastGuide />
       </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('upcomingFeaturesTitle')}>
-        <UpcomingFeatures />
+        <details className="visual-details"><summary>{t('upcomingFeaturesTitle')}</summary><UpcomingFeatures /></details>
       </div>
     </div>
     <div className="home-section-band home-section-band-even resources-band" role="region" aria-label={t('sourceNotesTitle')}>
       <AuroraResources />
     </div>
   </>
-}
-
-function SelectedLocationOutlook({ facts, language }: { facts: ObservationFacts; language: 'en' | 'zh' }) {
-  const { t } = useI18n()
-  const { outlook } = facts
-  const locale = language === 'zh' ? 'zh-CN' : 'en'
-  const generatedAt = new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium', timeStyle: 'short', timeZone: outlook.location.timezone,
-  }).format(new Date(facts.generatedAtUtc))
-
-  return <section className="selected-location-outlook" aria-labelledby="selected-location-title" aria-live="polite">
-    <div className="selected-location-heading">
-      <p className="eyebrow">{t('localOutlook')}</p>
-      <h2 id="selected-location-title">{outlook.location.name}, {outlook.location.country}</h2>
-      <p>{outlook.location.timezone}</p>
-    </div>
-    <p className={`source-status source-status-${facts.sourceStatus.toLowerCase()}`}>
-      {t(facts.sourceStatus === 'CURRENT' ? 'allSourcesAvailable' : facts.sourceStatus === 'PARTIAL' ? 'someSourcesMissing' : 'noSourcesAvailable')}
-    </p>
-    <p className="rule-status">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidated')}</p>
-    <div className="selected-night-list">
-      {outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} timezone={outlook.location.timezone} key={night.localDate} />)}
-    </div>
-    <p className="timestamp">{t('generatedAt')} {generatedAt}. {t('localTimeNote')}</p>
-    <LocalAuroraActivityCard fact={facts.auroraActivity} timezone={outlook.location.timezone} />
-    <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={outlook.nights[0]} />
-  </section>
 }
 
 function ForecastGuide() {
@@ -133,7 +104,7 @@ function ForecastGuide() {
     <ol className="forecast-guide-list">
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><p>{t(copy)}</p></div>
+        <div><h3>{t(title)}</h3><details className="visual-details"><summary>{t('guideDetails')}</summary><p>{t(copy)}</p></details></div>
       </li>)}
     </ol>
   </section>
