@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import reportSummary from '../../data/auroraHistorySummary.json'
 import './HistoricalReportsChart.css'
+import '../outlook/VisualOutlook.css'
 
 const chartHeight = 300
 const plot = { top: 20, right: 16, bottom: 38, left: 52 }
@@ -47,6 +48,7 @@ export function HistoricalReportsChart() {
     <p className="eyebrow">{t('historicalReportsEyebrow')}</p>
     <h2 id="historical-reports-title">{t('historicalReportsTitle')}</h2>
     <p className="historical-reports-intro">{t('historicalReportsIntro')}</p>
+    <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong>{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div></div>
     <figure className="historical-reports-figure">
       <div className="historical-reports-chart-wrap" ref={chartRef}>
         <svg className="historical-reports-chart" viewBox={`0 0 ${width} ${chartHeight}`} role="img" aria-label={`${t('historicalReportsTitle')}. ${t('historicalReportsIntro')}`}>
@@ -63,11 +65,11 @@ export function HistoricalReportsChart() {
             const x = chartStart + slotWidth * index + (slotWidth - barWidth) / 2
             const y = yFor(item.reports)
             return <g key={item.year} className="historical-reports-bar">
-              <rect x={x} y={y} width={barWidth} height={chartBottom - y} rx="3">
+              <rect x={x} y={y} width={barWidth} height={chartBottom - y} rx="3" opacity={index === 0 || index === reportSummary.years.length - 1 ? 0.5 : 1}>
                 <title>{`${item.year}: ${number.format(item.reports)} ${t('historicalReportsCountLabel')}`}</title>
               </rect>
               {index % yearStride === 0 || index === reportSummary.years.length - 1
-                ? <text className="historical-reports-axis-label" x={x + barWidth / 2} y={chartHeight - 12} textAnchor="middle">{item.year}</text>
+                ? <text className="historical-reports-axis-label" x={x + barWidth / 2} y={chartHeight - 12} textAnchor="middle">{item.year}{index === 0 || index === reportSummary.years.length - 1 ? '*' : ''}</text>
                 : null}
             </g>
           })}
@@ -78,7 +80,7 @@ export function HistoricalReportsChart() {
           {item.year}: {number.format(item.reports)} {t('historicalReportsCountLabel')}
         </li>)}
       </ol>
-      <figcaption>
+      <figcaption><span>{t('historyPartialYears')}</span>
         <a href={reportSummary.sourceUrl} target="_blank" rel="noreferrer">{t('historicalReportsSource')} ↗</a>
         <span>{t('historicalReportsNote')}</span>
       </figcaption>
