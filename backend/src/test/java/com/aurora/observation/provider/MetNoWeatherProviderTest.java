@@ -37,6 +37,7 @@ class MetNoWeatherProviderTest {
             """;
     private final AtomicReference<Reply> reply = new AtomicReference<>();
     private final AtomicInteger requests = new AtomicInteger();
+    private final AtomicInteger responseDelayMillis = new AtomicInteger();
     private final AtomicReference<String> requestTarget = new AtomicReference<>();
     private final AtomicReference<String> userAgent = new AtomicReference<>();
     private final AtomicReference<String> ifModifiedSince = new AtomicReference<>();
@@ -113,6 +114,19 @@ class MetNoWeatherProviderTest {
         assertThrows(IllegalArgumentException.class, () -> provider.forecast(91, 0));
     }
 
+    @Test
+    void classifiesAnActualHttpRequestTimeout() {
+        responseDelayMillis.set(250);
+        MetNoWeatherProvider shortTimeoutProvider = new MetNoWeatherProvider(HttpClient.newHttpClient(),
+                new ObjectMapper(), clock, "http://127.0.0.1:" + server.getAddress().getPort() + "/weather",
+                "AuroraFinder/test contact@example.com", Duration.ofMillis(50), Duration.ofMinutes(15), 10);
+
+        ProviderUnavailableException error = assertThrows(ProviderUnavailableException.class,
+                () -> shortTimeoutProvider.forecast(12, 34));
+
+        assertEquals(ProviderFailure.TIMEOUT, error.failure());
+    }
+
     private boolean serverAcceptsCompression() {
         return "gzip, deflate".equals(exchangeEncoding.get());
     }
@@ -121,6 +135,22 @@ class MetNoWeatherProviderTest {
 
     private void respond(HttpExchange exchange) throws IOException {
         requests.incrementAndGet();
+        int delay = responseDelayMillis.get();
+        if (delay > 0) {
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            try {
+                exchange.sendResponseHeaders(200, -1);
+            } catch (IOException ignored) {
+                // The provider has already timed out and closed this local test connection.
+            } finally {
+                exchange.close();
+            }
+            return;
+        }
         requestTarget.set(exchange.getRequestURI().toString());
         userAgent.set(exchange.getRequestHeaders().getFirst("User-Agent"));
         ifModifiedSince.set(exchange.getRequestHeaders().getFirst("If-Modified-Since"));
