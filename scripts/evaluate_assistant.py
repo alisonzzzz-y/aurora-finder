@@ -81,6 +81,7 @@ class Api:
         started = time.monotonic()
         max_attempts = self.MAX_GET_ATTEMPTS if payload is None else 1
         for attempt in range(1, max_attempts + 1):
+            retryable = False
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     body = response.read(2_000_001)
@@ -90,11 +91,14 @@ class Api:
                         result = {"status": response.status, "body": json.loads(body)}
             except urllib.error.HTTPError as error:
                 result = {"status": error.code, "error": "http_error"}
-            except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+                retryable = error.code in self.RETRYABLE_STATUS_CODES
+            except (urllib.error.URLError, TimeoutError, OSError) as error:
                 result = {"status": None, "error": type(error).__name__}
+                retryable = True
+            except ValueError as error:
+                result = {"status": response.status, "error": type(error).__name__}
 
             result["attempts"] = attempt
-            retryable = result["status"] in self.RETRYABLE_STATUS_CODES or result["status"] is None
             if attempt == max_attempts or not retryable:
                 break
             time.sleep(0.25 * attempt)
