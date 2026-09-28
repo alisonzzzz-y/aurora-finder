@@ -47,6 +47,23 @@ class SmokeCheckTest(unittest.TestCase):
         self.assertEqual("expected_one_irish_dublin_candidate", report["checks"][1]["error"])
         self.assertTrue(report["checks"][2]["skipped"])
 
+    def test_missing_location_id_is_not_selected_or_used_in_a_request(self):
+        check = SmokeCheck("https://api.example")
+        seen = []
+
+        def get_json(path):
+            seen.append(path)
+            if path == "/actuator/health":
+                return {"status": 200, "body": {"status": "UP"}}
+            if path.startswith("/api/v1/locations?"):
+                return {"status": 200, "body": [{"name": "Dublin", "country": "Ireland"}]}
+            return {"status": 200, "body": {}}
+
+        with patch.object(check, "get_json", side_effect=get_json):
+            report = check.run()
+        self.assertFalse(report["passed"])
+        self.assertFalse(any(path.startswith("/api/v1/facts/") for path in seen))
+
     def test_health_must_be_up(self):
         check = SmokeCheck("https://api.example")
         with patch.object(check, "get_json", return_value={"status": 200, "body": {"status": "DOWN"}}):
