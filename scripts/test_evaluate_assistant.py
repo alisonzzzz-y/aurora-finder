@@ -1,6 +1,7 @@
 """Offline checks for the live evaluation runner. No network or model calls."""
 
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 from evaluate_assistant import Api, CASES, evaluate, select_location
@@ -26,6 +27,32 @@ class EvaluationRunnerTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 api.chat({"message": "synthetic"})
             self.assertEqual(6, request.call_count)
+
+    def test_retries_transient_get_failures_and_records_attempt_count(self):
+        api = Api("https://example.test", 1)
+        response = unittest.mock.MagicMock()
+        response.status = 200
+        response.read.return_value = b"[]"
+        response.__enter__.return_value = response
+        transient = urllib.error.HTTPError("https://example.test/places", 504, "timeout", {}, None)
+        with patch("evaluate_assistant.urllib.request.urlopen", side_effect=[transient, response]) as urlopen:
+            with patch("evaluate_assistant.time.sleep") as sleep:
+                result = api.request("/places")
+
+        self.assertEqual(200, result["status"])
+        self.assertEqual(2, result["attempts"])
+        self.assertEqual(2, urlopen.call_count)
+        sleep.assert_called_once_with(0.25)
+
+    def test_never_retries_a_model_post_or_rate_limit(self):
+        api = Api("https://example.test", 1)
+        rate_limited = urllib.error.HTTPError("https://example.test/chat", 429, "rate limited", {}, None)
+        with patch("evaluate_assistant.urllib.request.urlopen", side_effect=rate_limited) as urlopen:
+            result = api.request("/chat", {"message": "synthetic"})
+
+        self.assertEqual(429, result["status"])
+        self.assertEqual(1, result["attempts"])
+        urlopen.assert_called_once()
 
     def test_failed_facts_baseline_does_not_spend_a_model_request(self):
         api = Api("http://localhost:8080", 1)

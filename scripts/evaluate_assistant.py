@@ -66,6 +66,9 @@ CASES = {
 
 
 class Api:
+    MAX_GET_ATTEMPTS = 3
+    RETRYABLE_STATUS_CODES = {502, 503, 504}
+
     def __init__(self, base_url, timeout):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -76,16 +79,26 @@ class Api:
         request = urllib.request.Request(self.base_url + path, data=data,
                                          headers={"Content-Type": "application/json", "Accept": "application/json"})
         started = time.monotonic()
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                body = response.read(2_000_001)
-                if len(body) > 2_000_000:
-                    return {"status": response.status, "error": "response_too_large"}
-                result = {"status": response.status, "body": json.loads(body)}
-        except urllib.error.HTTPError as error:
-            result = {"status": error.code, "error": "http_error"}
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
-            result = {"status": None, "error": type(error).__name__}
+        max_attempts = self.MAX_GET_ATTEMPTS if payload is None else 1
+        for attempt in range(1, max_attempts + 1):
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    body = response.read(2_000_001)
+                    if len(body) > 2_000_000:
+                        result = {"status": response.status, "error": "response_too_large"}
+                    else:
+                        result = {"status": response.status, "body": json.loads(body)}
+            except urllib.error.HTTPError as error:
+                result = {"status": error.code, "error": "http_error"}
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+                result = {"status": None, "error": type(error).__name__}
+
+            result["attempts"] = attempt
+            retryable = result["status"] in self.RETRYABLE_STATUS_CODES or result["status"] is None
+            if attempt == max_attempts or not retryable:
+                break
+            time.sleep(0.25 * attempt)
+
         result["duration_ms"] = round((time.monotonic() - started) * 1000)
         return result
 
