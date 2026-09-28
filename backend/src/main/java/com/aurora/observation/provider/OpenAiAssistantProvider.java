@@ -62,32 +62,55 @@ public class OpenAiAssistantProvider {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
+        long startedAtNanos = System.nanoTime();
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            long durationMs = elapsedMillis(startedAtNanos);
+            String requestId = requestId(response);
             if (response.statusCode() == 429) {
-                log.warn("OpenAI Responses API rate limited the request (requestId={}).",
-                        response.headers().firstValue("x-request-id").orElse("unknown"));
+                log.warn("OpenAI Responses API rate limited the request (model={}, durationMs={}, requestId={}).",
+                        model, durationMs, requestId);
                 throw new AssistantRateLimitException();
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.warn("OpenAI Responses API returned HTTP {} (requestId={}).",
-                        response.statusCode(), response.headers().firstValue("x-request-id").orElse("unknown"));
+                log.warn("OpenAI Responses API returned HTTP {} (model={}, durationMs={}, requestId={}).",
+                        response.statusCode(), model, durationMs, requestId);
                 throw new AssistantUnavailableException("The AI service returned HTTP " + response.statusCode() + ".");
             }
             try {
-                return objectMapper.readTree(response.body());
+                JsonNode result = objectMapper.readTree(response.body());
+                JsonNode usage = result.path("usage");
+                log.info("OpenAI Responses API completed (model={}, durationMs={}, inputTokens={}, outputTokens={}, requestId={}).",
+                        model, durationMs, tokenCount(usage, "input_tokens"), tokenCount(usage, "output_tokens"), requestId);
+                return result;
             } catch (RuntimeException error) {
-                log.error("OpenAI Responses API returned invalid JSON (requestId={}).",
-                        response.headers().firstValue("x-request-id").orElse("unknown"), error);
+                log.error("OpenAI Responses API returned invalid JSON (model={}, durationMs={}, requestId={}).",
+                        model, durationMs, requestId, error);
                 throw new AssistantUnavailableException("The AI service returned an invalid response.", error);
             }
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
+            log.warn("OpenAI Responses API request was interrupted (model={}, durationMs={}).",
+                    model, elapsedMillis(startedAtNanos));
             throw new AssistantUnavailableException("The AI request was interrupted.", error);
         } catch (IOException | IllegalArgumentException error) {
-            log.warn("OpenAI Responses API request failed before a response was received: {}.", error.getClass().getSimpleName());
+            log.warn("OpenAI Responses API request failed before a response was received (model={}, durationMs={}, failureType={}).",
+                    model, elapsedMillis(startedAtNanos), error.getClass().getSimpleName());
             throw new AssistantUnavailableException("The AI service could not be reached.", error);
         }
+    }
+
+    private long elapsedMillis(long startedAtNanos) {
+        return Duration.ofNanos(System.nanoTime() - startedAtNanos).toMillis();
+    }
+
+    private String requestId(HttpResponse<?> response) {
+        return response.headers().firstValue("x-request-id").orElse("unknown");
+    }
+
+    private String tokenCount(JsonNode usage, String field) {
+        JsonNode count = usage.path(field);
+        return count.isIntegralNumber() ? count.asText() : "unknown";
     }
 
     public String model() {
