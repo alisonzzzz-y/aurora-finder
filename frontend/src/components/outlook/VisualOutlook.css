@@ -1,0 +1,32 @@
+.local-summary-strip { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.local-summary-strip > div { display: grid; gap: 5px; }
+.local-summary-strip span { font-size: 10px; color: var(--muted); }
+.local-summary-strip strong { font-size: 14px; font-weight: 600; }
+.visual-chart-note { margin: 8px 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.local-night-switch { display: flex; gap: 16px; margin: 14px 0 0; border-bottom: 1px solid var(--line); }
+.local-night-switch button { padding: 8px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.local-night-switch button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.visual-details { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.visual-details > summary { padding: 8px 0; color: var(--accent); cursor: pointer; }
+.visual-details[open] > summary { margin-bottom: 6px; }
+.night-comparison { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--line); }
+.night-comparison h3 { margin: 0 0 12px; font-size: 15px; }
+.night-comparison-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; font-variant-numeric: tabular-nums; }
+.night-comparison-rows { display: grid; gap: 4px; margin-top: 8px; }
+.night-comparison-row { padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.night-comparison-row.is-selected { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.night-row-heading { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
+.night-row-heading > span { color: var(--muted); font-size: 9px; }
+.night-time-track { display: block; position: relative; height: 17px; margin: 9px 0 5px; background: #2b2635; border-radius: 4px; overflow: hidden; }
+.night-time-band { position: absolute; top: 0; bottom: 0; background: #aa88dc; }
+.night-depth-0 { background: #594369; }
+.night-depth-1 { background: #8b68b0; }
+.night-depth-2 { background: #c0a0ec; }
+.night-duration { color: var(--muted); font-size: 10px; }
+.night-depth-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; font-size: 9px; color: var(--muted); }
+.night-depth-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.night-depth-legend i { width: 12px; height: 7px; border-radius: 2px; }
+.local-night-switch button:focus-visible, .night-comparison-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.signal-ruler {position:relative;height:12px;margin:16px 0 36px;background:linear-gradient(to right,#45ba95 0% 18%,#e8d874 18% 50%,#f89b72 50%);border-radius:3px}.signal-ruler>span{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--text);transform:translateX(-50%)}.signal-ruler small{position:absolute;top:18px;left:0}.signal-ruler small:last-child{left:auto;right:0}.activity-mini-bar{display:block;width:100%;min-width:70px;height:4px;background:#ffffff18;margin-bottom:8px}.activity-mini-bar i{display:block;height:100%;background:#baa3f1}
+.comparison-chart {width:100%;overflow-x:auto}.comparison-chart svg{width:100%;min-width:520px;height:auto}.comparison-chart text{fill:currentColor;font-size:13px}.comparison-chart line{stroke:#ffffff22}.chart-legend{display:flex;flex-wrap:wrap;gap:20px;margin:12px 0}.chart-legend i{display:inline-block;width:12px;height:12px;margin-right:6px}.warning-time-row{display:grid;grid-template-columns:70px 1fr;gap:12px;margin:18px 0}.warning-time-track{height:28px;background:#ffffff0a;position:relative}.warning-time-band{position:absolute;height:100%;background:#ba9df170}.warning-time-now{position:absolute;top:-6px;bottom:-6px;width:2px;background:#f6d17e}.warning-axis{display:flex;justify-content:space-between;gap:16px;font-size:.8rem}.history-stats{display:flex;flex-wrap:wrap;gap:36px;margin:24px 0}.history-stats strong{display:block;font-size:1.8rem}.history-stats span{color:var(--muted)}
