@@ -62,6 +62,31 @@ class ObservationFactsServiceTest {
     }
 
     @Test
+    void keepsAuroraAndDarknessFactsAvailableWhenWeatherProviderTimesOut() {
+        OutlookService outlooks = mock(OutlookService.class);
+        AuroraMapService aurora = mock(AuroraMapService.class);
+        WeatherService weather = mock(WeatherService.class);
+        when(outlooks.forLocation(DUBLIN.id())).thenReturn(outlook());
+        when(aurora.forCoordinates(DUBLIN.latitude(), DUBLIN.longitude())).thenReturn(
+                new LocalAuroraActivityResponse(com.aurora.observation.dto.ForecastStatus.CURRENT,
+                        LocalAuroraActivityLevel.MEDIUM, 30, -6.0, 53.0, NOW.minusSeconds(600),
+                        NOW.plusSeconds(1800), NOW, "NOAA OVATION", "ovation-local-v1"));
+        when(weather.forecast(DUBLIN.latitude(), DUBLIN.longitude(), DUBLIN.timezone()))
+                .thenThrow(new ProviderUnavailableException(ProviderFailure.TIMEOUT, "timeout"));
+
+        ObservationFactsResponse response = service(outlooks, aurora, weather).forLocation(DUBLIN.id());
+
+        assertEquals(FactFetchStatus.PARTIAL, response.sourceStatus());
+        assertEquals(FactFetchStatus.CURRENT, response.auroraActivity().status());
+        assertEquals(30, response.auroraActivity().data().modelValue());
+        assertEquals(FactFetchStatus.UNAVAILABLE, response.cloudForecast().status());
+        assertEquals(ProviderFailure.TIMEOUT, response.cloudForecast().failureCode());
+        assertNull(response.cloudForecast().data());
+        assertEquals(FactFetchStatus.CURRENT, response.solarDarkness().status());
+        assertEquals(RuleStatus.NOT_VALIDATED, response.outlook().ruleStatus());
+    }
+
+    @Test
     void reportsCurrentSourcesAndTheirIndependentForecastScopes() {
         OutlookService outlooks = mock(OutlookService.class);
         AuroraMapService aurora = mock(AuroraMapService.class);
