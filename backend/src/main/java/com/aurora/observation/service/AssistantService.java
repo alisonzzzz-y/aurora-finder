@@ -44,6 +44,9 @@ public class AssistantService {
             otherwise ask the user to choose a date. Never guess a date or use the server's date. Include the place's
             UTC offset when tool data provides it. Keep answers concise and practical. Mention unavailable or
             incomplete source data instead of filling gaps.
+            For cloud cover, use the returned percentages and local hours. When summarizing an interval with a
+            numeric range, include its lowest and highest available values; do not omit hourly dips or peaks to
+            make the trend smoother. Prefer a few exact hour/value examples when the interval is not clearly defined.
             """;
 
     private final OpenAiAssistantProvider openAi;
