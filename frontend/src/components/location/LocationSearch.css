@@ -20,6 +20,7 @@
 .location-country { color: var(--accent); font-size: 13px; text-align: right; }
 .location-option-detail { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .search-status { margin: 9px 2px 0 !important; font-size: 13px; }
+.selected-place-confirmation { margin: 8px 2px 0 !important; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
 .hint { font-size: 13px; }
 @media (max-width: 720px) {
   .location-option-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
