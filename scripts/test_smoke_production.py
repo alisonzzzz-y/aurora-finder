@@ -17,7 +17,7 @@ class SmokeCheckTest(unittest.TestCase):
         results = {
             "/actuator/health": {"status": 200, "body": {"status": "UP"}},
             "/api/v1/locations?q=Dublin": {"status": 200, "body": [place]},
-            "/api/v1/facts/42": {"status": 200, "body": {"nights": []}},
+            "/api/v1/facts/42": {"status": 200, "body": {"outlook": {"nights": [{}, {}, {}]}}},
             "/api/v1/aurora-map": {"status": 200, "body": {"status": "AVAILABLE"}},
             "/api/v1/kp-index": {"status": 200, "body": {"records": []}},
             "/api/v1/geomagnetic-storm-forecast": {"status": 200, "body": {"status": "EMPTY"}},
@@ -27,6 +27,9 @@ class SmokeCheckTest(unittest.TestCase):
         self.assertTrue(report["passed"])
         self.assertEqual("/api/v1/facts/42", report["checks"][2]["path"])
         self.assertIn("AI/model not called", report["scope"])
+        self.assertNotIn("body", report["checks"][0])
+        self.assertEqual(1, report["checks"][1]["summary"]["irishDublinMatches"])
+        self.assertEqual(3, report["checks"][2]["summary"]["nightCount"])
 
     def test_ambiguous_irish_city_fails_safely_without_facts_request(self):
         check = SmokeCheck("https://api.example")
