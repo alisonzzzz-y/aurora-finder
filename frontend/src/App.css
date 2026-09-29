@@ -215,6 +215,7 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 .kp-chart-legend i.observed { background: #d9cff2; }
 .kp-chart-legend i.estimated { width: 7px; height: 7px; border: 1px solid #a49bb3; border-radius: 1px; background: #a49bb3; transform: rotate(45deg); }
 .kp-chart-legend i.predicted { border: 1.5px solid var(--accent); background: transparent; }
+.kp-chart-legend i.gap { width: 16px; height: 0; border-top: 1.5px dashed var(--muted); border-radius: 0; }
 .kp-chart-wrap { width: 100%; min-width: 0; }
 .kp-chart { display: block; width: 100%; height: auto; overflow: visible; }
 .kp-gridline { stroke: #393444; stroke-width: 1; }
