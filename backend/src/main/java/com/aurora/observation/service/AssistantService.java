@@ -13,6 +13,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -21,10 +22,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
+    private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
+            "(?m)(?<!\\d)([0-2]?\\d):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
+    private static final Pattern CORRECTION_WORD = Pattern.compile(
+            "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
     private static final String INSTRUCTIONS = """
             You are the read-only assistant inside Aurora Finder. Answer in the user's requested language.
             Use the provided tools for current aurora, geomagnetic, cloud, darkness, location, and source facts.
@@ -47,6 +54,9 @@ public class AssistantService {
             For cloud cover, use the returned percentages and local hours. When summarizing an interval with a
             numeric range, include its lowest and highest available values; do not omit hourly dips or peaks to
             make the trend smoother. Prefer a few exact hour/value examples when the interval is not clearly defined.
+            Before finishing an hourly cloud summary, check that you have not assigned conflicting percentages to
+            the same local hour. Do not append a correction that contradicts an earlier value; if you cannot give
+            a consistent summary, say so and direct the user to the local cloud forecast chart.
             """;
 
     private final OpenAiAssistantProvider openAi;
@@ -113,10 +123,33 @@ public class AssistantService {
                 }
                 List<Location> choices = toolContext.latestCandidates.size() > 1
                         ? toolContext.latestCandidates : List.of();
+                if (hasConflictingCorrectedCloudValues(answer)) {
+                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                }
                 return new AssistantChatResponse(answer, openAi.model(), choices);
             }
         }
         throw new AssistantUnavailableException("The AI assistant used too many tool steps.");
+    }
+
+    private boolean hasConflictingCorrectedCloudValues(String answer) {
+        if (!CORRECTION_WORD.matcher(answer).find()) return false;
+
+        Map<String, String> percentagesByHour = new HashMap<>();
+        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
+        while (matcher.find()) {
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            String percentage = new BigDecimal(matcher.group(3)).stripTrailingZeros().toPlainString();
+            String previous = percentagesByHour.putIfAbsent(hour, percentage);
+            if (previous != null && !previous.equals(percentage)) return true;
+        }
+        return false;
+    }
+
+    private String inconsistentCloudAnswer(boolean chinese) {
+        return chinese
+                ? "这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。"
+                : "I couldn't provide a consistent hourly cloud summary, so I won't guess. Please check the local cloud forecast chart or try again later.";
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {

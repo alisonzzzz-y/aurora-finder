@@ -35,6 +35,8 @@ The existing backend test `AssistantServiceTest.resolvesExactFullLocationLabelFr
 
 On 2026-09-30, a production browser follow-up selected the Dublin City candidate and the assistant rendered a local cloud forecast, confirming that the second-turn selection flow completes in production. The answer cited MET Norway and local time, but contained a self-correction that changed the stated 10:00 value and repeated 11:00, with a stray question mark. This is a response-quality concern, not evidence that the provider data itself is wrong: the hourly values were not independently compared with the selected-location forecast in this session. Record this as a remaining data-to-answer consistency check rather than treating the AI flow as unavailable. The earlier browser automation timeout was caused by checking that historical candidate buttons disappeared; those buttons correctly remain in chat history. A later browser interaction showed the final response.
 
+To prevent that observed failure from reaching users unchanged, the backend now detects a final answer that uses correction language and assigns different cloud percentages to the same local hour. It substitutes a short message directing users to the local cloud chart. The model instructions also ask it to check for conflicting hourly values before finishing. `AssistantServiceTest` covers both conflicting values and a correction that repeats the same value. The full backend `./mvnw --batch-mode verify` run passed 87 tests with no failures, errors, or skips on 2026-09-30. This guard targets contradictory corrections; it does not independently prove every generated value matches the source forecast.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
@@ -76,6 +78,8 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 后端既有测试 `AssistantServiceTest.resolvesExactFullLocationLabelFromAmbiguousResults` 已通过（1 项测试，失败/错误为 0），验证用户从先前的候选项中选择爱尔兰 Dublin 后，会查询该地点的当地夜间事实。第一次受限运行无法附加 Mockito 测试代理；在允许测试代理后重跑通过。自动化测试覆盖了选项到数据查询的路径；生产页面第二轮交互结果另见下文。
 
 2026-09-30 在生产页面选择 Dublin City 后，AI 成功显示了当地云量预报，确认第二轮地点选择流程可以在线上完成。回复注明 MET Norway 和当地时间，但对 10:00 的数值进行了自我更正，前后不一致，并在 11:00 后留下问号。本次没有把这些小时值与同一地点的预报逐项独立比对，因此这是回答质量和数据一致性待核查项，不能据此判断天气来源数据本身错误。此前浏览器自动化超时，是因为测试错误地要求聊天历史里的候选按钮消失；这些按钮本来就会保留。之后的浏览器交互已显示最终回复。
+
+为避免这类已观察到的矛盾直接显示给用户，后端现会检查最终回复：如果回复使用了更正措辞，且同一当地小时出现不同云量数值，就替换为提示用户查看当地云量图的简短信息。模型指令也补充了检查小时数是否冲突的要求。`AssistantServiceTest` 覆盖了矛盾数值和更正后数值相同两种情况。2026-09-30 后端 `./mvnw --batch-mode verify` 全量检查通过：87 项测试，失败、错误和跳过均为 0。此保护针对自我更正造成的冲突，不能独立证明每个生成数值都与来源预报一致。
 
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 

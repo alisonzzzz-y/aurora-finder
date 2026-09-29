@@ -61,6 +61,7 @@ class AssistantServiceTest {
         assertTrue(instructions.getValue().contains("Never guess a date or use the server's date"));
         assertTrue(instructions.getValue().contains("UTC offset"));
         assertTrue(instructions.getValue().contains("Mention unavailable or"));
+        assertTrue(instructions.getValue().contains("conflicting percentages to"));
     }
 
     @Test
@@ -292,6 +293,44 @@ class AssistantServiceTest {
         assertEquals("gpt-6-luna", response.model());
         verify(tools).searchPlaces("Dublin");
         verify(tools).getLocalNightFacts(2964574);
+    }
+
+    @Test
+    void replacesSelfCorrectedConflictingCloudValuesWithSafeGuidance() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts",
+                                "{\"location_id\":2964574}"))
+                .thenReturn(responseWithText(mapper,
+                        "10:00 云量为 21.1%。更正：10:00 云量为 25.8%。"));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("Dublin 今晚云量如何？", "zh", 2964574L, List.of()));
+
+        assertEquals("这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。",
+                result.answer());
+        verify(tools).getLocalNightFacts(2964574);
+    }
+
+    @Test
+    void keepsCloudAnswerWhenCorrectionRepeatsTheSameHourlyValue() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        String answer = "10:00 云量为 21.1%。更正：10:00 云量为 21.1%。";
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts",
+                                "{\"location_id\":2964574}"))
+                .thenReturn(responseWithText(mapper, answer));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("Dublin 今晚云量如何？", "zh", 2964574L, List.of()));
+
+        assertEquals(answer, result.answer());
     }
 
     @Test
