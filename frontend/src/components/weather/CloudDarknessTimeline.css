@@ -27,3 +27,8 @@
 .darkness-band-2 { opacity: .9; }
 .cloud-darkness-no-interval { font-size: 9px; }
 .cloud-darkness-empty { fill: #aaa2bb; font-size: 11px; }
+
+.aurora-window-key { height: 8px !important; background: #8c69c8; opacity: .85; }
+.aurora-window-track { opacity: .35; }
+.aurora-window-band { fill: #9a75d6; opacity: .9; }
+.aurora-window-marker { fill: #fff; stroke: #9a75d6; stroke-width: 2.5; }
