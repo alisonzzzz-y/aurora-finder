@@ -66,7 +66,7 @@ class ObservationWorkflowIntegrationTest {
 
     @BeforeEach
     void externalSources() {
-        workflowClock.set(NOW);
+        workflowClock.advance(Duration.ofMinutes(6));
         when(geocoding.search("Dublin")).thenReturn(List.of(DUBLIN, US_DUBLIN));
         when(geocoding.get(DUBLIN.id())).thenReturn(Optional.of(DUBLIN));
         when(ovation.latest()).thenReturn(new OvationForecast(NOW.minusSeconds(600), NOW.plusSeconds(3600),
@@ -106,6 +106,28 @@ class ObservationWorkflowIntegrationTest {
         assertEquals(2, map.path("points").size());
 
         assertEquals(facts, askAssistantAndCaptureFacts(selectedId));
+    }
+
+    @Test
+    void expiredAuroraForecastIsNotPresentedAsCurrentInFactsMapAndAssistant() throws Exception {
+        when(ovation.latest()).thenReturn(new OvationForecast(NOW.minusSeconds(3600), NOW.minusSeconds(60),
+                "NOAA OVATION", List.of(new OvationGridPoint(-6, 53, 30))));
+        workflowClock.advance(Duration.ofMinutes(16));
+
+        JsonNode facts = readGet("/api/v1/facts/" + DUBLIN.id());
+        JsonNode auroraFact = facts.path("auroraActivity");
+        assertEquals("EXPIRED", auroraFact.path("status").asText());
+        assertEquals("EXPIRED", auroraFact.path("data").path("status").asText());
+        assertEquals("INSUFFICIENT_DATA", auroraFact.path("data").path("level").asText());
+        assertFalse(auroraFact.path("data").hasNonNull("modelValue"));
+        assertEquals("PARTIAL", facts.path("sourceStatus").asText());
+        assertEquals("CURRENT", facts.path("cloudForecast").path("status").asText());
+        assertEquals("CANNOT_CHECK", facts.path("coverage").path("status").asText());
+
+        JsonNode map = readGet("/api/v1/aurora-map");
+        assertEquals("EXPIRED", map.path("status").asText());
+        assertEquals(0, map.path("points").size());
+        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
     }
 
     @Test
