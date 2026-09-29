@@ -77,6 +77,22 @@ class SmokeCheckTest(unittest.TestCase):
             result = check.check("/actuator/health", dict, lambda body: body.get("status") == "UP")
         self.assertEqual("unexpected_response_content", result["error"])
 
+    def test_fact_summary_shows_compared_source_windows_when_no_overlap(self):
+        body = {
+            "outlook": {"nights": [{}]},
+            "auroraActivity": {"status": "CURRENT", "scopeStartUtc": "2026-09-29T09:03:00Z",
+                               "scopeEndUtc": "2026-09-29T10:31:00Z"},
+            "cloudForecast": {"status": "CURRENT", "scopeStartUtc": "2026-09-29T11:00:00Z",
+                              "scopeEndUtc": "2026-09-30T11:00:00Z"},
+            "solarDarkness": {"status": "CURRENT"},
+            "coverage": {"status": "NO_OVERLAP", "cloudPointsWithValuesInsideShortRange": 0},
+        }
+        summary = SmokeCheck.summarize("/api/v1/facts/42", body)
+        self.assertEqual("NO_OVERLAP", summary["coverageStatus"])
+        self.assertEqual("2026-09-29T09:03:00Z", summary["auroraWindowUtc"]["start"])
+        self.assertEqual("2026-09-29T11:00:00Z", summary["cloudForecastWindowUtc"]["start"])
+        self.assertEqual(0, summary["overlappingCloudPointCount"])
+
     def test_invalid_json_is_reported_as_failure(self):
         check = SmokeCheck("https://api.example")
         response = unittest.mock.MagicMock()
