@@ -8,6 +8,7 @@ import { useAuroraMapData } from '../hooks/useAuroraMapData'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 import type { ObservationFacts } from '../types/observationFacts'
 import '../components/outlook/OutlookPage.css'
+import { cloudPointsInsideAuroraWindow } from '../utils/forecastCoverage'
 
 type Props = { facts: ObservationFacts; onChangeLocation: () => void }
 
@@ -32,14 +33,12 @@ export function OutlookPage({ facts, onChangeLocation }: Props) {
     [auroraMap.data],
   )
   const locale = language === 'zh' ? 'zh-CN' : 'en'
-  const coverageStart = facts.coverage.shortRangeStartUtc ? Date.parse(facts.coverage.shortRangeStartUtc) : null
-  const coverageEnd = facts.coverage.shortRangeEndUtc ? Date.parse(facts.coverage.shortRangeEndUtc) : null
-  const overlapTimes = facts.coverage.status === 'OVERLAPS' && coverageStart !== null && coverageEnd !== null
-    ? (facts.cloudForecast.data?.cloudForecast ?? [])
-      .filter(point => point.cloudCoverPercent !== null
-        && Date.parse(point.validAt) >= coverageStart && Date.parse(point.validAt) <= coverageEnd)
-      .map(point => formatLocalTimestamp(point.validAt, outlook.location.timezone, locale))
+  const overlapPoints = facts.coverage.status === 'OVERLAPS'
+    ? cloudPointsInsideAuroraWindow(facts.cloudForecast.data?.cloudForecast ?? [],
+      facts.coverage.shortRangeStartUtc, facts.coverage.shortRangeEndUtc)
     : []
+  const overlapTimes = overlapPoints.map(point =>
+    formatLocalTimestamp(point.validAt, outlook.location.timezone, locale))
   return <>
     <section className="outlook" aria-labelledby="outlook-title">
       <div className="section-heading">
