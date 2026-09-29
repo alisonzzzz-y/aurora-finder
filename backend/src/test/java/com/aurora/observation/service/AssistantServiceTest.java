@@ -56,7 +56,19 @@ class AssistantServiceTest {
         assertEquals("At 20:00 cloud cover is 78.9%, and at 21:00 it is 18.7%.", response.answer());
     }
 
+    @Test
+    void rejectsHourlyCloudValuesWhenTheSourceHasNoCloudPoints() {
+        AssistantChatResponse response = chatWithCloudSource(
+                "At 20:00 cloud cover is 72%.", true);
+
+        assertTrue(response.answer().contains("couldn't verify the hourly cloud values"));
+    }
+
     private AssistantChatResponse chatWithCloudSource(String answer) {
+        return chatWithCloudSource(answer, false);
+    }
+
+    private AssistantChatResponse chatWithCloudSource(String answer, boolean emptyCloudForecast) {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);
         ObjectMapper mapper = new ObjectMapper();
@@ -68,7 +80,7 @@ class AssistantServiceTest {
                 OutlookReasonCode.RULES_NOT_VALIDATED, null);
         OutlookResponse outlook = new OutlookResponse(dublin, retrievedAt, RuleStatus.NOT_VALIDATED, List.of(night));
         WeatherForecastResponse forecast = new WeatherForecastResponse(retrievedAt, retrievedAt.plusSeconds(86400),
-                "MET Norway", dublin.latitude(), dublin.longitude(), List.of(
+                "MET Norway", dublin.latitude(), dublin.longitude(), emptyCloudForecast ? List.of() : List.of(
                         new WeatherCloudPoint(Instant.parse("2026-09-28T19:00:00Z"), 78.9),
                         new WeatherCloudPoint(Instant.parse("2026-09-28T20:00:00Z"), 18.7)));
         SourceFact<WeatherForecastResponse> cloudFact = new SourceFact<>(FactFetchStatus.CURRENT,
@@ -366,18 +378,8 @@ class AssistantServiceTest {
 
     @Test
     void keepsCloudAnswerWhenCorrectionRepeatsTheSameHourlyValue() {
-        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
-        ObservationToolsService tools = mock(ObservationToolsService.class);
-        ObjectMapper mapper = new ObjectMapper();
-        String answer = "10:00 云量为 21.1%。更正：10:00 云量为 21.1%。";
-        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
-                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts",
-                                "{\"location_id\":2964574}"))
-                .thenReturn(responseWithText(mapper, answer));
-        when(openAi.model()).thenReturn("gpt-6-luna");
-
-        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
-                new AssistantChatRequest("Dublin 今晚云量如何？", "zh", 2964574L, List.of()));
+        String answer = "20:00 云量为 78.9%。更正：20:00 云量为 78.9%。";
+        AssistantChatResponse result = chatWithCloudSource(answer);
 
         assertEquals(answer, result.answer());
     }
