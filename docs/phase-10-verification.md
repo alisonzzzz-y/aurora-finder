@@ -31,6 +31,8 @@ On 2026-09-29, a read-only Playwright browser check covered the deployed Vercel 
 
 At 2026-09-29 17:58 UTC, one production assistant question was sent from the browser: “What cloud cover is forecast for Dublin, Ireland tonight?” The chat endpoint returned HTTP 200 with no browser runtime errors. Because the name still matched four Irish places (Dublin City, Dublin South, Dublin Pike, and Dublin Airport), the assistant offered those specific choices before running the weather lookup. This verifies the one-step disambiguation response, not the final answer after a choice; no second model request was sent in this check.
 
+The existing backend test `AssistantServiceTest.resolvesExactFullLocationLabelFromAmbiguousResults` passed (1 test, 0 failures/errors). It verifies that selecting the exact Dublin, Ireland candidate from prior assistant choices retrieves that candidate's local-night facts. The first restricted run could not attach Mockito's agent; the same test passed on rerun with test-agent permission. This covers the selection-to-data path in an automated test, while the corresponding second-turn production browser response remains unverified.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
@@ -68,6 +70,8 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 2026-09-29 又对已部署的 Vercel 页面进行了只读 Playwright 浏览器检查。地图正常渲染；Dublin 自动补全区分了爱尔兰和美国的同名地点；选择爱尔兰 Dublin 后，当地预报与云量时间图正常显示。点击当前活动较强地点后，条目显示为选中状态；中英文切换正常。未观察到页面运行错误或失败的浏览器请求。本次没有调用 AI，也没有在浏览器检查的同时查看 Render 日志。
 
 2026-09-29 17:58 UTC 从生产页面发送了一条 AI 问题：“What cloud cover is forecast for Dublin, Ireland tonight?” 聊天接口返回 HTTP 200，浏览器没有运行错误。由于爱尔兰境内仍有 Dublin City、Dublin South、Dublin Pike 和 Dublin Airport 四个候选地点，助手先列出这些具体选项供用户确认，再继续天气查询。这验证了单轮地点消歧响应，不代表选中地点后的最终天气回答已通过浏览器验收；本次没有发送第二条模型请求。
+
+后端既有测试 `AssistantServiceTest.resolvesExactFullLocationLabelFromAmbiguousResults` 已通过（1 项测试，失败/错误为 0），验证用户从先前的候选项中选择爱尔兰 Dublin 后，会查询该地点的当地夜间事实。第一次受限运行无法附加 Mockito 测试代理；在允许测试代理后重跑通过。自动化测试覆盖了选项到数据查询的路径，但生产页面第二轮回复仍未验证。
 
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
