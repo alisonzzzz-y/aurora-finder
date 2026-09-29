@@ -8,11 +8,12 @@ type Props = {
   points: WeatherCloudPoint[]
   night: NightOutlook
   timezone: string
+  highlightedPointTimes?: string[]
 }
 
 const thresholdOrder = ['CIVIL_TWILIGHT', 'NAUTICAL_TWILIGHT', 'ASTRONOMICAL_TWILIGHT'] as const
 
-export function CloudDarknessTimeline({ points, night, timezone }: Props) {
+export function CloudDarknessTimeline({ points, night, timezone, highlightedPointTimes = [] }: Props) {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(380)
@@ -25,6 +26,8 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
     return Number.isFinite(instant) && instant >= start && instant <= end
   })
   const validPoints = timelinePoints.filter(point => point.cloudCoverPercent !== null)
+  const highlightedPointSet = new Set(highlightedPointTimes)
+  const hasHighlightedPoints = validPoints.some(point => highlightedPointSet.has(point.validAt))
   const selectedPoint = validPoints.find(point => point.validAt === selectedPointAt)
   const left = 110
   const right = 10
@@ -60,6 +63,7 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
     <div className="cloud-darkness-legend" aria-hidden="true">
       <span><i className="cloud-line-key" />{t('cloudCoverLegend')}</span>
       <span><i className="darkness-band-key" />{t('sunBelowHorizonLegend')}</span>
+      {hasHighlightedPoints && <span><i className="cloud-darkness-overlap-key" />{t('auroraCloudOverlapPoint')}</span>}
     </div>
     <div ref={chartRef} className="cloud-darkness-chart-wrap">
       <svg className="cloud-darkness-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${t('cloudDarknessTimelineTitle')}. ${description}`}>
@@ -82,8 +86,11 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
         })}
         {validPoints.map(point => {
           const instant = Date.parse(point.validAt)
-          return <circle className="cloud-darkness-point" key={point.validAt} cx={xFor(instant)} cy={yFor(point.cloudCoverPercent!)} r="5" role="button" tabIndex={0}
-            aria-label={`${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}`}
+          const overlapsAurora = highlightedPointSet.has(point.validAt)
+          const label = `${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}${overlapsAurora ? ` · ${t('auroraCloudOverlapPoint')}` : ''}`
+          return <circle className={overlapsAurora ? 'cloud-darkness-point cloud-darkness-point-overlap' : 'cloud-darkness-point'}
+            key={point.validAt} cx={xFor(instant)} cy={yFor(point.cloudCoverPercent!)} r={overlapsAurora ? 7 : 5} role="button" tabIndex={0}
+            aria-label={label}
             onClick={() => setSelectedPointAt(point.validAt)}
             onKeyDown={event => {
               if (event.key === 'Enter' || event.key === ' ') {
@@ -91,7 +98,7 @@ export function CloudDarknessTimeline({ points, night, timezone }: Props) {
                 setSelectedPointAt(point.validAt)
               }
             }}>
-            <title>{`${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}`}</title>
+            <title>{label}</title>
           </circle>
         })}
         <text className="cloud-darkness-row-heading" x="0" y="207">{t('sunBelowHorizonLegend')}</text>
