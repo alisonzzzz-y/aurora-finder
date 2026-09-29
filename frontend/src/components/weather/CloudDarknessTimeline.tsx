@@ -67,7 +67,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
       {hasHighlightedPoints && <span><i className="cloud-darkness-overlap-key" />{t('auroraCloudOverlapPoint')}</span>}
     </div>
     <div ref={chartRef} className="cloud-darkness-chart-wrap">
-      <svg className="cloud-darkness-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${t('cloudDarknessTimelineTitle')}. ${description}`}>
+      <svg className="cloud-darkness-chart" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`${t('cloudDarknessTimelineTitle')}. ${description}`}>
         <title>{t('cloudDarknessTimelineTitle')}</title>
         <desc>{description}</desc>
         {[0, 25, 50, 75, 100].map(value => <g key={value}>
@@ -91,7 +91,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
           const label = `${timeLabel(instant)} · ${point.cloudCoverPercent}% ${t('cloudCoverLegend')}${overlapsAurora ? ` · ${t('auroraCloudOverlapPoint')}` : ''}`
           return <circle className={overlapsAurora ? 'cloud-darkness-point cloud-darkness-point-overlap' : 'cloud-darkness-point'}
             key={point.validAt} cx={xFor(instant)} cy={yFor(point.cloudCoverPercent!)} r={overlapsAurora ? 7 : 5} role="button" tabIndex={0}
-            aria-label={label}
+            aria-label={label} aria-pressed={selectedPointAt === point.validAt}
             onClick={() => setSelectedPointAt(point.validAt)}
             onKeyDown={event => {
               if (event.key === 'Enter' || event.key === ' ') {
