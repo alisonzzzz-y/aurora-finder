@@ -27,7 +27,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +55,7 @@ class ObservationWorkflowIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired MutableClock workflowClock;
     @MockitoBean GeocodingProvider geocoding;
     @MockitoBean OvationProvider ovation;
     @MockitoBean WeatherProvider weather;
@@ -60,6 +63,7 @@ class ObservationWorkflowIntegrationTest {
 
     @BeforeEach
     void externalSources() {
+        workflowClock.set(NOW);
         when(geocoding.search("Dublin")).thenReturn(List.of(DUBLIN, US_DUBLIN));
         when(geocoding.get(DUBLIN.id())).thenReturn(Optional.of(DUBLIN));
         when(ovation.latest()).thenReturn(new OvationForecast(NOW.minusSeconds(600), NOW.plusSeconds(3600),
@@ -105,6 +109,7 @@ class ObservationWorkflowIntegrationTest {
     void auroraTimeoutRemainsPartialInBothPageApiAndAssistantTool() throws Exception {
         when(ovation.latest())
                 .thenThrow(new ProviderUnavailableException(ProviderFailure.TIMEOUT, "private NOAA source detail"));
+        workflowClock.advance(Duration.ofMinutes(6));
 
         JsonNode facts = readGet("/api/v1/facts/" + DUBLIN.id());
         assertEquals("PARTIAL", facts.path("sourceStatus").asText());
@@ -169,6 +174,18 @@ class ObservationWorkflowIntegrationTest {
     @TestConfiguration
     static class FixedTime {
         @Bean @Primary
-        Clock workflowClock() { return Clock.fixed(NOW, ZoneOffset.UTC); }
+        MutableClock workflowClock() { return new MutableClock(NOW); }
+    }
+
+    static class MutableClock extends Clock {
+        private final AtomicReference<Instant> current;
+
+        MutableClock(Instant initial) { current = new AtomicReference<>(initial); }
+        void set(Instant instant) { current.set(instant); }
+        void advance(Duration duration) { current.updateAndGet(instant -> instant.plus(duration)); }
+
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return this; }
+        @Override public Instant instant() { return current.get(); }
     }
 }
