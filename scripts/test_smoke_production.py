@@ -1,6 +1,8 @@
 """Offline tests for the production read-only smoke check."""
 
+import socket
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 from smoke_production import DEFAULT_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS, SmokeCheck
@@ -111,6 +113,22 @@ class SmokeCheckTest(unittest.TestCase):
         self.assertEqual("2026-09-29T09:03:00Z", summary["auroraWindowUtc"]["start"])
         self.assertEqual("2026-09-29T11:00:00Z", summary["cloudForecastWindowUtc"]["start"])
         self.assertEqual(0, summary["overlappingCloudPointCount"])
+
+    def test_dns_failures_are_reported_with_a_safe_diagnostic(self):
+        check = SmokeCheck("https://api.example")
+        failure = urllib.error.URLError(socket.gaierror(8, "nodename nor servname provided"))
+        with patch("smoke_production.urllib.request.urlopen", side_effect=failure):
+            result = check.get_json("/health")
+        self.assertEqual("dns_error", result["error"])
+        self.assertIn("nodename", result["error_detail"])
+        self.assertNotIn("api.example", result["error_detail"])
+
+    def test_timeouts_are_classified_separately_from_dns_failures(self):
+        check = SmokeCheck("https://api.example")
+        with patch("smoke_production.urllib.request.urlopen", side_effect=TimeoutError("timed out")):
+            result = check.get_json("/health")
+        self.assertEqual("timeout", result["error"])
+        self.assertEqual("timed out", result["error_detail"])
 
     def test_invalid_json_is_reported_as_failure(self):
         check = SmokeCheck("https://api.example")

@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import sys
 import time
+import socket
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -35,8 +36,15 @@ class SmokeCheck:
                         result = {"status": response.status, "error": "invalid_json"}
         except urllib.error.HTTPError as error:
             result = {"status": error.code, "error": "http_error"}
-        except (urllib.error.URLError, TimeoutError, OSError) as error:
-            result = {"status": None, "error": type(error).__name__}
+        except urllib.error.URLError as error:
+            reason = error.reason
+            category = "dns_error" if isinstance(reason, socket.gaierror) else (
+                "timeout" if isinstance(reason, TimeoutError) else "network_error"
+            )
+            result = {"status": None, "error": category, "error_detail": str(reason)[:200]}
+        except (TimeoutError, OSError) as error:
+            category = "timeout" if isinstance(error, TimeoutError) else "network_error"
+            result = {"status": None, "error": category, "error_detail": str(error)[:200]}
         result["duration_ms"] = round(1000 * (time.monotonic() - started))
         return result
 
