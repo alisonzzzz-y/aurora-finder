@@ -164,6 +164,23 @@ class ObservationWorkflowIntegrationTest {
     }
 
     @Test
+    void missingCloudValuesRemainNoCoverageInPageApiAndAssistantTool() throws Exception {
+        when(weather.forecast(DUBLIN.latitude(), DUBLIN.longitude())).thenReturn(
+                new WeatherForecastResponse(NOW, NOW.plusSeconds(3600), "MET Norway",
+                        DUBLIN.latitude(), DUBLIN.longitude(), List.of(
+                        new WeatherCloudPoint(NOW.plusSeconds(900), null))));
+
+        JsonNode facts = readGet("/api/v1/facts/" + DUBLIN.id());
+        JsonNode cloudFact = facts.path("cloudForecast");
+        assertEquals("PARTIAL", facts.path("sourceStatus").asText());
+        assertEquals("NO_COVERAGE", cloudFact.path("status").asText());
+        assertEquals(1, cloudFact.path("data").path("cloudForecast").size());
+        assertFalse(cloudFact.path("data").path("cloudForecast").get(0).hasNonNull("cloudCoverPercent"));
+        assertEquals("CANNOT_CHECK", facts.path("coverage").path("status").asText());
+        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+    }
+
+    @Test
     void assistantProviderFailureReturnsSafeUnavailableResponse() throws Exception {
         when(openAi.respond(anyString(), any(), any()))
                 .thenThrow(new AssistantUnavailableException("upstream API key rejected: secret-value"));
