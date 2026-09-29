@@ -37,13 +37,15 @@ On 2026-09-30, a production browser follow-up selected the Dublin City candidate
 
 To prevent that observed failure from reaching users unchanged, the backend now detects a final answer that uses correction language and assigns different cloud percentages to the same local hour. It substitutes a short message directing users to the local cloud chart. The model instructions also ask it to check for conflicting hourly values before finishing. `AssistantServiceTest` covers both conflicting values and a correction that repeats the same value. The full backend `./mvnw --batch-mode verify` run passed 87 tests with no failures, errors, or skips on 2026-09-30. This guard targets contradictory corrections; it does not independently prove every generated value matches the source forecast.
 
+The assistant now also compares final hourly cloud percentages with the selected location's structured weather response. Local hours are derived from the location's IANA time zone; rounded whole percentages allow a 0.6-point tolerance, while decimal values allow 0.15 points. If an answer gives a cloud percentage for an hour that is absent from the returned forecast or does not match any returned value for that local hour, it is replaced with a message pointing to the chart. The check only applies when hourly time-and-percentage pairs can be extracted from the answer. Because answers may omit the date, values are matched by local clock hour across the returned forecast window; this confirms a value is present for that hour but does not prove which date the model intended. `AssistantServiceTest` covers a mismatched value and matching decimal values. The full backend verification passed 89 tests with no failures, errors, or skips on 2026-09-30.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
 
 - Review actual OpenAI usage and spend in the provider account. Application logs report model, duration, token counts, and request ID for successful responses, but do not replace the provider billing page.
 - Confirm MapTiler plan, quota, and public portfolio usage permission in the account.
-- The production API smoke check, normal browser flow, and the complete production AI location-selection flow have passed. The 2026-09-30 weather answer included a self-correction with inconsistent hourly values; compare a future answer against the selected-location forecast before calling answer-level accuracy verified. Render logs still need review during a browser session. External provider outages have not been deliberately triggered in production.
+- The production API smoke check, normal browser flow, and the complete production AI location-selection flow have passed. Source-backed hourly cloud validation is now covered by automated tests but has not yet been exercised against a live AI response after deployment. Render logs still need review during a browser session. External provider outages have not been deliberately triggered in production.
 - The current flow ends at read-only tool results. Persistent tool traces and decision records depend on the separate storage design and are not part of the deployed flow yet.
 
 ## 简体中文
@@ -81,11 +83,13 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 
 为避免这类已观察到的矛盾直接显示给用户，后端现会检查最终回复：如果回复使用了更正措辞，且同一当地小时出现不同云量数值，就替换为提示用户查看当地云量图的简短信息。模型指令也补充了检查小时数是否冲突的要求。`AssistantServiceTest` 覆盖了矛盾数值和更正后数值相同两种情况。2026-09-30 后端 `./mvnw --batch-mode verify` 全量检查通过：87 项测试，失败、错误和跳过均为 0。此保护针对自我更正造成的冲突，不能独立证明每个生成数值都与来源预报一致。
 
+助手现在还会把最终回复中的逐小时云量与所选地点的结构化天气数据进行比对。系统按地点的 IANA 时区换算当地小时；整数百分比允许 0.6 个百分点的四舍五入误差，小数值允许 0.15 个百分点。如果回复所称小时不在天气数据中，或该小时的数值与返回数据均不匹配，就替换为提示查看图表的信息。只有当回复中能提取出“小时 + 百分比”时才会执行该校验。由于回答可能省略日期，校验会在天气预报范围内按当地钟点匹配；这只能确认数值出现在该钟点，无法证明模型指的是哪一天。`AssistantServiceTest` 覆盖了数值不匹配和小数值匹配两种情况。2026-09-30 后端全量验证通过：89 项测试，失败、错误和跳过均为 0。
+
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
 ### 仍需进行的运行环境核验
 
 - 在 OpenAI 账户中查看实际用量和费用。应用日志会记录成功响应的模型、耗时、token 数和请求 ID，但不能代替服务商账单页面。
 - 在 MapTiler 账户确认套餐、配额及公开作品集使用许可。
-- 生产只读 API 检查、常规浏览器流程以及 AI 地点选择到最终天气回答的完整生产流程均已通过。2026-09-30 的天气回复出现小时值自我更正；在与所选地点预报逐项核对之前，回答数值准确性仍未确认。还需在同一时段查看 Render 日志。目前没有在生产环境中主动触发外部服务故障。
+- 生产只读 API 检查、常规浏览器流程以及 AI 地点选择到最终天气回答的完整生产流程均已通过。逐小时云量来源校验已通过自动化测试，但新版本部署后尚未用线上 AI 回复验证。还需在同一时段查看 Render 日志。目前没有在生产环境中主动触发外部服务故障。
 - 当前流程提供只读工具结果。持久化工具调用轨迹和判定记录依赖单独的数据存储设计，尚未接入已部署流程。
