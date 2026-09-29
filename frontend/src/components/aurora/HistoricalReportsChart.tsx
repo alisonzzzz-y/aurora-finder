@@ -65,7 +65,7 @@ export function HistoricalReportsChart() {
           {reportSummary.years.map((item, index) => {
             const x = chartStart + slotWidth * index + (slotWidth - barWidth) / 2
             const y = yFor(item.reports)
-            return <g key={item.year} className="historical-reports-bar">
+            return <g key={item.year} className={item.year === peakYear.year ? "historical-reports-bar peak" : "historical-reports-bar"}>
               <rect x={x} y={y} width={barWidth} height={chartBottom - y} rx="3" opacity={index === 0 || index === reportSummary.years.length - 1 ? 0.5 : 1}>
                 <title>{`${item.year}: ${number.format(item.reports)} ${t('historicalReportsCountLabel')}`}</title>
               </rect>
