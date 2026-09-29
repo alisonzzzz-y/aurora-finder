@@ -102,6 +102,23 @@ class ObservationWorkflowIntegrationTest {
     }
 
     @Test
+    void auroraTimeoutRemainsPartialInBothPageApiAndAssistantTool() throws Exception {
+        when(ovation.latest())
+                .thenThrow(new ProviderUnavailableException(ProviderFailure.TIMEOUT, "private NOAA source detail"));
+
+        JsonNode facts = readGet("/api/v1/facts/" + DUBLIN.id());
+        assertEquals("PARTIAL", facts.path("sourceStatus").asText());
+        assertEquals("UNAVAILABLE", facts.path("auroraActivity").path("status").asText());
+        assertEquals("TIMEOUT", facts.path("auroraActivity").path("failureCode").asText());
+        assertFalse(facts.path("auroraActivity").hasNonNull("data"));
+        assertEquals("CURRENT", facts.path("cloudForecast").path("status").asText());
+        assertEquals("CURRENT", facts.path("solarDarkness").path("status").asText());
+        assertFalse(facts.toString().contains("private NOAA source detail"));
+
+        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+    }
+
+    @Test
     void weatherTimeoutRemainsPartialInBothPageApiAndAssistantTool() throws Exception {
         when(weather.forecast(DUBLIN.latitude(), DUBLIN.longitude()))
                 .thenThrow(new ProviderUnavailableException(ProviderFailure.TIMEOUT, "private source detail"));
