@@ -10,6 +10,7 @@ import com.aurora.observation.provider.OpenAiAssistantProvider;
 import com.aurora.observation.provider.OvationProvider;
 import com.aurora.observation.provider.ProviderFailure;
 import com.aurora.observation.provider.ProviderUnavailableException;
+import com.aurora.observation.service.AssistantUnavailableException;
 import com.aurora.observation.provider.WeatherProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -136,6 +139,26 @@ class ObservationWorkflowIntegrationTest {
         assertFalse(facts.path("cloudForecast").hasNonNull("data"));
         assertFalse(facts.toString().contains("private source detail"));
         assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+    }
+
+    @Test
+    void assistantProviderFailureReturnsSafeUnavailableResponse() throws Exception {
+        when(openAi.respond(anyString(), any(), any()))
+                .thenThrow(new AssistantUnavailableException("upstream API key rejected: secret-value"));
+
+        var request = mapper.createObjectNode().put("message", "What does the latest Kp forecast mean?")
+                .put("language", "en");
+        mvc.perform(post("/api/v1/assistant/chat")
+                        .contentType(MediaType.APPLICATION_JSON).content(request.toString()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.code").value("ASSISTANT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.detail").value(
+                        "The AI assistant is temporarily unavailable. Please try again later."))
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("secret-value"))));
+        verify(openAi).respond(anyString(), any(), any());
     }
 
     private JsonNode askAssistantAndCaptureFacts(long selectedId) throws Exception {
