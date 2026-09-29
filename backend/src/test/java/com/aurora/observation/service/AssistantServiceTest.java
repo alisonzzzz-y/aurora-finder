@@ -153,6 +153,44 @@ class AssistantServiceTest {
     }
 
     @Test
+    void resolvesDublinCityFromSeveralIrishSubareaCandidatesInOneReply() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts",
+                        "{\"location_id\":2964574}"))
+                .thenReturn(responseWithText(mapper, "Here are the cloud facts for Dublin City."));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getLocalNightFacts(2964574)).thenReturn(null);
+
+        List<Location> candidates = List.of(
+                new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+                        53.33306, -6.24889, "Europe/Dublin"),
+                new Location(7001, "Dublin South", "Leinster", "South Dublin", "Ireland",
+                        53.29, -6.36, "Europe/Dublin"),
+                new Location(7002, "Dublin Airport", "Leinster", "Fingal", "Ireland",
+                        53.42, -6.27, "Europe/Dublin"),
+                new Location(7003, "Dublin Pike", "Munster", "County Cork", "Ireland",
+                        51.93, -8.53, "Europe/Dublin"));
+
+        AssistantChatResponse response = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("都柏林市", "zh", null, List.of(
+                        new com.aurora.observation.dto.AssistantMessage("user",
+                                "都柏林目前有哪些云量数据？"),
+                        new com.aurora.observation.dto.AssistantMessage("assistant",
+                                "请选择都柏林的具体地点。", candidates))));
+
+        assertEquals("Here are the cloud facts for Dublin City.", response.answer());
+        assertTrue(response.locationCandidates().isEmpty());
+        verify(tools).getLocalNightFacts(2964574);
+        verify(tools, never()).getLocalNightFacts(7001);
+        verify(tools, never()).getLocalNightFacts(7002);
+        verify(tools, never()).getLocalNightFacts(7003);
+        verify(openAi, times(2)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+    }
+
+    @Test
     void keepsAskingWithNumberedChoicesInsteadOfCallingModelWhenReplyIsUnclear() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObjectMapper mapper = new ObjectMapper();
