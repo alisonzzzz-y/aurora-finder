@@ -17,10 +17,16 @@ class SmokeCheckTest(unittest.TestCase):
         results = {
             "/actuator/health": {"status": 200, "body": {"status": "UP"}},
             "/api/v1/locations?q=Dublin": {"status": 200, "body": [place]},
-            "/api/v1/facts/42": {"status": 200, "body": {"outlook": {"nights": [{}, {}, {}]}}},
-            "/api/v1/aurora-map": {"status": 200, "body": {"status": "AVAILABLE"}},
-            "/api/v1/kp-index": {"status": 200, "body": {"records": []}},
-            "/api/v1/geomagnetic-storm-forecast": {"status": 200, "body": {"status": "EMPTY"}},
+            "/api/v1/facts/42": {"status": 200, "body": {"outlook": {
+                "location": {"id": 42}, "nights": [{}, {}, {}]
+            }}},
+            "/api/v1/aurora-map": {"status": 200, "body": {
+                "status": "CURRENT", "points": [{}],
+                "observationTime": "2026-09-29T09:03:00Z",
+                "forecastTime": "2026-09-29T10:31:00Z"
+            }},
+            "/api/v1/kp-index": {"status": 200, "body": {"records": [{}]}},
+            "/api/v1/geomagnetic-storm-forecast": {"status": 200, "body": {"days": [{}]}},
         }
         with patch.object(check, "get_json", side_effect=lambda path: results[path]):
             report = check.run()
@@ -76,6 +82,19 @@ class SmokeCheckTest(unittest.TestCase):
         with patch.object(check, "get_json", return_value={"status": 200, "body": {"status": "DOWN"}}):
             result = check.check("/actuator/health", dict, lambda body: body.get("status") == "UP")
         self.assertEqual("unexpected_response_content", result["error"])
+
+    def test_success_status_with_empty_data_fails_content_validation(self):
+        self.assertFalse(SmokeCheck.validate_aurora_map({"status": "CURRENT", "points": []}))
+        self.assertFalse(SmokeCheck.validate_kp_index({"records": []}))
+        self.assertFalse(SmokeCheck.validate_storm_forecast({"days": []}))
+        self.assertFalse(SmokeCheck.validate_facts(
+            {"outlook": {"location": {"id": 42}, "nights": [{}, {}]}}, 42
+        ))
+
+    def test_fact_validation_requires_the_requested_location_and_three_nights(self):
+        body = {"outlook": {"location": {"id": 42}, "nights": [{}, {}, {}]}}
+        self.assertTrue(SmokeCheck.validate_facts(body, 42))
+        self.assertFalse(SmokeCheck.validate_facts(body, 43))
 
     def test_fact_summary_shows_compared_source_windows_when_no_overlap(self):
         body = {
