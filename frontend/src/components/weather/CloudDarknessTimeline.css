@@ -18,6 +18,8 @@
 .cloud-darkness-row-label { font-size: 9px; }
 .cloud-darkness-line { fill: none; stroke: #c5a6ff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .cloud-darkness-point { fill: #171321; stroke: #c5a6ff; stroke-width: 2; }
+.cloud-darkness-point { cursor: pointer; }
+.cloud-darkness-point:focus-visible { stroke: #fff; stroke-width: 4; outline: none; }
 .cloud-darkness-track { stroke: var(--line); stroke-width: 7; stroke-linecap: round; }
 .cloud-darkness-band { fill: #aa88dc; }
 .darkness-band-0 { opacity: .38; }
