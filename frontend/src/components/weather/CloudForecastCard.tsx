@@ -1,12 +1,13 @@
 import type { WeatherForecast } from '../../types/weatherForecast'
 import type { SourceFact } from '../../types/observationFacts'
+import type { LocalAuroraActivity } from '../../types/localAuroraActivity'
 import type { NightOutlook } from '../../types/outlook'
 import { sortByValidAt } from '../../utils/sortByValidAt'
 import { useI18n } from '../../i18n'
 import { CloudDarknessTimeline } from './CloudDarknessTimeline'
 import './CloudForecastCard.css'
 
-type Props = { fact: SourceFact<WeatherForecast>; timezone: string; night?: NightOutlook; highlightedPointTimes?: string[] }
+type Props = { fact: SourceFact<WeatherForecast>; timezone: string; night?: NightOutlook; highlightedPointTimes?: string[]; auroraFact?: SourceFact<LocalAuroraActivity> }
 
 function formatTime(instant: string, timezone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -14,7 +15,7 @@ function formatTime(instant: string, timezone: string, locale: string) {
   }).format(new Date(instant))
 }
 
-export function CloudForecastCard({ fact, timezone, night, highlightedPointTimes = [] }: Props) {
+export function CloudForecastCard({ fact, timezone, night, highlightedPointTimes = [], auroraFact }: Props) {
   const { language, t } = useI18n()
   const data = fact.data
   const points = sortByValidAt((data?.cloudForecast ?? []).filter(point => !night || (Date.parse(point.validAt) >= Date.parse(night.evaluationWindowStartUtc) && Date.parse(point.validAt) < Date.parse(night.evaluationWindowEndUtc))))
@@ -29,7 +30,7 @@ export function CloudForecastCard({ fact, timezone, night, highlightedPointTimes
     {fact.status === 'NO_COVERAGE' && !data && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
     {night && points.length === 0 && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
     {night && <CloudDarknessTimeline points={data?.cloudForecast ?? []} night={night} timezone={timezone}
-        highlightedPointTimes={highlightedPointTimes} />}
+        highlightedPointTimes={highlightedPointTimes} auroraFact={auroraFact} />}
     {data && <>
       <details className="visual-details"><summary>{t('cloudDetails')}</summary><ul className="cloud-forecast-list">
         {points.map(point => <li key={point.validAt}>
