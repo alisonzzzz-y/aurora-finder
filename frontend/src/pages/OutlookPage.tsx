@@ -32,6 +32,14 @@ export function OutlookPage({ facts, onChangeLocation }: Props) {
     [auroraMap.data],
   )
   const locale = language === 'zh' ? 'zh-CN' : 'en'
+  const coverageStart = facts.coverage.shortRangeStartUtc ? Date.parse(facts.coverage.shortRangeStartUtc) : null
+  const coverageEnd = facts.coverage.shortRangeEndUtc ? Date.parse(facts.coverage.shortRangeEndUtc) : null
+  const overlapTimes = facts.coverage.status === 'OVERLAPS' && coverageStart !== null && coverageEnd !== null
+    ? (facts.cloudForecast.data?.cloudForecast ?? [])
+      .filter(point => point.cloudCoverPercent !== null
+        && Date.parse(point.validAt) >= coverageStart && Date.parse(point.validAt) <= coverageEnd)
+      .map(point => formatLocalTimestamp(point.validAt, outlook.location.timezone, locale))
+    : []
   return <>
     <section className="outlook" aria-labelledby="outlook-title">
       <div className="section-heading">
@@ -53,7 +61,7 @@ export function OutlookPage({ facts, onChangeLocation }: Props) {
       <p className="rule-status">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidated')}</p>
       <p className={`source-status source-status-${facts.sourceStatus.toLowerCase()}`}>{t(facts.sourceStatus === 'CURRENT' ? 'allSourcesAvailable' : facts.sourceStatus === 'PARTIAL' ? 'someSourcesMissing' : 'noSourcesAvailable')}</p>
       <p className="source-coverage">{facts.coverage.status === 'OVERLAPS'
-        ? `${t('forecastCoverageOverlap')} ${facts.coverage.cloudPointsWithValuesInsideShortRange} ${t('cloudPointsOverlapSuffix')}`
+        ? t('forecastCoverageOverlap') + ' ' + overlapTimes.join(' · ') + '. ' + t('cloudPointsOverlapSuffix')
         : t(facts.coverage.status === 'NO_OVERLAP' ? 'forecastCoverageNoOverlap' : 'forecastCoverageUnknown')}</p>
       <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} timezone={outlook.location.timezone} key={night.localDate} />)}</div>
       <p className="timestamp">{t('generatedAt')} {formatLocalTimestamp(facts.generatedAtUtc, outlook.location.timezone, locale)}. {t('localTimeNote')}</p>
