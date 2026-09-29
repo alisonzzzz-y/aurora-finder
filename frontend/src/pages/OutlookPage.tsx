@@ -65,7 +65,8 @@ export function OutlookPage({ facts, onChangeLocation }: Props) {
       <div className="night-grid">{outlook.nights.map((night, index) => <NightOutlookCard night={night} index={index} timezone={outlook.location.timezone} key={night.localDate} />)}</div>
       <p className="timestamp">{t('generatedAt')} {formatLocalTimestamp(facts.generatedAtUtc, outlook.location.timezone, locale)}. {t('localTimeNote')}</p>
       <LocalAuroraActivityCard fact={facts.auroraActivity} timezone={outlook.location.timezone} />
-      <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={outlook.nights[0]} />
+      <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={outlook.nights[0]}
+        highlightedPointTimes={overlapPoints.map(point => point.validAt)} />
     </section>
     <section className="foundation-grid" aria-label={t('upcomingFeatures')}>
       <article className="feature-card"><p className="eyebrow">{t('mapFeature')}</p><h2>{t('shortRangeActivity')}</h2><p>{t('mapFeatureNote')}</p><span className="coming-soon">{t('awaitingIntegration')}</span></article>
