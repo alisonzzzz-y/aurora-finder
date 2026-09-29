@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NightOutlook } from '../../types/outlook'
 import type { WeatherCloudPoint } from '../../types/weatherForecast'
+import type { SourceFact } from '../../types/observationFacts'
+import type { LocalAuroraActivity } from '../../types/localAuroraActivity'
 import { sortByValidAt } from '../../utils/sortByValidAt'
 import { useI18n } from '../../i18n'
 import './CloudDarknessTimeline.css'
@@ -10,11 +12,12 @@ type Props = {
   night: NightOutlook
   timezone: string
   highlightedPointTimes?: string[]
+  auroraFact?: SourceFact<LocalAuroraActivity>
 }
 
 const thresholdOrder = ['CIVIL_TWILIGHT', 'NAUTICAL_TWILIGHT', 'ASTRONOMICAL_TWILIGHT'] as const
 
-export function CloudDarknessTimeline({ points, night, timezone, highlightedPointTimes = [] }: Props) {
+export function CloudDarknessTimeline({ points, night, timezone, highlightedPointTimes = [], auroraFact }: Props) {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(380)
@@ -34,7 +37,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
   const right = 10
   const top = 25
   const cloudBottom = 164
-  const height = 316
+  const height = 344
   const xFor = (instant: number) => left + (instant - start) / Math.max(1, end - start) * (width - left - right)
   const yFor = (cloud: number) => top + (100 - cloud) / 100 * (cloudBottom - top)
   const timeLabel = (instant: number) => new Intl.DateTimeFormat(locale, {
@@ -42,6 +45,19 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
   }).format(new Date(instant))
   const xTicks = [0, 0.25, 0.5, 0.75, 1].map(ratio => start + (end - start) * ratio)
   const thresholds = thresholdOrder.map(key => night.solarDarkness.thresholds.find(item => item.threshold === key))
+  const aurora = auroraFact?.status === 'CURRENT' && auroraFact.data?.status === 'CURRENT'
+    && auroraFact.data.modelValue !== null && Number.isFinite(auroraFact.data.modelValue)
+    && auroraFact.data.level !== 'INSUFFICIENT_DATA'
+    && auroraFact.scopeStartUtc && auroraFact.scopeEndUtc
+    ? {
+        value: auroraFact.data.modelValue,
+        start: Math.max(start, Date.parse(auroraFact.scopeStartUtc)),
+        end: Math.min(end, Date.parse(auroraFact.scopeEndUtc)),
+        forecastAt: Date.parse(auroraFact.sourceForecastAtUtc ?? auroraFact.data.forecastTime),
+      }
+    : null
+  const hasAuroraWindow = Boolean(aurora && Number.isFinite(aurora.start) && Number.isFinite(aurora.end)
+    && aurora.end > aurora.start)
 
   useEffect(() => {
     const element = chartRef.current
@@ -54,7 +70,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
     return () => observer.disconnect()
   }, [])
 
-  const description = t('cloudDarknessTimelineDescription')
+  const description = `${t('cloudDarknessTimelineDescription')} ${hasAuroraWindow ? t('auroraTimelineDescription') : ''}`
 
   return <section className="cloud-darkness-timeline" aria-labelledby="cloud-darkness-timeline-title">
     <div className="cloud-darkness-title-row">
@@ -65,6 +81,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
       <span><i className="cloud-line-key" />{t('cloudCoverLegend')}</span>
       <span><i className="darkness-band-key" />{t('sunBelowHorizonLegend')}</span>
       {hasHighlightedPoints && <span><i className="cloud-darkness-overlap-key" />{t('auroraCloudOverlapPoint')}</span>}
+      {hasAuroraWindow && <span><i className="aurora-window-key" />{t('localAuroraForecast')}</span>}
     </div>
     <div ref={chartRef} className="cloud-darkness-chart-wrap">
       <svg className="cloud-darkness-chart" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`${t('cloudDarknessTimelineTitle')}. ${description}`}>
@@ -102,9 +119,22 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
             <title>{label}</title>
           </circle>
         })}
-        <text className="cloud-darkness-row-heading" x="0" y="207">{t('sunBelowHorizonLegend')}</text>
+        {hasAuroraWindow && aurora && <g aria-label={`${t('localAuroraForecast')}: ${aurora.value}/100`}>
+          <text className="cloud-darkness-row-heading" x="0" y="202">{t('localAuroraForecast')}</text>
+          <line className="cloud-darkness-track aurora-window-track" x1={left} x2={width - right} y1="198" y2="198" />
+          <rect className="aurora-window-band" x={xFor(aurora.start)} y="192"
+            width={Math.max(3, xFor(aurora.end) - xFor(aurora.start))} height="12" rx="5">
+            <title>{`${t('localAuroraForecast')}: ${timeLabel(aurora.start)}–${timeLabel(aurora.end)} · ${aurora.value}/100`}</title>
+          </rect>
+          {aurora.forecastAt >= aurora.start && aurora.forecastAt <= aurora.end && <circle className="aurora-window-marker"
+            cx={xFor(aurora.forecastAt)} cy="198" r="5">
+            <title>{`${t('activityValue')}: ${aurora.value}/100 · ${timeLabel(aurora.forecastAt)}`}</title>
+          </circle>}
+          <text className="cloud-darkness-axis-label" x={width - right} y="202" textAnchor="end">{aurora.value}/100</text>
+        </g>}
+        <text className="cloud-darkness-row-heading" x="0" y="245">{t('sunBelowHorizonLegend')}</text>
         {thresholds.map((threshold, index) => {
-          const y = 221 + index * 27
+          const y = 258 + index * 27
           const label = t(index === 0 ? 'civilTwilightShort' : index === 1 ? 'nauticalTwilightShort' : 'astronomicalTwilightShort')
           return <g key={thresholdOrder[index]}>
             <text className="cloud-darkness-row-label" x="0" y={y + 9}>{label}</text>
