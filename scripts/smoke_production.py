@@ -16,7 +16,7 @@ MAX_TIMEOUT_SECONDS = 90
 
 
 class SmokeCheck:
-    def __init__(self, base_url, timeout=15):
+    def __init__(self, base_url, timeout=DEFAULT_TIMEOUT_SECONDS):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -40,25 +40,69 @@ class SmokeCheck:
         result["duration_ms"] = round(1000 * (time.monotonic() - started))
         return result
 
-    def check(self, path, expected_type, validate=None):
-        result = self.get_json(path)
+    @staticmethod
+    def summarize(path, body):
+        if path == "/actuator/health":
+            return {"serviceStatus": body.get("status")}
+        if path.startswith("/api/v1/locations?"):
+            places = [place for place in body if isinstance(place, dict)]
+            irish_dublin = [place for place in places
+                            if isinstance(place.get("name"), str) and place["name"].casefold() == "dublin"
+                            and isinstance(place.get("country"), str) and place["country"].casefold() == "ireland"]
+            return {
+                "candidateCount": len(body),
+                "irishDublinMatches": len(irish_dublin),
+                "irishDublin": [{key: place.get(key) for key in ("name", "region", "subregion", "country", "timezone")}
+                                for place in irish_dublin],
+            }
+        if path.startswith("/api/v1/facts/"):
+            outlook = body.get("outlook") or {}
+            aurora = body.get("auroraActivity") or {}
+            clouds = body.get("cloudForecast") or {}
+            darkness = body.get("solarDarkness") or {}
+            return {
+                "location": outlook.get("location"),
+                "ruleStatus": (outlook.get("ruleStatus")),
+                "sourceStatus": body.get("sourceStatus"),
+                "nightCount": len(outlook.get("nights") or []),
+                "auroraStatus": aurora.get("status"),
+                "cloudStatus": clouds.get("status"),
+                "darknessStatus": darkness.get("status"),
+                "coverageStatus": (body.get("coverage") or {}).get("status"),
+            }
+        if path == "/api/v1/aurora-map":
+            return {"status": body.get("status"), "pointCount": len(body.get("points") or []),
+                    "observationTime": body.get("observationTime"), "forecastTime": body.get("forecastTime")}
+        if path == "/api/v1/kp-index":
+            return {"recordCount": len(body.get("records") or []), "retrievedAt": body.get("retrievedAt")}
+        if path == "/api/v1/geomagnetic-storm-forecast":
+            return {"dayCount": len(body.get("days") or []), "issuedAt": body.get("issuedAt"),
+                    "retrievedAt": body.get("retrievedAt")}
+        return {"topLevelKeys": sorted(body.keys()) if isinstance(body, dict) else None}
+
+    def check(self, path, expected_type, validate=None, keep_body=False):
+        result = dict(self.get_json(path))
         result["path"] = path
         if result.get("status") == 200:
-            body = result.get("body")
+            body = result.pop("body", None)
             if not isinstance(body, expected_type):
                 result["error"] = "unexpected_json_shape"
-            elif validate and not validate(body):
-                result["error"] = "unexpected_response_content"
+            else:
+                result["summary"] = self.summarize(path, body)
+                if validate and not validate(body):
+                    result["error"] = "unexpected_response_content"
+                if keep_body:
+                    result["_body"] = body
         return result
 
     def run(self):
         checks = [self.check("/actuator/health", dict, lambda body: body.get("status") == "UP")]
         query = urllib.parse.urlencode({"q": "Dublin"})
-        locations = self.check("/api/v1/locations?" + query, list)
+        locations = self.check("/api/v1/locations?" + query, list, keep_body=True)
         checks.append(locations)
         city = None
-        if locations.get("status") == 200 and isinstance(locations.get("body"), list):
-            matches = [place for place in locations["body"]
+        if locations.get("status") == 200 and isinstance(locations.get("_body"), list):
+            matches = [place for place in locations["_body"]
                        if isinstance(place, dict) and isinstance(place.get("name"), str)
                        and isinstance(place.get("country"), str)
                        and isinstance(place.get("id"), int)
@@ -68,6 +112,7 @@ class SmokeCheck:
                 city = matches[0]
             else:
                 locations["error"] = "expected_one_irish_dublin_candidate"
+        locations.pop("_body", None)
         if city:
             checks.append(self.check("/api/v1/facts/" + str(city["id"]), dict))
         else:
