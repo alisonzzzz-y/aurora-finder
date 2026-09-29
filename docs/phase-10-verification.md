@@ -23,6 +23,8 @@ The backend `./mvnw verify` run completed with 82 tests, 0 failures, 0 errors, a
 
 `python3 scripts/smoke_production.py --timeout 60` passed against the deployed Render API at 2026-09-29 16:00 UTC. Health, Dublin search, selected Dublin facts, aurora map, Kp index, and geomagnetic storm forecast all returned HTTP 200. The Dublin result contained three local nights; aurora and cloud sources were current with an overlapping window. The response correctly retained `NOT_VALIDATED` for the overall viewing rule. The check did not call the AI or test browser rendering, provider failure injection, or long-term availability.
 
+A separate production AI request on 2026-09-29 16:14 UTC asked what the latest Kp forecast means for aurora activity. The assistant returned HTTP 200 in 20.2 seconds, cited current NOAA forecast data, and stated that Kp is not a local viewing probability. This was one normal-path request and does not establish model accuracy across the evaluation matrix.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
@@ -52,6 +54,8 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 ### 生产只读 API 检查（2026-09-29）
 
 `python3 scripts/smoke_production.py --timeout 60` 于 2026-09-29 16:00 UTC 对已部署的 Render API 检查通过。健康检查、Dublin 搜索、所选 Dublin 的当地事实、极光地图、Kp 指数和地磁风暴预报均返回 HTTP 200。Dublin 结果包含三晚数据，极光与云量来源为当前状态，且预报时间范围有重叠；综合观测规则仍正确标记为 `NOT_VALIDATED`。本检查没有调用 AI，也没有验证浏览器渲染、线上故障注入或长期可用性。
+
+2026-09-29 16:14 UTC 另进行了一次线上 AI 请求，询问最新 Kp 预报对极光活动的含义。助手在 20.2 秒内返回 HTTP 200，引用了当前 NOAA 预报数据，并说明 Kp 不等于当地观测概率。这只是一次正常路径请求，不能证明模型已通过完整评估矩阵。
 
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
