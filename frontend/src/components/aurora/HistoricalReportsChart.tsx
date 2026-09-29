@@ -53,7 +53,7 @@ export function HistoricalReportsChart() {
     <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong className="history-coverage-range">{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div><div><strong>{peakYear.year}</strong><span>{t('historyPeakYear')} · {number.format(peakYear.reports)} {t('historicalReportsCountLabel')}</span></div></div>
     <figure className="historical-reports-figure">
       <div className="historical-reports-chart-wrap" ref={chartRef}>
-        <svg className="historical-reports-chart" viewBox={`0 0 ${width} ${chartHeight}`} role="img" aria-label={`${t('historicalReportsTitle')}. ${t('historicalReportsIntro')}`}>
+        <svg className="historical-reports-chart" viewBox={`0 0 ${width} ${chartHeight}`} role="group" aria-label={`${t('historicalReportsTitle')}. ${t('historicalReportsIntro')}`}>
           <title>{t('historicalReportsTitle')}</title>
           <desc>{t('historicalReportsIntro')}</desc>
           {Array.from({ length: tickCount + 1 }, (_, index) => {
@@ -66,9 +66,10 @@ export function HistoricalReportsChart() {
           {reportSummary.years.map((item, index) => {
             const x = chartStart + slotWidth * index + (slotWidth - barWidth) / 2
             const y = yFor(item.reports)
+            const accessibleLabel = `${item.year}: ${number.format(item.reports)} ${t('historicalReportsCountLabel')}`
             return <g key={item.year} className={item.year === peakYear.year ? "historical-reports-bar peak" : "historical-reports-bar"}>
-              <rect x={x} y={y} width={barWidth} height={chartBottom - y} rx="3" opacity={index === 0 || index === reportSummary.years.length - 1 ? 0.5 : 1}>
-                <title>{`${item.year}: ${number.format(item.reports)} ${t('historicalReportsCountLabel')}`}</title>
+              <rect x={x} y={y} width={barWidth} height={chartBottom - y} rx="3" opacity={index === 0 || index === reportSummary.years.length - 1 ? 0.5 : 1} tabIndex={0} role="img" aria-label={accessibleLabel}>
+                <title>{accessibleLabel}</title>
               </rect>
               {index % yearStride === 0 || index === reportSummary.years.length - 1
                 ? <text className="historical-reports-axis-label" x={x + barWidth / 2} y={chartHeight - 12} textAnchor="middle">{item.year}{index === 0 || index === reportSummary.years.length - 1 ? '*' : ''}</text>
