@@ -6,6 +6,8 @@ import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
+import com.aurora.observation.dto.WeatherCloudPoint;
+import com.aurora.observation.dto.WeatherForecastResponse;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -16,12 +18,14 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +33,7 @@ import java.util.regex.Pattern;
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
     private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
-            "(?m)(?<!\\d)([0-2]?\\d):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
+            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3])):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
     private static final String INSTRUCTIONS = """
@@ -125,6 +129,8 @@ public class AssistantService {
                         ? toolContext.latestCandidates : List.of();
                 if (hasConflictingCorrectedCloudValues(answer)) {
                     answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
+                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language()));
                 }
                 return new AssistantChatResponse(answer, openAi.model(), choices);
             }
@@ -150,6 +156,34 @@ public class AssistantService {
         return chinese
                 ? "这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。"
                 : "I couldn't provide a consistent hourly cloud summary, so I won't guess. Please check the local cloud forecast chart or try again later.";
+    }
+
+    private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
+        if (context.cloudPercentagesByLocalHour.isEmpty()) return false;
+        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
+        while (matcher.find()) {
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            Set<BigDecimal> sourceValues = context.cloudPercentagesByLocalHour.get(hour);
+            if (sourceValues == null || sourceValues.isEmpty()) return true;
+
+            BigDecimal stated = new BigDecimal(matcher.group(3));
+            boolean matchesSource = sourceValues.stream().anyMatch(source ->
+                    source.subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0);
+            if (!matchesSource) return true;
+        }
+        return false;
+    }
+
+    private BigDecimal roundingTolerance(BigDecimal stated) {
+        return stated.stripTrailingZeros().scale() <= 0
+                ? new BigDecimal("0.6")
+                : new BigDecimal("0.15");
+    }
+
+    private String unverifiedCloudAnswer(boolean chinese) {
+        return chinese
+                ? "这次回复中的小时云量数值无法与天气来源数据核对。为避免误报，请查看页面里的当地云量预报图。"
+                : "I couldn't verify the hourly cloud values against the weather source. To avoid giving you inaccurate figures, please check the local cloud forecast chart.";
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
@@ -286,6 +320,7 @@ public class AssistantService {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
                 ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
+                recordCloudForecast(facts, context);
                 List<LocalDate> availableDates = facts == null || facts.outlook() == null
                         || facts.outlook().nights() == null
                         ? List.of()
@@ -315,6 +350,24 @@ public class AssistantService {
     private void requirePermittedLocation(long locationId, ToolContext context) {
         if (!context.permittedLocationIds.contains(locationId)) {
             throw new LocationSelectionRequiredException(context.latestCandidates);
+        }
+    }
+
+    private void recordCloudForecast(ObservationFactsResponse facts, ToolContext context) {
+        if (facts == null || facts.outlook() == null || facts.outlook().location() == null
+                || facts.cloudForecast() == null || facts.cloudForecast().data() == null
+                || facts.cloudForecast().data().cloudForecast() == null) return;
+        ZoneId zone;
+        try {
+            zone = ZoneId.of(facts.outlook().location().timezone());
+        } catch (RuntimeException invalidZone) {
+            return;
+        }
+        for (WeatherCloudPoint point : facts.cloudForecast().data().cloudForecast()) {
+            if (point == null || point.validAt() == null || point.cloudCoverPercent() == null) continue;
+            String localHour = point.validAt().atZone(zone).toLocalTime().withMinute(0).toString();
+            BigDecimal value = BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros();
+            context.cloudPercentagesByLocalHour.computeIfAbsent(localHour, ignored -> new TreeSet<>()).add(value);
         }
     }
 
@@ -363,6 +416,7 @@ public class AssistantService {
         private final Set<Long> permittedLocationIds = new HashSet<>();
         private List<Location> latestCandidates = List.of();
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
+        private final Map<String, Set<BigDecimal>> cloudPercentagesByLocalHour = new HashMap<>();
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {
