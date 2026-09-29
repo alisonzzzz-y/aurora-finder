@@ -109,6 +109,28 @@ class ObservationWorkflowIntegrationTest {
     }
 
     @Test
+    void expiredAuroraForecastIsNotPresentedAsCurrentInFactsMapAndAssistant() throws Exception {
+        when(ovation.latest()).thenReturn(new OvationForecast(NOW.minusSeconds(3600), NOW.minusSeconds(60),
+                "NOAA OVATION", List.of(new OvationGridPoint(-6, 53, 30))));
+        workflowClock.advance(Duration.ofMinutes(16));
+
+        JsonNode facts = readGet("/api/v1/facts/" + DUBLIN.id());
+        JsonNode auroraFact = facts.path("auroraActivity");
+        assertEquals("EXPIRED", auroraFact.path("status").asText());
+        assertEquals("EXPIRED", auroraFact.path("data").path("status").asText());
+        assertEquals("INSUFFICIENT_DATA", auroraFact.path("data").path("level").asText());
+        assertTrue(auroraFact.path("data").path("modelValue").isNull());
+        assertEquals("PARTIAL", facts.path("sourceStatus").asText());
+        assertEquals("CURRENT", facts.path("cloudForecast").path("status").asText());
+        assertEquals("CANNOT_CHECK", facts.path("coverage").path("status").asText());
+
+        JsonNode map = readGet("/api/v1/aurora-map");
+        assertEquals("EXPIRED", map.path("status").asText());
+        assertEquals(0, map.path("points").size());
+        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+    }
+
+    @Test
     void auroraTimeoutRemainsPartialInBothPageApiAndAssistantTool() throws Exception {
         when(ovation.latest())
                 .thenThrow(new ProviderUnavailableException(ProviderFailure.TIMEOUT, "private NOAA source detail"));
