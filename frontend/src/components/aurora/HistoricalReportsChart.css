@@ -17,5 +17,4 @@
 .historical-reports-figure figcaption a { color: var(--accent); white-space: nowrap; }
 @media (max-width: 560px) {
   .historical-reports { margin-inline: 14px; padding-block: 19px; }
-  .historical-reports-chart { min-height: 235px; }
 }
