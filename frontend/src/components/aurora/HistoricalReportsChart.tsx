@@ -20,6 +20,7 @@ export function HistoricalReportsChart() {
   const chartRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(760)
   const locale = language === 'zh' ? 'zh-CN' : 'en'
+  const peakYear = reportSummary.years.reduce((peak, item) => item.reports > peak.reports ? item : peak)
   const maxReports = Math.max(...reportSummary.years.map(item => item.reports))
   const tickStep = niceStep(maxReports)
   const axisMaximum = tickStep * 4
@@ -48,7 +49,7 @@ export function HistoricalReportsChart() {
     <p className="eyebrow">{t('historicalReportsEyebrow')}</p>
     <h2 id="historical-reports-title">{t('historicalReportsTitle')}</h2>
     <p className="historical-reports-intro">{t('historicalReportsIntro')}</p>
-    <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong className="history-coverage-range">{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div></div>
+    <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong className="history-coverage-range">{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div><div><strong>{peakYear.year}</strong><span>{t('historyPeakYear')} · {number.format(peakYear.reports)} {t('historicalReportsCountLabel')}</span></div></div>
     <figure className="historical-reports-figure">
       <div className="historical-reports-chart-wrap" ref={chartRef}>
         <svg className="historical-reports-chart" viewBox={`0 0 ${width} ${chartHeight}`} role="img" aria-label={`${t('historicalReportsTitle')}. ${t('historicalReportsIntro')}`}>
