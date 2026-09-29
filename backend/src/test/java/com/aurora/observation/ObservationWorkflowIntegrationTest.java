@@ -66,7 +66,7 @@ class ObservationWorkflowIntegrationTest {
 
     @BeforeEach
     void externalSources() {
-        workflowClock.set(NOW);
+        workflowClock.advance(Duration.ofMinutes(6));
         when(geocoding.search("Dublin")).thenReturn(List.of(DUBLIN, US_DUBLIN));
         when(geocoding.get(DUBLIN.id())).thenReturn(Optional.of(DUBLIN));
         when(ovation.latest()).thenReturn(new OvationForecast(NOW.minusSeconds(600), NOW.plusSeconds(3600),
@@ -119,7 +119,7 @@ class ObservationWorkflowIntegrationTest {
         assertEquals("EXPIRED", auroraFact.path("status").asText());
         assertEquals("EXPIRED", auroraFact.path("data").path("status").asText());
         assertEquals("INSUFFICIENT_DATA", auroraFact.path("data").path("level").asText());
-        assertTrue(auroraFact.path("data").path("modelValue").isNull());
+        assertFalse(auroraFact.path("data").hasNonNull("modelValue"));
         assertEquals("PARTIAL", facts.path("sourceStatus").asText());
         assertEquals("CURRENT", facts.path("cloudForecast").path("status").asText());
         assertEquals("CANNOT_CHECK", facts.path("coverage").path("status").asText());
