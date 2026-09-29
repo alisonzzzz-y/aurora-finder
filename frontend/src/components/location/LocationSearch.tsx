@@ -20,6 +20,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
   const [activeIndex, setActiveIndex] = useState(-1)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const searchRequest = useRef<AbortController | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const normalizedQuery = query.trim()
 
   useEffect(() => () => searchRequest.current?.abort(), [])
@@ -75,6 +76,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
     setState('idle')
     setSelectedLocation(location)
     setQuery(location.name)
+    inputRef.current?.focus()
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -104,6 +106,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
           <label htmlFor="place-search" className="sr-only">{t('placeNameLabel')}</label>
           <input
             id="place-search"
+            ref={inputRef}
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={state === 'results'}
