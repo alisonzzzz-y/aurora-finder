@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NightOutlook } from '../../types/outlook'
 import type { WeatherCloudPoint } from '../../types/weatherForecast'
+import { sortByValidAt } from '../../utils/sortByValidAt'
 import { useI18n } from '../../i18n'
 import './CloudDarknessTimeline.css'
 
@@ -21,10 +22,10 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const start = Date.parse(night.evaluationWindowStartUtc)
   const end = Date.parse(night.evaluationWindowEndUtc)
-  const timelinePoints = points.filter(point => {
+  const timelinePoints = sortByValidAt(points.filter(point => {
     const instant = Date.parse(point.validAt)
     return Number.isFinite(instant) && instant >= start && instant <= end
-  })
+  }))
   const validPoints = timelinePoints.filter(point => point.cloudCoverPercent !== null)
   const highlightedPointSet = new Set(highlightedPointTimes)
   const hasHighlightedPoints = validPoints.some(point => highlightedPointSet.has(point.validAt))
