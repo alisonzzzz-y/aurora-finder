@@ -7,6 +7,8 @@
 .cloud-darkness-legend i { display: inline-block; width: 17px; height: 3px; border-radius: 3px; }
 .cloud-line-key { background: #c5a6ff; }
 .darkness-band-key { height: 8px !important; background: #8b6bb8; }
+.cloud-darkness-overlap-key { width: 9px !important; height: 9px !important; border: 2px solid #a56df6; border-radius: 50%; background: #fff1c2; }
+.cloud-darkness-point-overlap { fill: #fff1c2; stroke: #a56df6; stroke-width: 3; }
 .cloud-darkness-chart-wrap { width: 100%; min-width: 0; }
 .cloud-darkness-chart { display: block; width: 100%; height: auto; overflow: visible; }
 .cloud-darkness-gridline { stroke: var(--line); stroke-width: 1; }
