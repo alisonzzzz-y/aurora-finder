@@ -1,6 +1,7 @@
 import type { WeatherForecast } from '../../types/weatherForecast'
 import type { SourceFact } from '../../types/observationFacts'
 import type { NightOutlook } from '../../types/outlook'
+import { sortByValidAt } from '../../utils/sortByValidAt'
 import { useI18n } from '../../i18n'
 import { CloudDarknessTimeline } from './CloudDarknessTimeline'
 import './CloudForecastCard.css'
@@ -16,7 +17,7 @@ function formatTime(instant: string, timezone: string, locale: string) {
 export function CloudForecastCard({ fact, timezone, night, highlightedPointTimes = [] }: Props) {
   const { language, t } = useI18n()
   const data = fact.data
-  const points = (data?.cloudForecast ?? []).filter(point => !night || (Date.parse(point.validAt) >= Date.parse(night.evaluationWindowStartUtc) && Date.parse(point.validAt) < Date.parse(night.evaluationWindowEndUtc)))
+  const points = sortByValidAt((data?.cloudForecast ?? []).filter(point => !night || (Date.parse(point.validAt) >= Date.parse(night.evaluationWindowStartUtc) && Date.parse(point.validAt) < Date.parse(night.evaluationWindowEndUtc))))
   const locale = language === 'zh' ? 'zh-CN' : 'en'
 
   return <section className="cloud-forecast-card" aria-labelledby="cloud-forecast-title" aria-live="polite">
