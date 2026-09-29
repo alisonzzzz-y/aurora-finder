@@ -84,6 +84,45 @@ class SmokeCheck:
                     "retrievedAt": body.get("retrievedAt")}
         return {"topLevelKeys": sorted(body.keys()) if isinstance(body, dict) else None}
 
+    @staticmethod
+    def validate_facts(body, expected_location_id):
+        outlook = body.get("outlook")
+        if not isinstance(outlook, dict):
+            return False
+        location = outlook.get("location")
+        nights = outlook.get("nights")
+        return (
+            isinstance(location, dict)
+            and location.get("id") == expected_location_id
+            and isinstance(nights, list)
+            and len(nights) == 3
+            and all(isinstance(night, dict) for night in nights)
+        )
+
+    @staticmethod
+    def validate_aurora_map(body):
+        return (
+            body.get("status") == "CURRENT"
+            and isinstance(body.get("points"), list)
+            and len(body["points"]) > 0
+            and isinstance(body.get("observationTime"), str)
+            and isinstance(body.get("forecastTime"), str)
+        )
+
+    @staticmethod
+    def validate_kp_index(body):
+        records = body.get("records")
+        return isinstance(records, list) and len(records) > 0 and all(
+            isinstance(record, dict) for record in records
+        )
+
+    @staticmethod
+    def validate_storm_forecast(body):
+        days = body.get("days")
+        return isinstance(days, list) and len(days) > 0 and all(
+            isinstance(day, dict) for day in days
+        )
+
     def check(self, path, expected_type, validate=None, keep_body=False):
         result = dict(self.get_json(path))
         result["path"] = path
@@ -118,14 +157,22 @@ class SmokeCheck:
                 locations["error"] = "expected_one_irish_dublin_candidate"
         locations.pop("_body", None)
         if city:
-            checks.append(self.check("/api/v1/facts/" + str(city["id"]), dict))
+            checks.append(self.check(
+                "/api/v1/facts/" + str(city["id"]),
+                dict,
+                lambda body: self.validate_facts(body, city["id"]),
+            ))
         else:
             checks.append({"path": "/api/v1/facts/{selected Dublin id}", "skipped": True,
                            "error": "could_not_safely_select_irish_dublin"})
         checks.extend([
-            self.check("/api/v1/aurora-map", dict),
-            self.check("/api/v1/kp-index", dict),
-            self.check("/api/v1/geomagnetic-storm-forecast", dict),
+            self.check("/api/v1/aurora-map", dict, self.validate_aurora_map),
+            self.check("/api/v1/kp-index", dict, self.validate_kp_index),
+            self.check(
+                "/api/v1/geomagnetic-storm-forecast",
+                dict,
+                self.validate_storm_forecast,
+            ),
         ])
         return {
             "checked_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
