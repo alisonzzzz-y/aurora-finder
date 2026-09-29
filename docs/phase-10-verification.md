@@ -25,6 +25,8 @@ The backend `./mvnw verify` run completed with 82 tests, 0 failures, 0 errors, a
 
 A separate production AI request on 2026-09-29 16:14 UTC asked what the latest Kp forecast means for aurora activity. The assistant returned HTTP 200 in 20.2 seconds, cited current NOAA forecast data, and stated that Kp is not a local viewing probability. This was one normal-path request and does not establish model accuracy across the evaluation matrix.
 
+The read-only production smoke check was expanded to call the standalone Dublin weather forecast and geomagnetic warnings endpoints as well as the existing six checks. On 2026-09-29 16:26 UTC, all eight checks returned HTTP 200. The weather response contained 19 cloud points with values and the expected source timestamps; the warnings response contained three storm-watch days and zero active warnings. The first run exposed coordinate rounding in the weather API response (coordinates are rounded to four decimal places); the smoke validator now allows that documented precision while still checking it is the selected Dublin location. The updated 13 smoke-script unit tests passed. No AI request was made during this check.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
@@ -56,6 +58,8 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 `python3 scripts/smoke_production.py --timeout 60` 于 2026-09-29 16:00 UTC 对已部署的 Render API 检查通过。健康检查、Dublin 搜索、所选 Dublin 的当地事实、极光地图、Kp 指数和地磁风暴预报均返回 HTTP 200。Dublin 结果包含三晚数据，极光与云量来源为当前状态，且预报时间范围有重叠；综合观测规则仍正确标记为 `NOT_VALIDATED`。本检查没有调用 AI，也没有验证浏览器渲染、线上故障注入或长期可用性。
 
 2026-09-29 16:14 UTC 另进行了一次线上 AI 请求，询问最新 Kp 预报对极光活动的含义。助手在 20.2 秒内返回 HTTP 200，引用了当前 NOAA 预报数据，并说明 Kp 不等于当地观测概率。这只是一次正常路径请求，不能证明模型已通过完整评估矩阵。
+
+随后扩展了生产只读烟雾检查，新增单独的 Dublin 云量预报接口和地磁预警接口，现共检查八个接口。2026-09-29 16:26 UTC 的检查全部返回 HTTP 200。云量接口返回 19 个带数值的时段及来源时间；地磁预警接口返回未来三天的风暴观察数据，当前活动预警数量为 0。首次检查发现天气接口坐标保留四位小数，导致严格相等校验误报；现已按返回精度校验仍对应 Dublin。更新后的烟雾脚本 13 项离线测试通过。本次检查没有调用 AI。
 
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
