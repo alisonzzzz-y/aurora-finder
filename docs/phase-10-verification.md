@@ -1,6 +1,6 @@
 # Phase 10 Verification Record
 
-Updated: 2026-09-28
+Updated: 2026-09-30
 
 ## English
 
@@ -19,11 +19,17 @@ Updated: 2026-09-28
 
 The backend `./mvnw verify` run completed with 82 tests, 0 failures, 0 errors, and 0 skipped tests on 2026-09-28. Production browser checks recorded elsewhere confirm the normal user path; they do not demonstrate production fault injection.
 
+### Production read-only API check (2026-09-29)
+
+`python3 scripts/smoke_production.py --timeout 60` passed against the deployed Render API at 2026-09-29 16:00 UTC. Health, Dublin search, selected Dublin facts, aurora map, Kp index, and geomagnetic storm forecast all returned HTTP 200. The Dublin result contained three local nights; aurora and cloud sources were current with an overlapping window. The response correctly retained `NOT_VALIDATED` for the overall viewing rule. The check did not call the AI or test browser rendering, provider failure injection, or long-term availability.
+
+On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
+
 ### Operational limits still to verify
 
 - Review actual OpenAI usage and spend in the provider account. Application logs report model, duration, token counts, and request ID for successful responses, but do not replace the provider billing page.
 - Confirm MapTiler plan, quota, and public portfolio usage permission in the account.
-- Repeat the production end-to-end flow and inspect Render logs during the same session. External provider outages have not been deliberately triggered in production.
+- A production read-only API smoke check passed on 2026-09-29. Still repeat the full browser flow, including a real AI question, and inspect Render logs during the same session. External provider outages have not been deliberately triggered in production.
 - The current flow ends at read-only tool results. Persistent tool traces and decision records depend on the separate storage design and are not part of the deployed flow yet.
 
 ## 简体中文
@@ -43,9 +49,15 @@ The backend `./mvnw verify` run completed with 82 tests, 0 failures, 0 errors, a
 
 2026-09-28 的后端 `./mvnw verify` 全量检查通过：82 项测试，失败 0、错误 0、跳过 0。其他记录中的生产浏览器测试验证了正常使用流程，但不代表在生产环境注入过故障。
 
+### 生产只读 API 检查（2026-09-29）
+
+`python3 scripts/smoke_production.py --timeout 60` 于 2026-09-29 16:00 UTC 对已部署的 Render API 检查通过。健康检查、Dublin 搜索、所选 Dublin 的当地事实、极光地图、Kp 指数和地磁风暴预报均返回 HTTP 200。Dublin 结果包含三晚数据，极光与云量来源为当前状态，且预报时间范围有重叠；综合观测规则仍正确标记为 `NOT_VALIDATED`。本检查没有调用 AI，也没有验证浏览器渲染、线上故障注入或长期可用性。
+
+2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
+
 ### 仍需进行的运行环境核验
 
 - 在 OpenAI 账户中查看实际用量和费用。应用日志会记录成功响应的模型、耗时、token 数和请求 ID，但不能代替服务商账单页面。
 - 在 MapTiler 账户确认套餐、配额及公开作品集使用许可。
-- 再跑一次生产环境完整流程，并在同一时段检查 Render 日志。目前没有在生产环境中主动触发外部服务故障。
+- 2026-09-29 的生产只读 API 检查已通过。仍需在浏览器中复验完整流程，包括真实 AI 提问，并在同一时段检查 Render 日志。目前没有在生产环境中主动触发外部服务故障。
 - 当前流程提供只读工具结果。持久化工具调用轨迹和判定记录依赖单独的数据存储设计，尚未接入已部署流程。
