@@ -27,13 +27,15 @@ A separate production AI request on 2026-09-29 16:14 UTC asked what the latest K
 
 The read-only production smoke check was expanded to call the standalone Dublin weather forecast and geomagnetic warnings endpoints as well as the existing six checks. On 2026-09-29 16:26 UTC, all eight checks returned HTTP 200. The weather response contained 19 cloud points with values and the expected source timestamps; the warnings response contained three storm-watch days and zero active warnings. The first run exposed coordinate rounding in the weather API response (coordinates are rounded to four decimal places); the smoke validator now allows that documented precision while still checking it is the selected Dublin location. The updated 13 smoke-script unit tests passed. No AI request was made during this check.
 
+On 2026-09-29, a read-only Playwright browser check covered the deployed Vercel page at desktop size. The map rendered, Dublin autocomplete returned distinct Irish and U.S. candidates, and selecting Dublin, Ireland loaded its local outlook and weather timeline. The current strong-activity list selected a point and marked it as selected; the page also switched to Simplified Chinese. No page errors or failed browser requests were observed. The AI was not called, and Render logs were not inspected during this browser session.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
 
 - Review actual OpenAI usage and spend in the provider account. Application logs report model, duration, token counts, and request ID for successful responses, but do not replace the provider billing page.
 - Confirm MapTiler plan, quota, and public portfolio usage permission in the account.
-- A production read-only API smoke check passed on 2026-09-29. Still repeat the full browser flow, including a real AI question, and inspect Render logs during the same session. External provider outages have not been deliberately triggered in production.
+- The production API smoke check and normal browser flow passed on 2026-09-29. Still inspect Render logs during the same session as a repeat browser check, and run a real AI question if another production model call is approved. External provider outages have not been deliberately triggered in production.
 - The current flow ends at read-only tool results. Persistent tool traces and decision records depend on the separate storage design and are not part of the deployed flow yet.
 
 ## 简体中文
@@ -61,11 +63,13 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 
 随后扩展了生产只读烟雾检查，新增单独的 Dublin 云量预报接口和地磁预警接口，现共检查八个接口。2026-09-29 16:26 UTC 的检查全部返回 HTTP 200。云量接口返回 19 个带数值的时段及来源时间；地磁预警接口返回未来三天的风暴观察数据，当前活动预警数量为 0。首次检查发现天气接口坐标保留四位小数，导致严格相等校验误报；现已按返回精度校验仍对应 Dublin。更新后的烟雾脚本 13 项离线测试通过。本次检查没有调用 AI。
 
+2026-09-29 又对已部署的 Vercel 页面进行了只读 Playwright 浏览器检查。地图正常渲染；Dublin 自动补全区分了爱尔兰和美国的同名地点；选择爱尔兰 Dublin 后，当地预报与云量时间图正常显示。点击当前活动较强地点后，条目显示为选中状态；中英文切换正常。未观察到页面运行错误或失败的浏览器请求。本次没有调用 AI，也没有在浏览器检查的同时查看 Render 日志。
+
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
 ### 仍需进行的运行环境核验
 
 - 在 OpenAI 账户中查看实际用量和费用。应用日志会记录成功响应的模型、耗时、token 数和请求 ID，但不能代替服务商账单页面。
 - 在 MapTiler 账户确认套餐、配额及公开作品集使用许可。
-- 2026-09-29 的生产只读 API 检查已通过。仍需在浏览器中复验完整流程，包括真实 AI 提问，并在同一时段检查 Render 日志。目前没有在生产环境中主动触发外部服务故障。
+- 2026-09-29 的生产只读 API 检查和常规浏览器流程均已通过。仍需在复验浏览器流程的同一时段查看 Render 日志；如获准再次调用生产模型，可补做真实 AI 提问。目前没有在生产环境中主动触发外部服务故障。
 - 当前流程提供只读工具结果。持久化工具调用轨迹和判定记录依赖单独的数据存储设计，尚未接入已部署流程。
