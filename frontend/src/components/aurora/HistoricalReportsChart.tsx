@@ -23,7 +23,8 @@ export function HistoricalReportsChart() {
   const peakYear = reportSummary.years.reduce((peak, item) => item.reports > peak.reports ? item : peak)
   const maxReports = Math.max(...reportSummary.years.map(item => item.reports))
   const tickStep = niceStep(maxReports)
-  const axisMaximum = tickStep * 4
+  const tickCount = Math.ceil(maxReports / tickStep)
+  const axisMaximum = tickStep * tickCount
   const chartStart = plot.left
   const chartEnd = Math.max(chartStart + 1, width - plot.right)
   const chartTop = plot.top
@@ -55,7 +56,7 @@ export function HistoricalReportsChart() {
         <svg className="historical-reports-chart" viewBox={`0 0 ${width} ${chartHeight}`} role="img" aria-label={`${t('historicalReportsTitle')}. ${t('historicalReportsIntro')}`}>
           <title>{t('historicalReportsTitle')}</title>
           <desc>{t('historicalReportsIntro')}</desc>
-          {Array.from({ length: 5 }, (_, index) => {
+          {Array.from({ length: tickCount + 1 }, (_, index) => {
             const value = tickStep * index
             return <g key={value}>
               <line className="historical-reports-gridline" x1={chartStart} x2={chartEnd} y1={yFor(value)} y2={yFor(value)} />
