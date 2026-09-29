@@ -89,6 +89,8 @@ export function LatestAuroraForecast() {
 
   const periods = selectKpPeriods(data?.records ?? [])
   const forecast = periods.forecast
+  const hasKpGap = periods.trend.slice(0, -1).some((record, index) =>
+    !canConnectKpPeriods(record, periods.trend[index + 1]))
   useEffect(() => {
     const element = chartRef.current
     if (!element) return
@@ -162,6 +164,7 @@ export function LatestAuroraForecast() {
               <span><i className="observed" />{t('observedKp')}</span>
               <span><i className="estimated" />{t('estimatedKp')}</span>
               <span><i className="predicted" />{t('predictedKp')}</span>
+              {hasKpGap && <span><i className="gap" />{t('kpChartGapLegend')}</span>}
             </div>
             <div ref={chartRef} className="kp-chart-wrap">
               {periods.trend.length > 0 ? <svg className="kp-chart" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={`${t('kpChartTitle')}. ${chartDescription}`}>
