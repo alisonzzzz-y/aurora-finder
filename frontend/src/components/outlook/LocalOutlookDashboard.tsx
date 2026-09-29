@@ -27,7 +27,7 @@ export function LocalOutlookDashboard({ facts }: { facts: ObservationFacts }) {
       <div className="local-night-switch" role="group" aria-label={t('chooseNight')}>
         {outlook.nights.map((item, index) => <button type="button" key={item.localDate} aria-pressed={night.localDate === item.localDate} onClick={() => setSelectedIndex(index)}>{index === 0 ? t('tonight') : `${t('nightNumber')}${index + 1}${language === 'zh' ? '晚' : ''}`}</button>)}
       </div>
-      <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={night} />
+      <CloudForecastCard fact={facts.cloudForecast} timezone={outlook.location.timezone} night={night} auroraFact={activity} />
       <NightDarknessChart nights={outlook.nights} timezone={outlook.location.timezone} selectedIndex={selectedIndex} onSelect={setSelectedIndex} />
     </>}
     <LocalAuroraActivityCard fact={activity} timezone={outlook.location.timezone} />
