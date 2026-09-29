@@ -9,7 +9,9 @@
 .historical-reports-gridline { stroke: #393444; stroke-width: 1; }
 .historical-reports-axis-label { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .historical-reports-bar rect { fill: #a98adf; opacity: .82; transition: opacity 140ms ease; }
-.historical-reports-bar:hover rect { opacity: 1; }
+.historical-reports-bar:hover rect,
+.historical-reports-bar rect:focus-visible { opacity: 1; }
+.historical-reports-bar rect:focus-visible { stroke: #f5efff; stroke-width: 2; outline: none; }
 .historical-reports-bar.peak rect { fill: #d1baff; }
 .historical-reports-figure figcaption { display: flex; flex-wrap: wrap; gap: 7px 18px; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .historical-reports-figure figcaption a { color: var(--accent); white-space: nowrap; }
