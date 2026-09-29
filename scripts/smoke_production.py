@@ -60,15 +60,19 @@ class SmokeCheck:
             aurora = body.get("auroraActivity") or {}
             clouds = body.get("cloudForecast") or {}
             darkness = body.get("solarDarkness") or {}
+            coverage = body.get("coverage") or {}
             return {
                 "location": outlook.get("location"),
                 "ruleStatus": (outlook.get("ruleStatus")),
                 "sourceStatus": body.get("sourceStatus"),
                 "nightCount": len(outlook.get("nights") or []),
                 "auroraStatus": aurora.get("status"),
+                "auroraWindowUtc": {"start": aurora.get("scopeStartUtc"), "end": aurora.get("scopeEndUtc")},
                 "cloudStatus": clouds.get("status"),
+                "cloudForecastWindowUtc": {"start": clouds.get("scopeStartUtc"), "end": clouds.get("scopeEndUtc")},
                 "darknessStatus": darkness.get("status"),
-                "coverageStatus": (body.get("coverage") or {}).get("status"),
+                "coverageStatus": coverage.get("status"),
+                "overlappingCloudPointCount": coverage.get("cloudPointsWithValuesInsideShortRange"),
             }
         if path == "/api/v1/aurora-map":
             return {"status": body.get("status"), "pointCount": len(body.get("points") or []),
