@@ -36,6 +36,7 @@ public class AssistantService {
             "(?m)(?<!\\d)((?:[01]?\\d|2[0-3])):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
+    private static final Pattern CLOUD_CONTEXT = Pattern.compile("(?i)cloud|云量|云层|云覆盖");
     private static final String INSTRUCTIONS = """
             You are the read-only assistant inside Aurora Finder. Answer in the user's requested language.
             Use the provided tools for current aurora, geomagnetic, cloud, darkness, location, and source facts.
@@ -159,7 +160,7 @@ public class AssistantService {
     }
 
     private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
-        if (context.cloudPercentagesByLocalHour.isEmpty()) return false;
+        if (!context.cloudFactsRequested || !CLOUD_CONTEXT.matcher(answer).find()) return false;
         Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
         while (matcher.find()) {
             String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
@@ -320,6 +321,7 @@ public class AssistantService {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
                 ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
+                context.cloudFactsRequested = true;
                 recordCloudForecast(facts, context);
                 List<LocalDate> availableDates = facts == null || facts.outlook() == null
                         || facts.outlook().nights() == null
@@ -417,6 +419,7 @@ public class AssistantService {
         private List<Location> latestCandidates = List.of();
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
         private final Map<String, Set<BigDecimal>> cloudPercentagesByLocalHour = new HashMap<>();
+        private boolean cloudFactsRequested;
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {
