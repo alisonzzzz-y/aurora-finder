@@ -33,13 +33,15 @@ At 2026-09-29 17:58 UTC, one production assistant question was sent from the bro
 
 The existing backend test `AssistantServiceTest.resolvesExactFullLocationLabelFromAmbiguousResults` passed (1 test, 0 failures/errors). It verifies that selecting the exact Dublin, Ireland candidate from prior assistant choices retrieves that candidate's local-night facts. The first restricted run could not attach Mockito's agent; the same test passed on rerun with test-agent permission. This covers the selection-to-data path in an automated test, while the corresponding second-turn production browser response remains unverified.
 
+On 2026-09-30, a production browser follow-up selected the Dublin City candidate. The browser check timed out because its completion condition incorrectly required every location-choice button to disappear; the earlier assistant message remains in chat history, so its choice button is expected to remain visible. A retry could not launch the local Chromium process, and a direct API retry was blocked by DNS resolution in the restricted shell. Therefore the final production answer after selection remains unverified; these test-environment failures do not establish an application failure. The backend selection test above remains the verified coverage for this path.
+
 On 2026-09-30, the repository verification also passed locally: backend `./mvnw --batch-mode verify` (85 tests, no failures/errors/skips), all 19 Python script tests, frontend lint, all 11 chart regression tests, and the production frontend build. The first backend attempt could not attach Mockito's test agent under the restricted process sandbox; rerunning with test-agent permissions passed. The frontend build reports the existing large MapLibre map chunk warning.
 
 ### Operational limits still to verify
 
 - Review actual OpenAI usage and spend in the provider account. Application logs report model, duration, token counts, and request ID for successful responses, but do not replace the provider billing page.
 - Confirm MapTiler plan, quota, and public portfolio usage permission in the account.
-- The production API smoke check, normal browser flow, and one production AI disambiguation response passed on 2026-09-29. The final weather answer after selecting a candidate still needs a browser check. Render logs also need review during a browser session. External provider outages have not been deliberately triggered in production.
+- The production API smoke check, normal browser flow, and one production AI disambiguation response passed on 2026-09-29. The final weather answer after selecting a candidate still needs a successful browser check. The 2026-09-30 follow-up was blocked by a test-script condition error and local browser/network restrictions. Render logs also need review during a browser session. External provider outages have not been deliberately triggered in production.
 - The current flow ends at read-only tool results. Persistent tool traces and decision records depend on the separate storage design and are not part of the deployed flow yet.
 
 ## 简体中文
@@ -73,11 +75,13 @@ On 2026-09-30, the repository verification also passed locally: backend `./mvnw 
 
 后端既有测试 `AssistantServiceTest.resolvesExactFullLocationLabelFromAmbiguousResults` 已通过（1 项测试，失败/错误为 0），验证用户从先前的候选项中选择爱尔兰 Dublin 后，会查询该地点的当地夜间事实。第一次受限运行无法附加 Mockito 测试代理；在允许测试代理后重跑通过。自动化测试覆盖了选项到数据查询的路径，但生产页面第二轮回复仍未验证。
 
+2026-09-30 尝试在生产页面选择 Dublin City 后继续验证 AI 最终回答。浏览器脚本因完成条件写错而超时：它要求所有地点候选按钮消失，但聊天历史中的上一条助手消息会继续保留候选按钮。重试时本机 Chromium 未能启动；通过受限终端直接请求接口也因 DNS 解析失败而未能进行。因此，选中地点后的生产最终回答仍未验证。这些测试环境问题不能证明应用本身出错；该流程目前仍由上方已通过的后端地点选择测试覆盖。
+
 2026-09-30 的仓库检查也全部通过：后端 `./mvnw --batch-mode verify`（85 项测试，失败/错误/跳过均为 0）、Python 脚本测试 19 项、前端 lint、图表回归测试 11 项及正式前端构建。后端第一次运行时，受限进程沙箱阻止 Mockito 附加测试代理；在允许测试代理后重跑通过。前端构建仍提示 MapLibre 地图代码块较大。
 
 ### 仍需进行的运行环境核验
 
 - 在 OpenAI 账户中查看实际用量和费用。应用日志会记录成功响应的模型、耗时、token 数和请求 ID，但不能代替服务商账单页面。
 - 在 MapTiler 账户确认套餐、配额及公开作品集使用许可。
-- 2026-09-29 的生产只读 API 检查、常规浏览器流程和一次 AI 地点消歧响应均已通过。仍需通过浏览器确认选择地点后的最终天气回答，并在同一时段查看 Render 日志。目前没有在生产环境中主动触发外部服务故障。
+- 2026-09-29 的生产只读 API 检查、常规浏览器流程和一次 AI 地点消歧响应均已通过。选中地点后的最终天气回答仍需成功通过浏览器验证；2026-09-30 的跟进受测试脚本条件错误及本机浏览器、网络限制影响而未完成。还需在同一时段查看 Render 日志。目前没有在生产环境中主动触发外部服务故障。
 - 当前流程提供只读工具结果。持久化工具调用轨迹和判定记录依赖单独的数据存储设计，尚未接入已部署流程。
