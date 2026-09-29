@@ -4,7 +4,6 @@ import reportSummary from '../../data/auroraHistorySummary.json'
 import './HistoricalReportsChart.css'
 import '../outlook/VisualOutlook.css'
 
-const chartHeight = 300
 const plot = { top: 20, right: 16, bottom: 38, left: 52 }
 
 function niceStep(maximum: number) {
@@ -19,6 +18,7 @@ export function HistoricalReportsChart() {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(760)
+  const chartHeight = Math.min(300, Math.max(240, width * 0.54))
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const peakYear = reportSummary.years.reduce((peak, item) => item.reports > peak.reports ? item : peak)
   const maxReports = Math.max(...reportSummary.years.map(item => item.reports))
