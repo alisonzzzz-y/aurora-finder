@@ -5,7 +5,7 @@ import { useI18n } from '../../i18n'
 import { CloudDarknessTimeline } from './CloudDarknessTimeline'
 import './CloudForecastCard.css'
 
-type Props = { fact: SourceFact<WeatherForecast>; timezone: string; night?: NightOutlook }
+type Props = { fact: SourceFact<WeatherForecast>; timezone: string; night?: NightOutlook; highlightedPointTimes?: string[] }
 
 function formatTime(instant: string, timezone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
@@ -13,7 +13,7 @@ function formatTime(instant: string, timezone: string, locale: string) {
   }).format(new Date(instant))
 }
 
-export function CloudForecastCard({ fact, timezone, night }: Props) {
+export function CloudForecastCard({ fact, timezone, night, highlightedPointTimes = [] }: Props) {
   const { language, t } = useI18n()
   const data = fact.data
   const points = (data?.cloudForecast ?? []).filter(point => !night || (Date.parse(point.validAt) >= Date.parse(night.evaluationWindowStartUtc) && Date.parse(point.validAt) < Date.parse(night.evaluationWindowEndUtc)))
@@ -27,7 +27,8 @@ export function CloudForecastCard({ fact, timezone, night }: Props) {
     {fact.status === 'UNAVAILABLE' && <p className="cloud-forecast-message error">{t('sourceUnavailable')} {t(fact.failureCode === 'TIMEOUT' ? 'sourceTimeout' : fact.failureCode === 'RATE_LIMITED' ? 'sourceRateLimited' : fact.failureCode === 'FORBIDDEN' ? 'sourceForbidden' : 'sourceFailed')}</p>}
     {fact.status === 'NO_COVERAGE' && !data && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
     {night && points.length === 0 && <p className="cloud-forecast-message">{t('cloudNoCoverage')}</p>}
-    {night && <CloudDarknessTimeline points={data?.cloudForecast ?? []} night={night} timezone={timezone} />}
+    {night && <CloudDarknessTimeline points={data?.cloudForecast ?? []} night={night} timezone={timezone}
+        highlightedPointTimes={highlightedPointTimes} />}
     {data && <>
       <details className="visual-details"><summary>{t('cloudDetails')}</summary><ul className="cloud-forecast-list">
         {points.map(point => <li key={point.validAt}>
