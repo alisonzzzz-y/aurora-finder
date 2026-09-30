@@ -17,6 +17,7 @@ import com.aurora.observation.service.ObservationFactsService;
 import com.aurora.observation.service.GeomagneticStormForecastService;
 import com.aurora.observation.service.GeomagneticWarningsService;
 import com.aurora.observation.service.WeatherService;
+import com.aurora.observation.record.RunRecordStore;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,11 +37,12 @@ public class ObservationController {
     private final ObservationFactsService facts;
     private final GeomagneticStormForecastService geomagneticStormForecast;
     private final GeomagneticWarningsService geomagneticWarnings;
+    private final RunRecordStore records;
 
     public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
                                  KpIndexService kpIndex, WeatherService weather, ObservationFactsService facts,
                                  GeomagneticStormForecastService geomagneticStormForecast,
-                                 GeomagneticWarningsService geomagneticWarnings) {
+                                 GeomagneticWarningsService geomagneticWarnings, RunRecordStore records) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
@@ -49,6 +51,7 @@ public class ObservationController {
         this.facts = facts;
         this.geomagneticStormForecast = geomagneticStormForecast;
         this.geomagneticWarnings = geomagneticWarnings;
+        this.records = records;
     }
 
     @GetMapping("/locations")
@@ -63,7 +66,17 @@ public class ObservationController {
 
     @GetMapping("/facts/{locationId}")
     public ObservationFactsResponse facts(@PathVariable long locationId) {
-        return facts.forLocation(locationId);
+        String runId = records.begin("PAGE_FACTS", locationId);
+        try {
+            ObservationFactsResponse result = facts.forLocation(locationId);
+            records.recordFacts(runId, result);
+            records.finish(runId, "COMPLETED");
+            return new ObservationFactsResponse(result.generatedAtUtc(), result.outlook(), result.auroraActivity(),
+                    result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId);
+        } catch (RuntimeException failure) {
+            records.finish(runId, "FAILED");
+            throw failure;
+        }
     }
 
     @GetMapping("/aurora-map")

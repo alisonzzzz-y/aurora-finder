@@ -8,11 +8,15 @@ import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
 import com.aurora.observation.dto.WeatherCloudPoint;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
+import com.aurora.observation.record.NoopRunRecordStore;
+import com.aurora.observation.record.RunRecordStore;
+import com.aurora.observation.record.RunRecordUnavailableException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
@@ -67,15 +71,35 @@ public class AssistantService {
     private final ObservationToolsService tools;
     private final ObjectMapper objectMapper;
     private final ArrayNode toolDefinitions;
+    private final RunRecordStore records;
 
     public AssistantService(OpenAiAssistantProvider openAi, ObservationToolsService tools, ObjectMapper objectMapper) {
+        this(openAi, tools, objectMapper, new NoopRunRecordStore());
+    }
+
+    @Autowired
+    public AssistantService(OpenAiAssistantProvider openAi, ObservationToolsService tools,
+                            ObjectMapper objectMapper, RunRecordStore records) {
         this.openAi = openAi;
         this.tools = tools;
         this.objectMapper = objectMapper;
+        this.records = records;
         this.toolDefinitions = buildToolDefinitions();
     }
 
     public AssistantChatResponse chat(AssistantChatRequest request) {
+        String runId = records.begin("ASSISTANT", request.locationId());
+        try {
+            AssistantChatResponse answer = answer(request, runId);
+            records.finish(runId, "COMPLETED");
+            return new AssistantChatResponse(answer.answer(), answer.model(), answer.locationCandidates(), runId);
+        } catch (RuntimeException failure) {
+            records.finish(runId, "FAILED");
+            throw failure;
+        }
+    }
+
+    private AssistantChatResponse answer(AssistantChatRequest request, String runId) {
         ArrayNode input = objectMapper.createArrayNode();
         List<AssistantMessage> history = request.history() == null ? List.of() : request.history();
         history.forEach(item -> input.add(message(item.role(), item.content())));
@@ -87,6 +111,7 @@ public class AssistantService {
             userMessage.append("\nSelected Aurora Finder location ID: ").append(request.locationId());
         }
         ToolContext toolContext = new ToolContext();
+        toolContext.runId = runId;
         if (request.locationId() != null && request.locationId() > 0) {
             toolContext.permittedLocationIds.add(request.locationId());
         } else {
@@ -301,13 +326,50 @@ public class AssistantService {
             failure.put("status", "local_facts_required");
             failure.put("message", "Read local night facts first and use one of the exact localDate values returned.");
             output.put("output", failure.toString());
+        } catch (RunRecordUnavailableException error) {
+            throw error;
         } catch (RuntimeException error) {
             ObjectNode failure = objectMapper.createObjectNode();
             failure.put("status", "unavailable");
             failure.put("message", safeToolError(error));
             output.put("output", failure.toString());
         }
+        recordToolEvidence(call, output, context);
         return output;
+    }
+
+    private void recordToolEvidence(JsonNode call, ObjectNode output, ToolContext context) {
+        String name = call.path("name").asText();
+        ObjectNode evidence = objectMapper.createObjectNode();
+        JsonNode args;
+        JsonNode result;
+        try {
+            args = objectMapper.readTree(call.path("arguments").asText("{}"));
+            result = objectMapper.readTree(output.path("output").asText("{}"));
+        } catch (RuntimeException invalidJson) {
+            args = objectMapper.createObjectNode();
+            result = objectMapper.createObjectNode();
+        }
+        if (args.path("location_id").isIntegralNumber()) evidence.put("locationId", args.path("location_id").asLong());
+        if (args.path("local_date").isTextual()) evidence.put("localDate", args.path("local_date").asText());
+        if ("search_places".equals(name) && result.isArray()) {
+            evidence.put("candidateCount", result.size());
+            ArrayNode ids = evidence.putArray("candidateIds");
+            result.forEach(place -> ids.add(place.path("id").asLong()));
+        }
+        if ("get_local_night_facts".equals(name)) {
+            evidence.put("sourceStatus", result.path("sourceStatus").asText("unavailable"));
+        }
+        if ("get_night_outlook".equals(name)) {
+            evidence.put("level", result.path("level").asText("unavailable"));
+            evidence.put("reasonCode", result.path("reasonCode").asText("unavailable"));
+        }
+        if (result.isObject() && result.has("retrievedAt")) {
+            evidence.put("retrievedAt", result.path("retrievedAt").asText());
+        }
+        String outcome = result.isObject() && result.has("status")
+                ? result.path("status").asText("unavailable") : "OK";
+        records.recordTool(context.runId, ++context.toolSequence, name, outcome, evidence.toString());
     }
 
     private Object runTool(String name, JsonNode arguments, ToolContext context) {
@@ -324,6 +386,7 @@ public class AssistantService {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
                 ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
+                records.recordFacts(context.runId, facts);
                 context.cloudFactsRequested = true;
                 recordCloudForecast(facts, context);
                 List<LocalDate> availableDates = facts == null || facts.outlook() == null
@@ -418,6 +481,8 @@ public class AssistantService {
     }
 
     private static final class ToolContext {
+        private String runId;
+        private int toolSequence;
         private final Set<Long> permittedLocationIds = new HashSet<>();
         private List<Location> latestCandidates = List.of();
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();

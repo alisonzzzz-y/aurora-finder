@@ -12,6 +12,7 @@ type AssistantChatResponse = {
   answer: string
   model: string
   locationCandidates: Location[]
+  runId?: string
 }
 
 export async function askAssistant(
