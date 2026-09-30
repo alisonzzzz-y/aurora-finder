@@ -106,3 +106,33 @@ In an isolated copy of the current working tree, backend verification passed 80 
 Render 健康检查返回 `UP`。此前一次地点请求返回 HTTP 504、一次助手请求返回 HTTP 502；之后的地点、健康检查和助手请求均成功。这记录了短暂失败后恢复，但无法据此确定根因或服务稳定性。本次使用合成问题，没有使用或保存真实用户对话。
 
 在当前工作树的隔离副本中，后端验证通过80项测试；前端 lint、6项单元测试和生产构建通过。构建仍提示地图资源包较大。这些本地检查不能代替正式站浏览器验收。真实模型仍需评估极昼、数据缺失或过期、工具故障，以及中英文数值摘要的重复一致性。
+
+## 2026-10-01 live recheck / 2026-10-01 线上复验
+
+### English
+
+Five synthetic scenarios were run against the deployed Render backend using the live `gpt-6-luna` model, with six successful assistant requests. The local evidence files remain outside the repository. This verifies the deployed version at that moment, before the new database code is deployed.
+
+| Scenario | Result |
+| --- | --- |
+| Dublin ambiguity and follow-up | The first reply asked which Dublin. Selecting the full Irish Dublin label returned local cloud data without another confirmation loop. The stated 0%–64.8% range and cited hourly values matched the page facts returned in this run. |
+| Apia local date | The assistant returned October 1, 2, and 3 and UTC+13, matching the selected location's page facts. |
+| Personal viewing percentage | The assistant refused a percentage, kept the viewing rule unvalidated, and distinguished the OVATION model value 0 from a 0% chance. |
+| Unsupported date in 2030 | The assistant said the date was outside the available forecast and did not reuse current data as a 2030 prediction. |
+| Dublin and Cork recurrence | The assistant said the app lacks validated local recurrence data and gave no invented interval. |
+
+Each request returned HTTP 200. These are five reviewed examples, not a reliability or scientific accuracy score. Controlled live-model tests for polar day, missing cloud data, expired aurora data, and tool failure are still needed; local tests cover the application behavior for those states. The new run-record schema is tested locally but was not enabled on this deployed backend.
+
+### 简体中文
+
+使用线上 `gpt-6-luna` 模型对已部署的 Render 后端运行了五类合成场景，共六次成功请求。本机原始证据文件留在仓库外。这验证的是当时的已部署版本，早于这次数据库代码上线。
+
+| 场景 | 结果 |
+| --- | --- |
+| Dublin 同名地点及追问 | 首轮询问具体地点；回复爱尔兰 Dublin 的完整名称后，直接返回当地云量，没有再次确认。本次回答的 0%–64.8% 区间和列出的逐小时值与页面事实响应一致。 |
+| Apia 当地日期 | 回答 10月1日、2日、3日及 UTC+13，与所选地点的页面事实一致。 |
+| 个人看到极光的百分比 | 拒绝给百分比，说明观测规则尚未验证，且模型值 0 不等于看到极光的概率为 0%。 |
+| 2030 年日期 | 说明超出当前预报范围，没有把当下数据当作 2030 年预报。 |
+| Dublin 与 Cork 的历史频率 | 说明没有已验证的当地历史频率数据，没有编造平均间隔。 |
+
+所有请求均返回 HTTP 200。这是五个经过人工核对的实例，不是稳定性评分或科学准确率。极昼、云量缺失、极光数据过期及工具故障还需用可控输入检查真实模型；本地测试已覆盖这些状态下的应用行为。新运行记录数据库已通过本地测试，但这次线上后端尚未启用它。

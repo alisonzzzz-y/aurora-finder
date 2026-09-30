@@ -7,6 +7,7 @@ import com.aurora.observation.service.LocationNotFoundException;
 import com.aurora.observation.service.InvalidWeatherRequestException;
 import com.aurora.observation.service.AssistantRateLimitException;
 import com.aurora.observation.service.AssistantUnavailableException;
+import com.aurora.observation.record.RunRecordUnavailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiErrorHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiErrorHandler.class);
+
+    @ExceptionHandler(RunRecordUnavailableException.class)
+    public ProblemDetail runRecordUnavailable(RunRecordUnavailableException error) {
+        log.error("Run record database failed.", error);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "The result could not be recorded. Please try again later.");
+        problem.setProperty("code", "RUN_RECORD_UNAVAILABLE");
+        return problem;
+    }
 
     @ExceptionHandler(AssistantRateLimitException.class)
     public ProblemDetail assistantRateLimited(AssistantRateLimitException error) {

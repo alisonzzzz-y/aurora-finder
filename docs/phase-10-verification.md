@@ -2,6 +2,10 @@
 
 Updated: 2026-09-30
 
+Update / 更新 2026-10-01: the database and AI statements below describe the earlier deployed build. A PostgreSQL run-record implementation is now in the working branch. Local migration, restart readback, retention, and database-failure tests pass; production storage is not enabled until Render is connected to PostgreSQL. Five live AI scenarios with six requests passed manual fact checks on the previously deployed build. The current rule-validation conclusion is in [observation-rule-validation-gate.md](observation-rule-validation-gate.md).
+
+更新：下文数据库和 AI 的描述是当时已部署版本的历史记录。目前工作分支已实现 PostgreSQL 运行记录，本地迁移、重启读回、保留期和数据库故障测试通过；Render 接入 PostgreSQL 前，线上尚未启用持久化。已部署旧版本的五类线上 AI 场景共六次请求通过人工事实核对。当前综合规则验证结论见 [观测规则验证结论](observation-rule-validation-gate.md)。
+
 ## English
 
 ### Automated evidence
