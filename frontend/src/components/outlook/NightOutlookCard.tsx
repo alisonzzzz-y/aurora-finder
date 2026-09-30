@@ -1,3 +1,4 @@
+import './NightOutlookCard.css'
 import type { NightOutlook } from '../../types/outlook'
 import { useI18n } from '../../i18n'
 

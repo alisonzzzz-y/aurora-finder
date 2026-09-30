@@ -7,7 +7,6 @@ import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
 import com.aurora.observation.dto.WeatherCloudPoint;
-import com.aurora.observation.dto.WeatherForecastResponse;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -204,8 +203,12 @@ public class AssistantService {
     private Location resolveCandidate(String reply, List<Location> candidates) {
         String value = normalize(reply);
         if (value.matches("[1-9][0-9]*")) {
-            int index = Integer.parseInt(value) - 1;
-            return index < candidates.size() ? candidates.get(index) : null;
+            try {
+                int index = Integer.parseInt(value) - 1;
+                return index < candidates.size() ? candidates.get(index) : null;
+            } catch (NumberFormatException invalidSelection) {
+                return null;
+            }
         }
 
         List<Location> fullLocationMatches = candidates.stream()
@@ -367,7 +370,7 @@ public class AssistantService {
         }
         for (WeatherCloudPoint point : facts.cloudForecast().data().cloudForecast()) {
             if (point == null || point.validAt() == null || point.cloudCoverPercent() == null) continue;
-            String localHour = point.validAt().atZone(zone).toLocalTime().withMinute(0).toString();
+            String localHour = point.validAt().atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT));
             BigDecimal value = BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros();
             context.cloudPercentagesByLocalHour.computeIfAbsent(localHour, ignored -> new TreeSet<>()).add(value);
         }

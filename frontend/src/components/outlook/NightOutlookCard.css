@@ -1,0 +1,14 @@
+.night-card { padding: 22px 0 0; border-top: 1px solid var(--line); background: transparent; }
+.night-card p { color: var(--muted); line-height: 1.6; }
+.night-card .night-index { color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; margin: 0 0 9px; }
+.night-card h3 { font-size: 21px; font-weight: 620; margin: 0 0 18px; }
+.level-badge { display: inline-block; border-bottom: 1px solid var(--line-strong); padding: 4px 0; color: #d2ccdf; font-size: 12px; font-weight: 650; letter-spacing: .02em; }
+.night-card p:last-child { font-size: 14px; margin-bottom: 0; }
+.solar-darkness { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.solar-darkness h4 { margin: 0 0 12px; font-size: 15px; font-weight: 620; }
+.solar-threshold { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 13px; }
+.solar-threshold span:first-child { color: var(--text); }
+.solar-threshold span:last-child { color: var(--muted); text-align: right; }
+.solar-darkness p { margin: 12px 0 0; font-size: 12px; }
+.timestamp { color: var(--muted); font-size: 13px; margin-top: 12px; }
+.utc-offset { color: #aaa2ba; font-size: 13px; font-weight: 500; white-space: nowrap; }

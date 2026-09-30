@@ -1,6 +1,7 @@
 package com.aurora.observation.service;
 
 import com.aurora.observation.dto.AssistantChatRequest;
+import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.AssistantChatResponse;
 import com.aurora.observation.dto.FactFetchStatus;
 import com.aurora.observation.dto.FactTimeScope;
@@ -40,6 +41,19 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void oversizedNumericCandidateReplyAsksAgainInsteadOfThrowing() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        Location ireland = new Location(1, "Dublin", "Leinster", "Dublin City", "Ireland", 53, -6, "Europe/Dublin");
+        Location usa = new Location(2, "Dublin", "Ohio", "Franklin", "United States", 40, -83, "America/New_York");
+        AssistantService service = new AssistantService(openAi, tools, new ObjectMapper());
+        AssistantChatResponse response = service.chat(new AssistantChatRequest("9".repeat(1000), "en", null,
+                List.of(new AssistantMessage("assistant", "Choose a place", List.of(ireland, usa)))));
+        assertEquals(2, response.locationCandidates().size());
+        verify(openAi, never()).respond(anyString(), any(), any());
+    }
+
+    @Test
     void replacesHourlyCloudValuesThatDoNotMatchTheSelectedLocationSource() {
         AssistantChatResponse response = chatWithCloudSource(
                 "At 20:00 cloud cover is 72%, and at 21:00 it is 18.7%.");
@@ -68,12 +82,24 @@ class AssistantServiceTest {
         return chatWithCloudSource(answer, false);
     }
 
+    @Test
+    void matchesCloudReadingsInQuarterHourTimezonesWithoutRoundingTheHour() {
+        String answer = "At 00:45 cloud cover is 78.9%, and at 01:45 it is 18.7%.";
+        assertEquals(answer, chatWithCloudSource(answer, false, "Asia/Kathmandu").answer());
+        assertTrue(chatWithCloudSource("At 00:00 cloud cover is 78.9%.", false, "Asia/Kathmandu")
+                .answer().contains("couldn't verify"));
+    }
+
     private AssistantChatResponse chatWithCloudSource(String answer, boolean emptyCloudForecast) {
+        return chatWithCloudSource(answer, emptyCloudForecast, "Europe/Dublin");
+    }
+
+    private AssistantChatResponse chatWithCloudSource(String answer, boolean emptyCloudForecast, String timezone) {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);
         ObjectMapper mapper = new ObjectMapper();
         Location dublin = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland",
-                53.33306, -6.24889, "Europe/Dublin");
+                53.33306, -6.24889, timezone);
         Instant retrievedAt = Instant.parse("2026-09-28T00:00:00Z");
         NightOutlook night = new NightOutlook(LocalDate.of(2026, 9, 28), "+01:00",
                 retrievedAt, retrievedAt.plusSeconds(86400), OutlookLevel.INSUFFICIENT_DATA,
