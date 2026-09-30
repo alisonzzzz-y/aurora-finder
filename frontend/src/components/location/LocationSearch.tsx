@@ -54,9 +54,9 @@ export function LocationSearch({ busy, onSelect }: Props) {
     }
   }, [normalizedQuery, selectedLocation])
 
-  async function submitSearch(event: FormEvent<HTMLFormElement>) {
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!selectedLocation || state === 'loading') return
+    if (busy || !selectedLocation || state === 'loading') return
     onSelect(selectedLocation)
   }
 
@@ -80,6 +80,7 @@ export function LocationSearch({ busy, onSelect }: Props) {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return
     if (event.key === 'ArrowDown' && results.length > 0) {
       event.preventDefault()
       setActiveIndex(index => (index + 1) % results.length)
