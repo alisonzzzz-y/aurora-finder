@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type PointerEvent as React
 import { askAssistant, type AssistantMessage } from '../../api/assistant'
 import type { Location } from '../../types/location'
 import { useI18n } from '../../i18n'
+import { ApiRequestError } from '../../api/requestError'
 
 const exampleQuestions = [
   'assistantExampleTonight',
@@ -127,8 +128,11 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         role: 'assistant', content: response.answer,
         ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),
       }])
-    } catch {
-      setError(t('assistantRequestFailed'))
+    } catch (cause) {
+      setError(t(cause instanceof ApiRequestError && cause.status === 429
+        ? 'assistantRateLimited'
+        : cause instanceof ApiRequestError && cause.status === 408
+          ? 'assistantTimedOut' : 'assistantRequestFailed'))
       setFailedRequest({ question, history, ...(selectedLocation ? { location: selectedLocation } : {}) })
     } finally {
       setBusy(false)

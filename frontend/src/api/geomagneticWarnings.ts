@@ -1,9 +1,7 @@
 import { apiUrl } from './apiUrl'
-import { ApiRequestError } from './requestError'
 import type { GeomagneticWarnings } from '../types/geomagneticWarnings'
+import { fetchJson } from './fetchJson'
 
 export async function getGeomagneticWarnings(signal?: AbortSignal): Promise<GeomagneticWarnings> {
-  const response = await fetch(apiUrl('/api/v1/geomagnetic-warnings'), { signal })
-  if (!response.ok) throw new ApiRequestError('Current geomagnetic warnings are unavailable.', response.status)
-  return (await response.json()) as GeomagneticWarnings
+  return fetchJson<GeomagneticWarnings>(apiUrl('/api/v1/geomagnetic-warnings'), { signal }, 'Current geomagnetic warnings are unavailable.')
 }

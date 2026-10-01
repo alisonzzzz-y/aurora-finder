@@ -90,6 +90,18 @@ class SmokeCheck:
         if path == "/api/v1/geomagnetic-storm-forecast":
             return {"dayCount": len(body.get("days") or []), "issuedAt": body.get("issuedAt"),
                     "retrievedAt": body.get("retrievedAt")}
+        if path == "/api/v1/geomagnetic-warnings":
+            return {"warningCount": len(body.get("warnings") or []),
+                    "stormWatchDayCount": len(body.get("stormWatchDays") or []),
+                    "source": body.get("source"), "retrievedAt": body.get("retrievedAt")}
+        if path.startswith("/api/v1/weather-forecast?"):
+            points = body.get("cloudForecast") or []
+            return {"source": body.get("source"), "retrievedAt": body.get("retrievedAt"),
+                    "expiresAt": body.get("expiresAt"), "cloudPointCount": len(points),
+                    "cloudValueCount": sum(point.get("cloudCoverPercent") is not None
+                                            for point in points if isinstance(point, dict)),
+                    "requestedLatitude": body.get("requestedLatitude"),
+                    "requestedLongitude": body.get("requestedLongitude")}
         return {"topLevelKeys": sorted(body.keys()) if isinstance(body, dict) else None}
 
     @staticmethod
@@ -129,6 +141,39 @@ class SmokeCheck:
         days = body.get("days")
         return isinstance(days, list) and len(days) > 0 and all(
             isinstance(day, dict) for day in days
+        )
+
+    @staticmethod
+    def validate_weather_forecast(body):
+        points = body.get("cloudForecast")
+        if not isinstance(points, list):
+            return False
+        if not isinstance(body.get("source"), str) or not body["source"].strip():
+            return False
+        if not isinstance(body.get("retrievedAt"), str) or not isinstance(body.get("expiresAt"), str):
+            return False
+        latitude = body.get("requestedLatitude")
+        longitude = body.get("requestedLongitude")
+        if (not isinstance(latitude, (int, float)) or not isinstance(longitude, (int, float))
+                or abs(latitude - 53.33306) > 0.001 or abs(longitude - (-6.24889)) > 0.001):
+            return False
+        return all(
+            isinstance(point, dict)
+            and isinstance(point.get("validAt"), str)
+            and (point.get("cloudCoverPercent") is None
+                 or isinstance(point.get("cloudCoverPercent"), (int, float))
+                 and 0 <= point["cloudCoverPercent"] <= 100)
+            for point in points
+        )
+
+    @staticmethod
+    def validate_geomagnetic_warnings(body):
+        return (
+            isinstance(body.get("warnings"), list)
+            and isinstance(body.get("stormWatchDays"), list)
+            and isinstance(body.get("source"), str)
+            and bool(body["source"].strip())
+            and isinstance(body.get("retrievedAt"), str)
         )
 
     def check(self, path, expected_type, validate=None, keep_body=False):
@@ -181,6 +226,12 @@ class SmokeCheck:
                 dict,
                 self.validate_storm_forecast,
             ),
+            self.check(
+                "/api/v1/weather-forecast?latitude=53.33306&longitude=-6.24889&timezone=Europe%2FDublin",
+                dict,
+                self.validate_weather_forecast,
+            ),
+            self.check("/api/v1/geomagnetic-warnings", dict, self.validate_geomagnetic_warnings),
         ])
         return {
             "checked_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
