@@ -9,10 +9,10 @@ public record RunRecord(String id, String kind, Instant createdAtUtc, Instant co
                         String resultStatus, Long locationId, String ruleVersion,
                         String ruleStatus, String coverageStatus,
                         List<Night> nights, List<Source> sources, List<ToolCall> toolCalls) {
-    public record Night(LocalDate localDate, Instant windowStartUtc, Instant windowEndUtc,
+    public record Night(int snapshot, Long locationId, LocalDate localDate, Instant windowStartUtc, Instant windowEndUtc,
                         String level, String reasonCode) {}
 
-    public record Source(String key, String fetchStatus, String timeScope, String failureCode,
+    public record Source(int snapshot, Long locationId, String key, String fetchStatus, String timeScope, String failureCode,
                          Instant retrievedAtUtc, Instant observedAtUtc, Instant forecastAtUtc,
                          Instant scopeStartUtc, Instant scopeEndUtc, String evidenceJson) {}
 
