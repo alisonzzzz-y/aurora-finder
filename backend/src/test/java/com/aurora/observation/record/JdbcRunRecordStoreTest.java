@@ -26,7 +26,7 @@ class JdbcRunRecordStoreTest {
     void migratesEmptyDatabaseAndReadsMinimalEvidenceAfterRestart() {
         String url = "jdbc:h2:file:" + directory.resolve("records") + ";DB_CLOSE_ON_EXIT=FALSE";
         JdbcTemplate first = jdbc(url);
-        assertEquals(1, Flyway.configure().dataSource(first.getDataSource()).load().migrate().migrationsExecuted);
+        assertEquals(2, Flyway.configure().dataSource(first.getDataSource()).load().migrate().migrationsExecuted);
         JdbcRunRecordStore records = store(first, NOW);
         String id = records.begin("PAGE_FACTS", 2964574L);
         records.recordFacts(id, facts());
@@ -57,6 +57,38 @@ class JdbcRunRecordStoreTest {
     }
 
     @Test
+    void upgradesExistingRecordsWithoutLosingEvidence() {
+        JdbcTemplate jdbc = jdbc("jdbc:h2:mem:upgradefacts;DB_CLOSE_DELAY=-1");
+        Flyway.configure().dataSource(jdbc.getDataSource()).target("1").load().migrate();
+        String id = store(jdbc, NOW).begin("PAGE_FACTS", 2964574L);
+        jdbc.update("INSERT INTO evaluation_night(run_id, local_date, window_start_utc, window_end_utc, level, reason_code) VALUES (?, ?, ?, ?, ?, ?)",
+                id, java.sql.Date.valueOf("2026-10-01"), java.sql.Timestamp.from(NOW), java.sql.Timestamp.from(NOW.plusSeconds(86400)), "INSUFFICIENT_DATA", "RULES_NOT_VALIDATED");
+        Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
+        RunRecord view = store(jdbc, NOW).find(id).orElseThrow();
+        assertEquals(1, view.nights().size());
+        assertEquals(2964574L, view.nights().getFirst().locationId());
+        assertEquals(1, view.nights().getFirst().snapshot());
+        store(jdbc, NOW).recordFacts(id, facts());
+        assertEquals(2, store(jdbc, NOW).find(id).orElseThrow().nights().size());
+    }
+
+    @Test
+    void retainsMultipleLocationsAndRepeatedQueries() {
+        JdbcTemplate jdbc = jdbc("jdbc:h2:mem:multifacts;DB_CLOSE_DELAY=-1");
+        Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
+        JdbcRunRecordStore records = store(jdbc, NOW);
+        String id = records.begin("ASSISTANT", null);
+        records.recordFacts(id, facts(2964574));
+        records.recordFacts(id, facts(2965140));
+        records.recordFacts(id, facts(2964574));
+        RunRecord view = records.find(id).orElseThrow();
+        assertEquals(3, view.nights().size());
+        assertEquals(9, view.sources().size());
+        assertEquals(List.of(2964574L, 2965140L, 2964574L), view.nights().stream().map(RunRecord.Night::locationId).toList());
+        assertEquals(List.of(1, 2, 3), view.nights().stream().map(RunRecord.Night::snapshot).toList());
+    }
+
+    @Test
     void deletesExpiredRunAndChildRecordsTogether() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:runretention;DB_CLOSE_DELAY=-1");
         Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
@@ -81,7 +113,11 @@ class JdbcRunRecordStoreTest {
     }
 
     private ObservationFactsResponse facts() {
-        Location location = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
+        return facts(2964574);
+    }
+
+    private ObservationFactsResponse facts(long locationId) {
+        Location location = new Location(locationId, "Dublin", "Leinster", "Dublin City", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");
         NightOutlook night = new NightOutlook(LocalDate.of(2026, 10, 1), "+01:00", NOW,
                 NOW.plusSeconds(86400), OutlookLevel.INSUFFICIENT_DATA,
