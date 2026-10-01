@@ -1,5 +1,5 @@
 import { apiUrl } from './apiUrl'
-import { ApiRequestError } from './requestError'
+import { fetchJson } from './fetchJson'
 import type { Location } from '../types/location'
 
 export type AssistantMessage = {
@@ -12,6 +12,7 @@ type AssistantChatResponse = {
   answer: string
   model: string
   locationCandidates: Location[]
+  runId?: string
 }
 
 export async function askAssistant(
@@ -20,20 +21,11 @@ export async function askAssistant(
   history: AssistantMessage[],
   locationId?: number,
 ): Promise<AssistantChatResponse> {
-  const response = await fetch(apiUrl('/api/v1/assistant/chat'), {
+  return fetchJson<AssistantChatResponse>(apiUrl('/api/v1/assistant/chat'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, language, history: history.slice(-10), locationId }),
-  })
-  if (!response.ok) {
-    let messageText = 'The AI assistant is temporarily unavailable.'
-    try {
-      const problem = await response.json() as { detail?: string }
-      if (problem.detail) messageText = problem.detail
-    } catch {
-      // Keep the stable fallback when the server did not return problem JSON.
-    }
-    throw new ApiRequestError(messageText, response.status)
-  }
-  return response.json() as Promise<AssistantChatResponse>
+    body: JSON.stringify({ message, language, history: history.slice(-10).map(item => ({
+      ...item, content: item.content.slice(0, 8000),
+    })), locationId }),
+  }, 'The AI assistant is temporarily unavailable.', 240_000)
 }

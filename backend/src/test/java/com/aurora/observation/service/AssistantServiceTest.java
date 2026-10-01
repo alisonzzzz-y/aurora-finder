@@ -1,6 +1,7 @@
 package com.aurora.observation.service;
 
 import com.aurora.observation.dto.AssistantChatRequest;
+import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.AssistantChatResponse;
 import com.aurora.observation.dto.FactFetchStatus;
 import com.aurora.observation.dto.FactTimeScope;
@@ -15,6 +16,7 @@ import com.aurora.observation.dto.OutlookResponse;
 import com.aurora.observation.dto.RuleStatus;
 import com.aurora.observation.dto.SourceFact;
 import com.aurora.observation.dto.WeatherForecastResponse;
+import com.aurora.observation.dto.WeatherCloudPoint;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import com.aurora.observation.provider.ProviderFailure;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,91 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void oversizedNumericCandidateReplyAsksAgainInsteadOfThrowing() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        Location ireland = new Location(1, "Dublin", "Leinster", "Dublin City", "Ireland", 53, -6, "Europe/Dublin");
+        Location usa = new Location(2, "Dublin", "Ohio", "Franklin", "United States", 40, -83, "America/New_York");
+        AssistantService service = new AssistantService(openAi, tools, new ObjectMapper());
+        AssistantChatResponse response = service.chat(new AssistantChatRequest("9".repeat(1000), "en", null,
+                List.of(new AssistantMessage("assistant", "Choose a place", List.of(ireland, usa)))));
+        assertEquals(2, response.locationCandidates().size());
+        verify(openAi, never()).respond(anyString(), any(), any());
+    }
+
+    @Test
+    void replacesHourlyCloudValuesThatDoNotMatchTheSelectedLocationSource() {
+        AssistantChatResponse response = chatWithCloudSource(
+                "At 20:00 cloud cover is 72%, and at 21:00 it is 18.7%.");
+
+        assertTrue(response.answer().contains("couldn't verify the hourly cloud values"));
+        assertTrue(response.answer().contains("local cloud forecast chart"));
+    }
+
+    @Test
+    void keepsHourlyCloudValuesThatMatchTheSelectedLocationSource() {
+        AssistantChatResponse response = chatWithCloudSource(
+                "At 20:00 cloud cover is 78.9%, and at 21:00 it is 18.7%.");
+
+        assertEquals("At 20:00 cloud cover is 78.9%, and at 21:00 it is 18.7%.", response.answer());
+    }
+
+    @Test
+    void rejectsHourlyCloudValuesWhenTheSourceHasNoCloudPoints() {
+        AssistantChatResponse response = chatWithCloudSource(
+                "At 20:00 cloud cover is 72%.", true);
+
+        assertTrue(response.answer().contains("couldn't verify the hourly cloud values"));
+    }
+
+    private AssistantChatResponse chatWithCloudSource(String answer) {
+        return chatWithCloudSource(answer, false);
+    }
+
+    @Test
+    void matchesCloudReadingsInQuarterHourTimezonesWithoutRoundingTheHour() {
+        String answer = "At 00:45 cloud cover is 78.9%, and at 01:45 it is 18.7%.";
+        assertEquals(answer, chatWithCloudSource(answer, false, "Asia/Kathmandu").answer());
+        assertTrue(chatWithCloudSource("At 00:00 cloud cover is 78.9%.", false, "Asia/Kathmandu")
+                .answer().contains("couldn't verify"));
+    }
+
+    private AssistantChatResponse chatWithCloudSource(String answer, boolean emptyCloudForecast) {
+        return chatWithCloudSource(answer, emptyCloudForecast, "Europe/Dublin");
+    }
+
+    private AssistantChatResponse chatWithCloudSource(String answer, boolean emptyCloudForecast, String timezone) {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        Location dublin = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland",
+                53.33306, -6.24889, timezone);
+        Instant retrievedAt = Instant.parse("2026-09-28T00:00:00Z");
+        NightOutlook night = new NightOutlook(LocalDate.of(2026, 9, 28), "+01:00",
+                retrievedAt, retrievedAt.plusSeconds(86400), OutlookLevel.INSUFFICIENT_DATA,
+                OutlookReasonCode.RULES_NOT_VALIDATED, null);
+        OutlookResponse outlook = new OutlookResponse(dublin, retrievedAt, RuleStatus.NOT_VALIDATED, List.of(night));
+        WeatherForecastResponse forecast = new WeatherForecastResponse(retrievedAt, retrievedAt.plusSeconds(86400),
+                "MET Norway", dublin.latitude(), dublin.longitude(), emptyCloudForecast ? List.of() : List.of(
+                        new WeatherCloudPoint(Instant.parse("2026-09-28T19:00:00Z"), 78.9),
+                        new WeatherCloudPoint(Instant.parse("2026-09-28T20:00:00Z"), 18.7)));
+        SourceFact<WeatherForecastResponse> cloudFact = new SourceFact<>(FactFetchStatus.CURRENT,
+                FactTimeScope.THREE_LOCAL_NIGHTS, retrievedAt, retrievedAt, retrievedAt,
+                retrievedAt, retrievedAt.plusSeconds(86400), "MET Norway", "https://example.test/weather",
+                null, forecast);
+        ObservationFactsResponse facts = new ObservationFactsResponse(retrievedAt, outlook, null,
+                cloudFact, null, null, FactFetchStatus.CURRENT);
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":42}"))
+                .thenReturn(responseWithText(mapper, answer));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.getLocalNightFacts(42)).thenReturn(facts);
+
+        return new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("What is the cloud cover tonight?", "en", 42L, List.of()));
+    }
+
+    @Test
     void tellsAssistantNotToInventLocalAuroraRecurrenceIntervals() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObjectMapper mapper = new ObjectMapper();
@@ -61,6 +148,7 @@ class AssistantServiceTest {
         assertTrue(instructions.getValue().contains("Never guess a date or use the server's date"));
         assertTrue(instructions.getValue().contains("UTC offset"));
         assertTrue(instructions.getValue().contains("Mention unavailable or"));
+        assertTrue(instructions.getValue().contains("conflicting percentages to"));
     }
 
     @Test
@@ -292,6 +380,34 @@ class AssistantServiceTest {
         assertEquals("gpt-6-luna", response.model());
         verify(tools).searchPlaces("Dublin");
         verify(tools).getLocalNightFacts(2964574);
+    }
+
+    @Test
+    void replacesSelfCorrectedConflictingCloudValuesWithSafeGuidance() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts",
+                                "{\"location_id\":2964574}"))
+                .thenReturn(responseWithText(mapper,
+                        "10:00 云量为 21.1%。更正：10:00 云量为 25.8%。"));
+        when(openAi.model()).thenReturn("gpt-6-luna");
+
+        AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
+                new AssistantChatRequest("Dublin 今晚云量如何？", "zh", 2964574L, List.of()));
+
+        assertEquals("这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。",
+                result.answer());
+        verify(tools).getLocalNightFacts(2964574);
+    }
+
+    @Test
+    void keepsCloudAnswerWhenCorrectionRepeatsTheSameHourlyValue() {
+        String answer = "20:00 云量为 78.9%。更正：20:00 云量为 78.9%。";
+        AssistantChatResponse result = chatWithCloudSource(answer);
+
+        assertEquals(answer, result.answer());
     }
 
     @Test

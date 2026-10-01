@@ -29,6 +29,18 @@ class SmokeCheckTest(unittest.TestCase):
             }},
             "/api/v1/kp-index": {"status": 200, "body": {"records": [{}]}},
             "/api/v1/geomagnetic-storm-forecast": {"status": 200, "body": {"days": [{}]}},
+            "/api/v1/weather-forecast?latitude=53.33306&longitude=-6.24889&timezone=Europe%2FDublin": {
+                "status": 200, "body": {
+                    "source": "MET Norway", "retrievedAt": "2026-09-30T09:00:00Z",
+                    "expiresAt": "2026-09-30T10:00:00Z", "requestedLatitude": 53.33306,
+                    "requestedLongitude": -6.24889,
+                    "cloudForecast": [{"validAt": "2026-09-30T09:00:00Z", "cloudCoverPercent": 42.0}],
+                },
+            },
+            "/api/v1/geomagnetic-warnings": {"status": 200, "body": {
+                "warnings": [], "stormWatchDays": [], "source": "NOAA SWPC",
+                "retrievedAt": "2026-09-30T09:00:00Z",
+            }},
         }
         with patch.object(check, "get_json", side_effect=lambda path: results[path]):
             report = check.run()
@@ -38,6 +50,9 @@ class SmokeCheckTest(unittest.TestCase):
         self.assertNotIn("body", report["checks"][0])
         self.assertEqual(1, report["checks"][1]["summary"]["irishDublinMatches"])
         self.assertEqual(3, report["checks"][2]["summary"]["nightCount"])
+        self.assertEqual(8, len(report["checks"]))
+        self.assertEqual(1, report["checks"][6]["summary"]["cloudValueCount"])
+        self.assertEqual(0, report["checks"][7]["summary"]["warningCount"])
 
     def test_ambiguous_irish_city_fails_safely_without_facts_request(self):
         check = SmokeCheck("https://api.example")
@@ -97,6 +112,24 @@ class SmokeCheckTest(unittest.TestCase):
         body = {"outlook": {"location": {"id": 42}, "nights": [{}, {}, {}]}}
         self.assertTrue(SmokeCheck.validate_facts(body, 42))
         self.assertFalse(SmokeCheck.validate_facts(body, 43))
+
+    def test_weather_forecast_accepts_missing_values_but_rejects_invalid_percentages(self):
+        body = {
+            "source": "MET Norway", "retrievedAt": "2026-09-30T09:00:00Z",
+            "expiresAt": "2026-09-30T10:00:00Z", "requestedLatitude": 53.333,
+            "requestedLongitude": -6.2488,
+            "cloudForecast": [{"validAt": "2026-09-30T09:00:00Z", "cloudCoverPercent": None}],
+        }
+        self.assertTrue(SmokeCheck.validate_weather_forecast(body))
+        body["cloudForecast"][0]["cloudCoverPercent"] = 101
+        self.assertFalse(SmokeCheck.validate_weather_forecast(body))
+
+    def test_warning_validation_accepts_empty_warning_lists(self):
+        body = {"warnings": [], "stormWatchDays": [], "source": "NOAA SWPC",
+                "retrievedAt": "2026-09-30T09:00:00Z"}
+        self.assertTrue(SmokeCheck.validate_geomagnetic_warnings(body))
+        body["warnings"] = None
+        self.assertFalse(SmokeCheck.validate_geomagnetic_warnings(body))
 
     def test_fact_summary_shows_compared_source_windows_when_no_overlap(self):
         body = {

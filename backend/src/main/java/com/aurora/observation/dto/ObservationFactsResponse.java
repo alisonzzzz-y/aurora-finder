@@ -7,4 +7,12 @@ public record ObservationFactsResponse(Instant generatedAtUtc, OutlookResponse o
                                        SourceFact<WeatherForecastResponse> cloudForecast,
                                        SourceFact<java.util.List<SolarNightFact>> solarDarkness,
                                        ForecastCoverage coverage,
-                                       FactFetchStatus sourceStatus) {}
+                                       FactFetchStatus sourceStatus, String runId) {
+    public ObservationFactsResponse(Instant generatedAtUtc, OutlookResponse outlook,
+                                    SourceFact<LocalAuroraActivityResponse> auroraActivity,
+                                    SourceFact<WeatherForecastResponse> cloudForecast,
+                                    SourceFact<java.util.List<SolarNightFact>> solarDarkness,
+                                    ForecastCoverage coverage, FactFetchStatus sourceStatus) {
+        this(generatedAtUtc, outlook, auroraActivity, cloudForecast, solarDarkness, coverage, sourceStatus, null);
+    }
+}

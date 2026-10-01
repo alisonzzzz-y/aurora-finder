@@ -6,25 +6,40 @@ import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
+import com.aurora.observation.dto.WeatherCloudPoint;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
+import com.aurora.observation.record.NoopRunRecordStore;
+import com.aurora.observation.record.RunRecordStore;
+import com.aurora.observation.record.RunRecordUnavailableException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
+    private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
+            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3])):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
+    private static final Pattern CORRECTION_WORD = Pattern.compile(
+            "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
+    private static final Pattern CLOUD_CONTEXT = Pattern.compile("(?i)cloud|云量|云层|云覆盖");
     private static final String INSTRUCTIONS = """
             You are the read-only assistant inside Aurora Finder. Answer in the user's requested language.
             Use the provided tools for current aurora, geomagnetic, cloud, darkness, location, and source facts.
@@ -47,21 +62,44 @@ public class AssistantService {
             For cloud cover, use the returned percentages and local hours. When summarizing an interval with a
             numeric range, include its lowest and highest available values; do not omit hourly dips or peaks to
             make the trend smoother. Prefer a few exact hour/value examples when the interval is not clearly defined.
+            Before finishing an hourly cloud summary, check that you have not assigned conflicting percentages to
+            the same local hour. Do not append a correction that contradicts an earlier value; if you cannot give
+            a consistent summary, say so and direct the user to the local cloud forecast chart.
             """;
 
     private final OpenAiAssistantProvider openAi;
     private final ObservationToolsService tools;
     private final ObjectMapper objectMapper;
     private final ArrayNode toolDefinitions;
+    private final RunRecordStore records;
 
     public AssistantService(OpenAiAssistantProvider openAi, ObservationToolsService tools, ObjectMapper objectMapper) {
+        this(openAi, tools, objectMapper, new NoopRunRecordStore());
+    }
+
+    @Autowired
+    public AssistantService(OpenAiAssistantProvider openAi, ObservationToolsService tools,
+                            ObjectMapper objectMapper, RunRecordStore records) {
         this.openAi = openAi;
         this.tools = tools;
         this.objectMapper = objectMapper;
+        this.records = records;
         this.toolDefinitions = buildToolDefinitions();
     }
 
     public AssistantChatResponse chat(AssistantChatRequest request) {
+        String runId = records.begin("ASSISTANT", request.locationId());
+        try {
+            AssistantChatResponse answer = answer(request, runId);
+            records.finish(runId, "COMPLETED");
+            return new AssistantChatResponse(answer.answer(), answer.model(), answer.locationCandidates(), runId);
+        } catch (RuntimeException failure) {
+            records.finish(runId, "FAILED");
+            throw failure;
+        }
+    }
+
+    private AssistantChatResponse answer(AssistantChatRequest request, String runId) {
         ArrayNode input = objectMapper.createArrayNode();
         List<AssistantMessage> history = request.history() == null ? List.of() : request.history();
         history.forEach(item -> input.add(message(item.role(), item.content())));
@@ -73,6 +111,7 @@ public class AssistantService {
             userMessage.append("\nSelected Aurora Finder location ID: ").append(request.locationId());
         }
         ToolContext toolContext = new ToolContext();
+        toolContext.runId = runId;
         if (request.locationId() != null && request.locationId() > 0) {
             toolContext.permittedLocationIds.add(request.locationId());
         } else {
@@ -113,10 +152,63 @@ public class AssistantService {
                 }
                 List<Location> choices = toolContext.latestCandidates.size() > 1
                         ? toolContext.latestCandidates : List.of();
+                if (hasConflictingCorrectedCloudValues(answer)) {
+                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
+                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                }
                 return new AssistantChatResponse(answer, openAi.model(), choices);
             }
         }
         throw new AssistantUnavailableException("The AI assistant used too many tool steps.");
+    }
+
+    private boolean hasConflictingCorrectedCloudValues(String answer) {
+        if (!CORRECTION_WORD.matcher(answer).find()) return false;
+
+        Map<String, String> percentagesByHour = new HashMap<>();
+        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
+        while (matcher.find()) {
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            String percentage = new BigDecimal(matcher.group(3)).stripTrailingZeros().toPlainString();
+            String previous = percentagesByHour.putIfAbsent(hour, percentage);
+            if (previous != null && !previous.equals(percentage)) return true;
+        }
+        return false;
+    }
+
+    private String inconsistentCloudAnswer(boolean chinese) {
+        return chinese
+                ? "这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。"
+                : "I couldn't provide a consistent hourly cloud summary, so I won't guess. Please check the local cloud forecast chart or try again later.";
+    }
+
+    private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
+        if (!context.cloudFactsRequested || !CLOUD_CONTEXT.matcher(answer).find()) return false;
+        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
+        while (matcher.find()) {
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            Set<BigDecimal> sourceValues = context.cloudPercentagesByLocalHour.get(hour);
+            if (sourceValues == null || sourceValues.isEmpty()) return true;
+
+            BigDecimal stated = new BigDecimal(matcher.group(3));
+            boolean matchesSource = sourceValues.stream().anyMatch(source ->
+                    source.subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0);
+            if (!matchesSource) return true;
+        }
+        return false;
+    }
+
+    private BigDecimal roundingTolerance(BigDecimal stated) {
+        return stated.stripTrailingZeros().scale() <= 0
+                ? new BigDecimal("0.6")
+                : new BigDecimal("0.15");
+    }
+
+    private String unverifiedCloudAnswer(boolean chinese) {
+        return chinese
+                ? "这次回复中的小时云量数值无法与天气来源数据核对。为避免误报，请查看页面里的当地云量预报图。"
+                : "I couldn't verify the hourly cloud values against the weather source. To avoid giving you inaccurate figures, please check the local cloud forecast chart.";
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
@@ -136,8 +228,12 @@ public class AssistantService {
     private Location resolveCandidate(String reply, List<Location> candidates) {
         String value = normalize(reply);
         if (value.matches("[1-9][0-9]*")) {
-            int index = Integer.parseInt(value) - 1;
-            return index < candidates.size() ? candidates.get(index) : null;
+            try {
+                int index = Integer.parseInt(value) - 1;
+                return index < candidates.size() ? candidates.get(index) : null;
+            } catch (NumberFormatException invalidSelection) {
+                return null;
+            }
         }
 
         List<Location> fullLocationMatches = candidates.stream()
@@ -230,13 +326,50 @@ public class AssistantService {
             failure.put("status", "local_facts_required");
             failure.put("message", "Read local night facts first and use one of the exact localDate values returned.");
             output.put("output", failure.toString());
+        } catch (RunRecordUnavailableException error) {
+            throw error;
         } catch (RuntimeException error) {
             ObjectNode failure = objectMapper.createObjectNode();
             failure.put("status", "unavailable");
             failure.put("message", safeToolError(error));
             output.put("output", failure.toString());
         }
+        recordToolEvidence(call, output, context);
         return output;
+    }
+
+    private void recordToolEvidence(JsonNode call, ObjectNode output, ToolContext context) {
+        String name = call.path("name").asText();
+        ObjectNode evidence = objectMapper.createObjectNode();
+        JsonNode args;
+        JsonNode result;
+        try {
+            args = objectMapper.readTree(call.path("arguments").asText("{}"));
+            result = objectMapper.readTree(output.path("output").asText("{}"));
+        } catch (RuntimeException invalidJson) {
+            args = objectMapper.createObjectNode();
+            result = objectMapper.createObjectNode();
+        }
+        if (args.path("location_id").isIntegralNumber()) evidence.put("locationId", args.path("location_id").asLong());
+        if (args.path("local_date").isTextual()) evidence.put("localDate", args.path("local_date").asText());
+        if ("search_places".equals(name) && result.isArray()) {
+            evidence.put("candidateCount", result.size());
+            ArrayNode ids = evidence.putArray("candidateIds");
+            result.forEach(place -> ids.add(place.path("id").asLong()));
+        }
+        if ("get_local_night_facts".equals(name)) {
+            evidence.put("sourceStatus", result.path("sourceStatus").asText("unavailable"));
+        }
+        if ("get_night_outlook".equals(name)) {
+            evidence.put("level", result.path("level").asText("unavailable"));
+            evidence.put("reasonCode", result.path("reasonCode").asText("unavailable"));
+        }
+        if (result.isObject() && result.has("retrievedAt")) {
+            evidence.put("retrievedAt", result.path("retrievedAt").asText());
+        }
+        String outcome = result.isObject() && result.has("status")
+                ? result.path("status").asText("unavailable") : "OK";
+        records.recordTool(context.runId, ++context.toolSequence, name, outcome, evidence.toString());
     }
 
     private Object runTool(String name, JsonNode arguments, ToolContext context) {
@@ -253,6 +386,9 @@ public class AssistantService {
                 long locationId = requiredPositiveLong(arguments, "location_id");
                 requirePermittedLocation(locationId, context);
                 ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
+                records.recordFacts(context.runId, facts);
+                context.cloudFactsRequested = true;
+                recordCloudForecast(facts, context);
                 List<LocalDate> availableDates = facts == null || facts.outlook() == null
                         || facts.outlook().nights() == null
                         ? List.of()
@@ -282,6 +418,24 @@ public class AssistantService {
     private void requirePermittedLocation(long locationId, ToolContext context) {
         if (!context.permittedLocationIds.contains(locationId)) {
             throw new LocationSelectionRequiredException(context.latestCandidates);
+        }
+    }
+
+    private void recordCloudForecast(ObservationFactsResponse facts, ToolContext context) {
+        if (facts == null || facts.outlook() == null || facts.outlook().location() == null
+                || facts.cloudForecast() == null || facts.cloudForecast().data() == null
+                || facts.cloudForecast().data().cloudForecast() == null) return;
+        ZoneId zone;
+        try {
+            zone = ZoneId.of(facts.outlook().location().timezone());
+        } catch (RuntimeException invalidZone) {
+            return;
+        }
+        for (WeatherCloudPoint point : facts.cloudForecast().data().cloudForecast()) {
+            if (point == null || point.validAt() == null || point.cloudCoverPercent() == null) continue;
+            String localHour = point.validAt().atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT));
+            BigDecimal value = BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros();
+            context.cloudPercentagesByLocalHour.computeIfAbsent(localHour, ignored -> new TreeSet<>()).add(value);
         }
     }
 
@@ -327,9 +481,13 @@ public class AssistantService {
     }
 
     private static final class ToolContext {
+        private String runId;
+        private int toolSequence;
         private final Set<Long> permittedLocationIds = new HashSet<>();
         private List<Location> latestCandidates = List.of();
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
+        private final Map<String, Set<BigDecimal>> cloudPercentagesByLocalHour = new HashMap<>();
+        private boolean cloudFactsRequested;
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {

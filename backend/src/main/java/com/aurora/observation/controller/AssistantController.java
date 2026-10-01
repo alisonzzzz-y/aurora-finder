@@ -30,10 +30,7 @@ public class AssistantController {
     }
 
     private String clientKey(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",", 2)[0].trim();
-        }
+        // Forwarded headers are untrusted unless the server has verified the proxy.
         return request.getRemoteAddr();
     }
 }

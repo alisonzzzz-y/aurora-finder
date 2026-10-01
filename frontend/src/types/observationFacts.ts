@@ -21,6 +21,7 @@ export type SourceFact<T> = {
 }
 
 export type ObservationFacts = {
+  runId?: string
   generatedAtUtc: string
   outlook: Outlook
   auroraActivity: SourceFact<LocalAuroraActivity>

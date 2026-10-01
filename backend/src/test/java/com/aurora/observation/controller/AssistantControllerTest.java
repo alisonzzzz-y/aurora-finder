@@ -34,6 +34,56 @@ class AssistantControllerTest {
     }
 
     @Test
+    void acceptsLongAssistantHistorySoTheNextTurnCanContinue() throws Exception {
+        String historyAnswer = "a".repeat(4000);
+        mockMvc.perform(post("/api/v1/assistant/chat")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"message\":\"What about tomorrow?\",\"history\":[{\"role\":\"assistant\",\"content\":\""
+                                + historyAnswer + "\"}]}"))
+                .andExpect(status().isOk());
+        verify(assistant).chat(any());
+    }
+
+    @Test
+    void rejectsNullHistoryAndCandidateEntriesBeforeCallingAi() throws Exception {
+        for (String history : new String[]{"[null]",
+                "[{\"role\":\"assistant\",\"content\":\"Choose a place\",\"locationCandidates\":[null]}]"}) {
+            mockMvc.perform(post("/api/v1/assistant/chat")
+                            .contentType(APPLICATION_JSON)
+                            .content("{\"message\":\"1\",\"history\":" + history + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verify(assistant, never()).chat(any());
+    }
+
+    @Test
+    void boundsHistorySizeAndRejectsInvalidSelectedLocation() throws Exception {
+        mockMvc.perform(post("/api/v1/assistant/chat").contentType(APPLICATION_JSON)
+                        .content("{\"message\":\"Hello\",\"locationId\":-1}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/assistant/chat").contentType(APPLICATION_JSON)
+                        .content("{\"message\":\"Hello\",\"history\":[{\"role\":\"assistant\",\"content\":\""
+                                + "a".repeat(8001) + "\"}]}"))
+                .andExpect(status().isBadRequest());
+        verify(assistant, never()).chat(any());
+    }
+
+    @Test
+    void changingForwardedHeadersCannotBypassTheClientLimit() throws Exception {
+        MockMvc guarded = MockMvcBuilders.standaloneSetup(new AssistantController(assistant,
+                        new AssistantRequestLimiter(1, java.time.Duration.ofMinutes(10))))
+                .setControllerAdvice(new ApiErrorHandler()).build();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            guarded.perform(post("/api/v1/assistant/chat")
+                            .with(request -> { request.setRemoteAddr("192.0.2.10"); return request; })
+                            .header("X-Forwarded-For", "198.51.100." + attempt)
+                            .contentType(APPLICATION_JSON).content("{\"message\":\"Hello\"}"))
+                    .andExpect(attempt == 0 ? status().isOk() : status().isTooManyRequests());
+        }
+        verify(assistant, org.mockito.Mockito.times(1)).chat(any());
+    }
+
+    @Test
     void returnsSafeServiceUnavailableProblemWhenAiProviderFails() throws Exception {
         when(assistant.chat(any())).thenThrow(new AssistantUnavailableException("upstream key rejected"));
 

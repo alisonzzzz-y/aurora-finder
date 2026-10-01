@@ -48,10 +48,10 @@ export function NextAuroraStormForecast() {
       if (current.signal.aborted) return
       const [stormResult, kpResult, warningsResult] = results
       if (stormResult.status === 'fulfilled') { setForecast(stormResult.value); setError(null) }
-      else setError(stormResult.reason)
-      if (kpResult.status === 'fulfilled') setKp(kpResult.value)
+      else { setForecast(null); setError(stormResult.reason) }
+      setKp(kpResult.status === 'fulfilled' ? kpResult.value : null)
       if (warningsResult.status === 'fulfilled') { setWarnings(warningsResult.value); setWarningsError(false) }
-      else setWarningsError(true)
+      else { setWarnings(null); setWarningsError(true) }
       setNow(Date.now())
       setLoading(false)
     }
