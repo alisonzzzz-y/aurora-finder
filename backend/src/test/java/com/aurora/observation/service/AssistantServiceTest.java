@@ -78,6 +78,16 @@ class AssistantServiceTest {
         assertTrue(response.answer().contains("couldn't verify the hourly cloud values"));
     }
 
+    @Test
+    void rejectedSummaryStillShowsExactSourceSamplesWithLocalDates() {
+        String answer = chatWithCloudSource("At 20:00 cloud cover is 72%.").answer();
+        assertTrue(answer.contains("2026-09-28 20:00 +01:00: 78.9%"));
+        assertTrue(answer.contains("2026-09-28 21:00 +01:00: 18.7%"));
+        assertTrue(answer.contains("Source: MET Norway"));
+        assertTrue(answer.contains("https://example.test/weather"));
+        assertFalse(chatWithCloudSource("At 20:00 cloud cover is 72%.", true).answer().contains("Sample readings"));
+    }
+
     private AssistantChatResponse chatWithCloudSource(String answer) {
         return chatWithCloudSource(answer, false);
     }

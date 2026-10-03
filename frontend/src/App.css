@@ -171,8 +171,8 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 12px;
 }
 
 /* Long-form home page sections: content stays in the reading column below the map. */
-.home-content-sections { display: grid; gap: 0; margin: 30px -20px 0; }
-.home-section-band { padding: 30px clamp(24px, 4vw, 72px); }
+.home-content-sections { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 30px -20px 0; }
+.home-section-band { min-width: 0; padding: 30px clamp(24px, 4vw, 72px); }
 .home-section-band-odd { background: #15131f; }
 .home-section-band-even { background: #1b1828; }
 .resources-band { margin: 0 -20px; }

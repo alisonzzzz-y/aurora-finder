@@ -153,9 +153,9 @@ public class AssistantService {
                 List<Location> choices = toolContext.latestCandidates.size() > 1
                         ? toolContext.latestCandidates : List.of();
                 if (hasConflictingCorrectedCloudValues(answer)) {
-                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
                 } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
-                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language()));
+                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
                 }
                 return new AssistantChatResponse(answer, openAi.model(), choices);
             }
@@ -209,6 +209,29 @@ public class AssistantService {
         return chinese
                 ? "这次回复中的小时云量数值无法与天气来源数据核对。为避免误报，请查看页面里的当地云量预报图。"
                 : "I couldn't verify the hourly cloud values against the weather source. To avoid giving you inaccurate figures, please check the local cloud forecast chart.";
+    }
+
+    private String sourceCloudExamples(ToolContext context, boolean chinese) {
+        ObservationFactsResponse facts = context.latestCloudFacts;
+        if (facts == null || facts.cloudForecast().status() != com.aurora.observation.dto.FactFetchStatus.CURRENT) return "";
+        Location location = facts.outlook().location();
+        ZoneId zone = ZoneId.of(location.timezone());
+        var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
+        var points = facts.cloudForecast().data().cloudForecast().stream()
+                .filter(point -> point != null && point.validAt() != null && point.cloudCoverPercent() != null)
+                .sorted(java.util.Comparator.comparing(WeatherCloudPoint::validAt)).limit(2).toList();
+        if (points.isEmpty()) return "";
+        StringBuilder summary = new StringBuilder(chinese
+                ? "\n\n以下为天气来源的样本读数（当地时间，不代表整晚）：\n"
+                : "\n\nSample readings from the weather source, in local time. They do not describe the whole night:\n");
+        summary.append(location.name()).append(", ").append(location.country()).append("\n");
+        for (WeatherCloudPoint point : points) {
+            summary.append("- ").append(formatter.format(point.validAt().atZone(zone))).append(": ")
+                    .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
+        }
+        summary.append(chinese ? "数据来源：" : "Source: ").append(facts.cloudForecast().source());
+        if (facts.cloudForecast().sourceUrl() != null) summary.append("\n").append(facts.cloudForecast().sourceUrl());
+        return summary.toString();
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
@@ -431,6 +454,7 @@ public class AssistantService {
         } catch (RuntimeException invalidZone) {
             return;
         }
+        context.latestCloudFacts = facts;
         for (WeatherCloudPoint point : facts.cloudForecast().data().cloudForecast()) {
             if (point == null || point.validAt() == null || point.cloudCoverPercent() == null) continue;
             String localHour = point.validAt().atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT));
@@ -488,6 +512,7 @@ public class AssistantService {
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
         private final Map<String, Set<BigDecimal>> cloudPercentagesByLocalHour = new HashMap<>();
         private boolean cloudFactsRequested;
+        private ObservationFactsResponse latestCloudFacts;
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {
