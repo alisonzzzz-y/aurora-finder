@@ -3,6 +3,7 @@ package com.aurora.observation.record;
 import com.aurora.observation.dto.*;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -14,6 +15,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,6 +25,8 @@ class JdbcRunRecordStoreTest {
     private static final Instant NOW = Instant.parse("2026-10-01T12:00:00Z");
 
     @TempDir Path directory;
+    private final Map<String, JdbcTemplate> postgresDatabases = new HashMap<>();
+    private final List<String> postgresSchemas = new java.util.ArrayList<>();
 
     @Test
     void migratesEmptyDatabaseAndReadsMinimalEvidenceAfterRestart() {
@@ -105,7 +111,32 @@ class JdbcRunRecordStoreTest {
     }
 
     private JdbcTemplate jdbc(String url) {
-        return new JdbcTemplate(new DriverManagerDataSource(url, "sa", ""));
+        String postgresUrl = System.getenv("TEST_POSTGRES_URL");
+        if (postgresUrl == null || url.startsWith("jdbc:h2:tcp:")) {
+            return new JdbcTemplate(new DriverManagerDataSource(url, "sa", ""));
+        }
+        return postgresDatabases.computeIfAbsent(url, ignored -> {
+            String schema = "run_test_" + UUID.randomUUID().toString().replace("-", "");
+            JdbcTemplate admin = postgresAdmin(postgresUrl);
+            admin.execute("CREATE SCHEMA " + schema);
+            postgresSchemas.add(schema);
+            String scopedUrl = postgresUrl + (postgresUrl.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+            return new JdbcTemplate(new DriverManagerDataSource(scopedUrl,
+                    System.getenv("TEST_POSTGRES_USER"), System.getenv("TEST_POSTGRES_PASSWORD")));
+        });
+    }
+
+    private JdbcTemplate postgresAdmin(String url) {
+        return new JdbcTemplate(new DriverManagerDataSource(url,
+                System.getenv("TEST_POSTGRES_USER"), System.getenv("TEST_POSTGRES_PASSWORD")));
+    }
+
+    @AfterEach
+    void removeDisposableTestSchemas() {
+        String url = System.getenv("TEST_POSTGRES_URL");
+        if (url != null) {
+            for (String schema : postgresSchemas) postgresAdmin(url).execute("DROP SCHEMA " + schema + " CASCADE");
+        }
     }
 
     private JdbcRunRecordStore store(JdbcTemplate jdbc, Instant now) {
