@@ -25,21 +25,21 @@ class JdbcRunRecordStoreTest {
     private static final Instant NOW = Instant.parse("2026-10-01T12:00:00Z");
 
     @TempDir Path directory;
-    private final Map<String, JdbcTemplate> postgresDatabases = new HashMap<>();
-    private final List<String> postgresSchemas = new java.util.ArrayList<>();
+    private final Map<String, JdbcTemplate> mysqlDatabases = new HashMap<>();
+    private final List<String> mysqlSchemas = new java.util.ArrayList<>();
 
     @Test
     void migratesEmptyDatabaseAndReadsMinimalEvidenceAfterRestart() {
         String url = "jdbc:h2:file:" + directory.resolve("records") + ";DB_CLOSE_ON_EXIT=FALSE";
         JdbcTemplate first = jdbc(url);
-        assertEquals(2, Flyway.configure().dataSource(first.getDataSource()).load().migrate().migrationsExecuted);
+        assertEquals(2, Flyway.configure().dataSource(first.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
         JdbcRunRecordStore records = store(first, NOW);
         String id = records.begin("PAGE_FACTS", 2964574L);
         records.recordFacts(id, facts());
         records.finish(id, "COMPLETED");
 
         JdbcTemplate restarted = jdbc(url);
-        assertEquals(0, Flyway.configure().dataSource(restarted.getDataSource()).load().migrate().migrationsExecuted);
+        assertEquals(0, Flyway.configure().dataSource(restarted.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
         assertEquals("COMPLETED", restarted.queryForObject(
                 "SELECT result_status FROM evaluation_run WHERE run_id = ?", String.class, id));
         assertEquals(1, restarted.queryForObject(
@@ -53,6 +53,8 @@ class JdbcRunRecordStoreTest {
         assertEquals("get_local_night_facts", restarted.queryForObject(
                 "SELECT tool_name FROM assistant_tool_call WHERE run_id = ?", String.class, id));
         RunRecord view = store(restarted, NOW).find(id).orElseThrow();
+        assertEquals(NOW, view.createdAtUtc());
+        assertEquals(NOW, view.completedAtUtc());
         assertEquals(JdbcRunRecordStore.RULE_VERSION, view.ruleVersion());
         assertEquals("NOT_VALIDATED", view.ruleStatus());
         assertEquals("OVERLAPS", view.coverageStatus());
@@ -63,13 +65,25 @@ class JdbcRunRecordStoreTest {
     }
 
     @Test
+    void productionConfigurationSelectsCompatibleMigrations() {
+        DriverManagerDataSource dataSource = (DriverManagerDataSource) jdbc(
+                "jdbc:h2:mem:configuredrecords;DB_CLOSE_DELAY=-1").getDataSource();
+        RunRecordStore records = new RunRecordConfiguration().jdbcRunRecordStore(
+                dataSource.getUrl(), dataSource.getUsername(), dataSource.getPassword(), 7,
+                Clock.fixed(NOW, ZoneOffset.UTC), new ObjectMapper());
+        String id = records.begin("PAGE_FACTS", 2964574L);
+        records.finish(id, "COMPLETED");
+        assertEquals(NOW, records.find(id).orElseThrow().createdAtUtc());
+    }
+
+    @Test
     void upgradesExistingRecordsWithoutLosingEvidence() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:upgradefacts;DB_CLOSE_DELAY=-1");
-        Flyway.configure().dataSource(jdbc.getDataSource()).target("1").load().migrate();
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).target("1").load().migrate();
         String id = store(jdbc, NOW).begin("PAGE_FACTS", 2964574L);
         jdbc.update("INSERT INTO evaluation_night(run_id, local_date, window_start_utc, window_end_utc, level, reason_code) VALUES (?, ?, ?, ?, ?, ?)",
                 id, java.sql.Date.valueOf("2026-10-01"), java.sql.Timestamp.from(NOW), java.sql.Timestamp.from(NOW.plusSeconds(86400)), "INSUFFICIENT_DATA", "RULES_NOT_VALIDATED");
-        Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
         RunRecord view = store(jdbc, NOW).find(id).orElseThrow();
         assertEquals(1, view.nights().size());
         assertEquals(2964574L, view.nights().getFirst().locationId());
@@ -81,7 +95,7 @@ class JdbcRunRecordStoreTest {
     @Test
     void retainsMultipleLocationsAndRepeatedQueries() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:multifacts;DB_CLOSE_DELAY=-1");
-        Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
         JdbcRunRecordStore records = store(jdbc, NOW);
         String id = records.begin("ASSISTANT", null);
         records.recordFacts(id, facts(2964574));
@@ -97,7 +111,7 @@ class JdbcRunRecordStoreTest {
     @Test
     void deletesExpiredRunAndChildRecordsTogether() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:runretention;DB_CLOSE_DELAY=-1");
-        Flyway.configure().dataSource(jdbc.getDataSource()).load().migrate();
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
         String old = store(jdbc, NOW).begin("ASSISTANT", null);
         store(jdbc, NOW.plusSeconds(8 * 86400L)).begin("ASSISTANT", null);
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM evaluation_run WHERE run_id = ?", Integer.class, old));
@@ -110,32 +124,36 @@ class JdbcRunRecordStoreTest {
         assertThrows(RunRecordUnavailableException.class, () -> store(jdbc, NOW).begin("PAGE_FACTS", 1L));
     }
 
+    private String migrations() {
+        return System.getenv("TEST_MYSQL_URL") == null ? "classpath:db/migration" : "classpath:db/mysql";
+    }
+
     private JdbcTemplate jdbc(String url) {
-        String postgresUrl = System.getenv("TEST_POSTGRES_URL");
-        if (postgresUrl == null || url.startsWith("jdbc:h2:tcp:")) {
+        String mysqlUrl = System.getenv("TEST_MYSQL_URL");
+        if (mysqlUrl == null || url.startsWith("jdbc:h2:tcp:")) {
             return new JdbcTemplate(new DriverManagerDataSource(url, "sa", ""));
         }
-        return postgresDatabases.computeIfAbsent(url, ignored -> {
+        return mysqlDatabases.computeIfAbsent(url, ignored -> {
             String schema = "run_test_" + UUID.randomUUID().toString().replace("-", "");
-            JdbcTemplate admin = postgresAdmin(postgresUrl);
-            admin.execute("CREATE SCHEMA " + schema);
-            postgresSchemas.add(schema);
-            String scopedUrl = postgresUrl + (postgresUrl.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+            JdbcTemplate admin = mysqlAdmin(mysqlUrl);
+            admin.execute("CREATE DATABASE " + schema);
+            mysqlSchemas.add(schema);
+            String scopedUrl = mysqlUrl.replaceFirst("/[^/?]+(?=\\?|$)", "/" + schema);
             return new JdbcTemplate(new DriverManagerDataSource(scopedUrl,
-                    System.getenv("TEST_POSTGRES_USER"), System.getenv("TEST_POSTGRES_PASSWORD")));
+                    System.getenv("TEST_MYSQL_USER"), System.getenv("TEST_MYSQL_PASSWORD")));
         });
     }
 
-    private JdbcTemplate postgresAdmin(String url) {
+    private JdbcTemplate mysqlAdmin(String url) {
         return new JdbcTemplate(new DriverManagerDataSource(url,
-                System.getenv("TEST_POSTGRES_USER"), System.getenv("TEST_POSTGRES_PASSWORD")));
+                System.getenv("TEST_MYSQL_USER"), System.getenv("TEST_MYSQL_PASSWORD")));
     }
 
     @AfterEach
     void removeDisposableTestSchemas() {
-        String url = System.getenv("TEST_POSTGRES_URL");
+        String url = System.getenv("TEST_MYSQL_URL");
         if (url != null) {
-            for (String schema : postgresSchemas) postgresAdmin(url).execute("DROP SCHEMA " + schema + " CASCADE");
+            for (String schema : mysqlSchemas) mysqlAdmin(url).execute("DROP DATABASE " + schema);
         }
     }
 

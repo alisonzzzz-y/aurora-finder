@@ -1,3 +1,5 @@
+> 2026-10-06 更新：当前部署方案改为 Railway MySQL + Render，连接配置见 [database-setup.md](database-setup.md)。以下 PostgreSQL 描述保留为早期设计记录。
+
 # 运行记录与持久化
 
 状态：代码已实现并通过本地文件数据库重启读回测试；线上 PostgreSQL 尚需配置和部署验收。2026-10-01。
