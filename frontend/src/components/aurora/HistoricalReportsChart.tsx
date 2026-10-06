@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import reportSummary from '../../data/auroraHistorySummary.json'
@@ -48,8 +49,7 @@ export function HistoricalReportsChart() {
 
   return <section className="historical-reports" aria-labelledby="historical-reports-title">
     <p className="eyebrow">{t('historicalReportsEyebrow')}</p>
-    <h2 id="historical-reports-title">{t('historicalReportsTitle')}</h2>
-    <p className="historical-reports-intro">{t('historicalReportsIntro')}</p>
+    <h2 id="historical-reports-title">{t('historicalReportsTitle')}<InfoHint>{t('historicalReportsIntro')}</InfoHint></h2>
     <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong className="history-coverage-range">{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div><div><strong>{peakYear.year}</strong><span>{t('historyPeakYear')} · {number.format(peakYear.reports)} {t('historicalReportsCountLabel')}</span></div></div>
     <figure className="historical-reports-figure">
       <div className="historical-reports-chart-wrap" ref={chartRef}>

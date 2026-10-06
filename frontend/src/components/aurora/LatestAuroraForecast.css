@@ -1,3 +1,4 @@
+.kp-value-with-info { display: inline-flex; align-items: center; }
 .latest-aurora-forecast { margin-inline: clamp(18px, 3vw, 56px); padding: 22px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .latest-forecast-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .latest-forecast-heading .eyebrow { margin-bottom: 7px; }
@@ -13,7 +14,6 @@
 .latest-forecast-meta { display: grid; gap: 12px; justify-items: end; text-align: right; color: var(--muted); font-size: 12px; }
 .latest-forecast-meta > div { display: grid; gap: 4px; }
 .latest-forecast-meta time { color: var(--text); font-size: 14px; }
-.latest-forecast-note { grid-column: 1 / -1; margin: 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .latest-forecast-message { margin: 18px 0 0; color: var(--muted); font-size: 13px; }
 @media (max-width: 720px) {
   .latest-aurora-forecast { margin-inline: 14px; padding-block: 19px; }
