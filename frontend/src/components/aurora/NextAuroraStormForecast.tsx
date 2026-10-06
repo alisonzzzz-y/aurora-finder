@@ -93,18 +93,23 @@ export function NextAuroraStormForecast() {
     </div>}
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="storm-outlook-message error">{localizeError(error, t)}</p>}
-    {!loading && forecast && <>
-      <StormComparisonChart days={forecast.days} />
-      <details className="visual-details"><summary>{t('kpPeak')}</summary>{forecast.days.map(day => {
-        const peak = kp ? dayPeak(kp.records, day.date) : undefined
-        return <p key={day.date}>{day.date} (UTC): {peak ? <>Kp {peak.kp.toFixed(2)} · {kpPeriodRange(peak.periodStart, locale)}</> : t('kpPeakUnavailable')}</p>
-      })}</details>
-      <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
-    </>}
-    <details className="visual-details"><summary>{t('bestViewingPlacesTitle')}</summary><div className="storm-best-places">
-      <h3>{t('bestViewingPlacesTitle')}</h3>
-      <p>{t('bestViewingPlacesPending')}</p>
+    {!loading && forecast && <StormComparisonChart days={forecast.days} />}
+    <div className="storm-forecast-columns">
+      <section className="storm-peak-column">
+        <h3>{t('kpPeak')}</h3>
+        {!loading && forecast ? <>
+          {forecast.days.map(day => {
+            const peak = kp ? dayPeak(kp.records, day.date) : undefined
+            return <p key={day.date}>{day.date} (UTC): {peak ? <>Kp {peak.kp.toFixed(2)} · {kpPeriodRange(peak.periodStart, locale)}</> : t('kpPeakUnavailable')}</p>
+          })}
+          <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
+        </> : <p>{loading ? t('loading') : t('kpPeakUnavailable')}</p>}
+      </section>
+      <section className="storm-best-places">
+        <h3>{t('bestViewingPlacesTitle')}</h3>
+        <p>{t('bestViewingPlacesPending')}</p>
+      </section>
     </div>
-    </details><p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
+    <p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
   </section>
 }
