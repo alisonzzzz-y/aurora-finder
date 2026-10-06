@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { useEffect, useRef, useState } from 'react'
 import { getKpIndex } from '../../api/kpIndex'
 import { transientRetryDelay } from '../../api/requestError'
@@ -134,7 +135,7 @@ export function LatestAuroraForecast() {
     {!loading && error === null && !forecast && <p className="latest-forecast-message">{t('noUpcomingForecast')}</p>}
     {!loading && error === null && forecast && levelKey && <div className="latest-forecast-content">
       <div className="latest-forecast-value">
-        <strong>Kp {forecast.kp.toFixed(2)}</strong>
+        <span className="kp-value-with-info"><strong>Kp {forecast.kp.toFixed(2)}</strong><InfoHint><p>{t('globalKpNote')}</p><p>{t('geomagneticScaleNote')}</p></InfoHint></span>
         <span className={`activity-badge activity-${forecast.activityLevel.toLowerCase()}`}>
           {t(levelKey)}
         </span>
@@ -149,14 +150,12 @@ export function LatestAuroraForecast() {
           <time dateTime={data.retrievedAt}>{formatLocalTime(data.retrievedAt, locale)}</time>
         </div>}
       </div>
-      <p className="latest-forecast-note">{t('globalKpNote')}</p>
-      <p className="storm-scale-note">{t('geomagneticScaleNote')}</p>
       <div className="kp-trend">
         <div className="kp-trend-heading"><h3>{t('kpChartTitle')}</h3><span>{t('kpTrendLocalTime')}</span></div>
         <div className="kp-trend-layout">
           {periods.reported && <div className="kp-latest-reported">
             <span>{t('latestReportedKp')}</span>
-            <strong>Kp {periods.reported.kp.toFixed(2)}</strong>
+            <span className="kp-value-with-info"><strong>Kp {periods.reported.kp.toFixed(2)}</strong><InfoHint><p>{t('globalKpNote')}</p><p>{t('geomagneticScaleNote')}</p></InfoHint></span>
             <small>{t(periods.reported.type === 'OBSERVED' ? 'observedKp' : 'estimatedKp')} · {formatLocalTime(periods.reported.periodStart, locale)}</small>
           </div>}
           <div className="kp-chart-area">

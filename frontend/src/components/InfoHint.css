@@ -1,0 +1,8 @@
+.info-hint { position: relative; display: inline-flex; vertical-align: middle; margin-inline-start: 8px; font-size: 13px; font-weight: 400; letter-spacing: normal; }
+.info-hint-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font: 600 13px Georgia, serif; cursor: help; }
+.info-hint-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.info-hint-content { position: absolute; z-index: 30; inset-block-start: calc(100% + 7px); inset-inline-start: -80px; width: min(320px, 70vw); padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #211b30; color: var(--text); box-shadow: 0 6px 20px #0005; line-height: 1.65; text-align: start; visibility: hidden; opacity: 0; transition: opacity .12s; }
+.info-hint-content::before { content: ''; position: absolute; inset: -9px 0 auto; height: 9px; }
+.info-hint-content p { margin: 0; font-size: 13px; font-weight: 400; }
+.info-hint-content p + p { margin-top: 10px; }
+.info-hint:hover .info-hint-content, .info-hint:focus-within .info-hint-content { visibility: visible; opacity: 1; }

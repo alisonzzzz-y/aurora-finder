@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import type { AuroraMapData } from '../../types/auroraMap'
 import { useI18n } from '../../i18n'
 import { strongestDistinctPoints } from './activityPoints'
@@ -21,7 +22,7 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
 
   return <section className="current-activity-areas" aria-labelledby="current-activity-title">
     <p className="eyebrow">{t('currentAreasLabel')}</p>
-    <h2 id="current-activity-title">{t('currentAreasTitle')}</h2>
+    <h2 id="current-activity-title">{t('currentAreasTitle')}<InfoHint>{t('currentAreasNote')}</InfoHint></h2>
     <p className="activity-areas-hint">{t('activityAreasMapHint')}</p>
     {loading && <p className="activity-areas-message" role="status">{t('activityAreasLoading')}</p>}
     {!loading && error && <p className="activity-areas-message" role="status">{t('activityAreasUnavailable')}</p>}
@@ -49,6 +50,5 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
       })}
     </ol>}
     {!loading && !error && data?.status === 'CURRENT' && points.length === 0 && <p className="activity-areas-message">{t('activityAreasUnavailable')}</p>}
-    <p className="activity-areas-note">{t('currentAreasNote')}</p>
   </section>
 }
