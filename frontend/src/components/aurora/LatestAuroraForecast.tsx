@@ -103,7 +103,7 @@ export function LatestAuroraForecast() {
     return () => observer.disconnect()
   }, [forecast])
 
-  const chartHeight = 230
+  const chartHeight = 320
   const chartPadding = { top: 14, right: 14, bottom: 34, left: 34 }
   const chartStart = chartPadding.left
   const chartEnd = Math.max(chartStart + 1, chartWidth - chartPadding.right)
