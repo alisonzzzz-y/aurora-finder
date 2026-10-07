@@ -35,12 +35,12 @@ public class WeatherService {
         }
         WeatherForecastResponse source = provider.forecast(latitude, longitude);
         LocalDate tonight = LocalDate.now(clock.withZone(zone));
-        var windowStart = tonight.atTime(LocalTime.NOON).atZone(zone).toInstant();
-        var windowEnd = tonight.plusDays(1).atTime(LocalTime.NOON).atZone(zone).toInstant();
-        List<WeatherCloudPoint> tonightCloud = source.cloudForecast().stream()
+        var windowStart = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+        var windowEnd = tonight.plusDays(3).atTime(LocalTime.NOON).atZone(zone).toInstant();
+        List<WeatherCloudPoint> clouds = source.cloudForecast().stream()
                 .filter(point -> !point.validAt().isBefore(windowStart) && point.validAt().isBefore(windowEnd))
                 .toList();
         return new WeatherForecastResponse(source.retrievedAt(), source.expiresAt(), source.source(),
-                source.requestedLatitude(), source.requestedLongitude(), tonightCloud);
+                source.requestedLatitude(), source.requestedLongitude(), clouds);
     }
 }

@@ -97,7 +97,7 @@ class ObservationWorkflowIntegrationTest {
         for (JsonNode night : nights) assertEquals("INSUFFICIENT_DATA", night.path("level").asText());
         assertEquals("NOT_VALIDATED", facts.path("outlook").path("ruleStatus").asText());
         assertEquals("CURRENT", facts.path("sourceStatus").asText());
-        assertEquals(1, facts.path("cloudForecast").path("data").path("cloudForecast").size());
+        assertEquals(2, facts.path("cloudForecast").path("data").path("cloudForecast").size());
 
         JsonNode map = readGet("/api/v1/aurora-map");
         assertEquals("CURRENT", map.path("status").asText());

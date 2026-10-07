@@ -1,0 +1,13 @@
+.comparison-row { padding: 1.25rem 0; border-top: 1px solid #494158; margin-top: 1.25rem; }
+.comparison-row header, .conditions-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.comparison-row h4 { margin: 0; }
+.place-comparison button { padding: .45rem .7rem; }
+.place-comparison .location-search { margin: 1rem 0; }
+.viewing-conditions { padding: 1rem 0; min-width: 0; }
+.conditions-heading { justify-content: flex-start; font-weight: 600; }
+.conditions-level { display: inline-block; margin-top: .75rem; font-size: 1.4rem; }
+.conditions-high { color: #d8c4ff; }
+.conditions-medium { color: #d5c394; }
+.conditions-low, .conditions-insufficient_data { color: #b9b2c4; }
+.conditions-factors { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: .75rem 0; }
+.viewing-conditions small, .place-comparison > small { color: #b9b2c4; }

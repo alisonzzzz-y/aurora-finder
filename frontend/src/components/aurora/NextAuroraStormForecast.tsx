@@ -1,3 +1,5 @@
+import { PlaceComparison } from '../location/PlaceComparison'
+import type { Location } from '../../types/location'
 import { InfoHint } from '../InfoHint'
 import { StormComparisonChart, WarningTimeline } from './StormComparisonChart'
 import { useEffect, useState } from 'react'
@@ -26,7 +28,7 @@ function kpPeriodRange(value: string, locale: string) {
   return `${startLabel}–${endLabel}`
 }
 
-export function NextAuroraStormForecast() {
+export function NextAuroraStormForecast({ onSelect }: { onSelect: (location: Location) => void }) {
   const { language, t } = useI18n()
   const [forecast, setForecast] = useState<GeomagneticStormForecast | null>(null)
   const [kp, setKp] = useState<KpIndexData | null>(null)
@@ -106,8 +108,7 @@ export function NextAuroraStormForecast() {
         </> : <p>{loading ? t('loading') : t('kpPeakUnavailable')}</p>}
       </section>
       <section className="storm-best-places">
-        <h3>{t('bestViewingPlacesTitle')}</h3>
-        <p>{t('bestViewingPlacesPending')}</p>
+        <PlaceComparison onSelect={onSelect} />
       </section>
     </div>
     <p className="storm-outlook-note">{t('stormOutlookLimit')}</p>

@@ -72,7 +72,7 @@ public class ObservationController {
             records.recordFacts(runId, result);
             records.finish(runId, "COMPLETED");
             return new ObservationFactsResponse(result.generatedAtUtc(), result.outlook(), result.auroraActivity(),
-                    result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId);
+                    result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId, result.viewingConditions());
         } catch (RuntimeException failure) {
             records.finish(runId, "FAILED");
             throw failure;
