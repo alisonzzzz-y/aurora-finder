@@ -111,7 +111,7 @@ class ObservationFactsServiceTest {
         assertEquals(com.aurora.observation.dto.ForecastCoverage.Status.OVERLAPS, response.coverage().status());
         assertEquals(1, response.coverage().cloudPointsWithValuesInsideShortRange());
         assertEquals(com.aurora.observation.dto.FactTimeScope.SHORT_RANGE, response.auroraActivity().timeScope());
-        assertEquals(com.aurora.observation.dto.FactTimeScope.TONIGHT, response.cloudForecast().timeScope());
+        assertEquals(com.aurora.observation.dto.FactTimeScope.THREE_LOCAL_NIGHTS, response.cloudForecast().timeScope());
         assertEquals(com.aurora.observation.dto.FactTimeScope.THREE_LOCAL_NIGHTS, response.solarDarkness().timeScope());
         assertEquals("https://www.spaceweather.gov/products/aurora-30-minute-forecast",
                 response.auroraActivity().sourceUrl());
@@ -143,7 +143,7 @@ class ObservationFactsServiceTest {
     }
 
     private ObservationFactsService service(OutlookService outlooks, AuroraMapService aurora, WeatherService weather) {
-        return new ObservationFactsService(outlooks, aurora, weather, Clock.fixed(NOW, ZoneOffset.UTC));
+        return new ObservationFactsService(outlooks, aurora, weather, Clock.fixed(NOW, ZoneOffset.UTC), new ViewingConditionsService(new SolarDarknessService()));
     }
 
     private OutlookResponse outlook() {

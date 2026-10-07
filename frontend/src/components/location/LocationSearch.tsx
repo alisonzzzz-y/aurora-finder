@@ -1,18 +1,21 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { searchLocations } from '../../api/locations'
 import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import './LocationSearch.css'
 
 type Props = {
+  title?: string
+  buttonLabel?: string
   busy: boolean
   onSelect: (location: Location) => void
 }
 
 type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error'
 
-export function LocationSearch({ busy, onSelect }: Props) {
+export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
   const { t } = useI18n()
+  const id = useId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Location[]>([])
   const [error, setError] = useState<unknown>(null)
@@ -97,25 +100,25 @@ export function LocationSearch({ busy, onSelect }: Props) {
   }
 
   const describedBy = state === 'empty'
-    ? 'place-search-status'
+    ? `${id}-status`
     : state === 'error'
-      ? 'place-search-error'
+      ? `${id}-error`
       : undefined
 
   return (
-    <section className="search-panel" aria-labelledby="search-title">
-      <h2 id="search-title">{t('findPlace')}</h2>
+    <section className="search-panel" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`}>{title ?? t('findPlace')}</h2>
       <form className="search-form" onSubmit={submitSearch}>
         <div className="search-field-wrap">
-          <label htmlFor="place-search" className="sr-only">{t('placeNameLabel')}</label>
+          <label htmlFor={`${id}-input`} className="sr-only">{t('placeNameLabel')}</label>
           <input
-            id="place-search"
+            id={`${id}-input`}
             ref={inputRef}
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={state === 'results'}
-            aria-controls="place-search-results"
-            aria-activedescendant={activeIndex >= 0 ? `place-option-${results[activeIndex]?.id}` : undefined}
+            aria-controls={state === 'results' ? `${id}-results` : undefined}
+            aria-activedescendant={activeIndex >= 0 ? `${id}-option-${results[activeIndex]?.id}` : undefined}
             aria-describedby={describedBy}
             autoComplete="off"
             value={query}
@@ -127,21 +130,21 @@ export function LocationSearch({ busy, onSelect }: Props) {
           />
         </div>
         <button className="location-search-button" type="submit" disabled={busy || state === 'loading' || !selectedLocation}>
-          {state === 'loading' ? t('loading') : t('search')}
+          {state === 'loading' ? t('loading') : buttonLabel ?? t('search')}
         </button>
       </form>
       {state === 'loading' && <p className="search-status" role="status">{t('loading')}</p>}
-      {state === 'error' && error !== null && <p id="place-search-error" className="error search-status" role="alert">{localizeError(error, t)}</p>}
-      {state === 'empty' && <p id="place-search-status" className="hint search-status" role="status">{t('emptySearch')}</p>}
+      {state === 'error' && error !== null && <p id={`${id}-error`} className="error search-status" role="alert">{localizeError(error, t)}</p>}
+      {state === 'empty' && <p id={`${id}-status`} className="hint search-status" role="status">{t('emptySearch')}</p>}
       {selectedLocation && <p className="selected-place-confirmation" role="status">
         {t('selectedPlace')}: {[selectedLocation.name, selectedLocation.region, selectedLocation.subregion, selectedLocation.country].filter(Boolean).join(', ')}
       </p>}
-      {state === 'results' && <ul id="place-search-results" className="results" role="listbox" aria-label={t('matchingLocations')}>
+      {state === 'results' && <ul id={`${id}-results`} className="results" role="listbox" aria-label={t('matchingLocations')}>
         {results.map((location, index) => {
           const administrativeArea = [location.region, location.subregion].filter(Boolean).join(', ')
           return <li key={location.id} role="presentation">
             <button
-              id={`place-option-${location.id}`}
+              id={`${id}-option-${location.id}`}
               type="button"
               role="option"
               aria-selected={activeIndex === index}

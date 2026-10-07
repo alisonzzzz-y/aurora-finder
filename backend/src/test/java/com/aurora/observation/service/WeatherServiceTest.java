@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 class WeatherServiceTest {
     @Test
-    void selectsOnlySourcePointsInTheSelectedPlacesTonightWindowAndKeepsGaps() {
+    void keepsSourcePointsAcrossThreeLocalNightsAndPreservesGaps() {
         WeatherProvider provider = mock(WeatherProvider.class);
         var source = new WeatherForecastResponse(Instant.parse("2026-09-24T23:30:00Z"),
                 Instant.parse("2026-09-25T01:00:00Z"), "MET Norway", 53.333, -6.248,
@@ -26,17 +26,20 @@ class WeatherServiceTest {
                         new WeatherCloudPoint(Instant.parse("2026-09-25T10:00:00Z"), 20.0),
                         new WeatherCloudPoint(Instant.parse("2026-09-25T11:00:00Z"), null),
                         new WeatherCloudPoint(Instant.parse("2026-09-25T17:00:00Z"), 75.0),
-                        new WeatherCloudPoint(Instant.parse("2026-09-26T11:00:00Z"), 0.0)));
+                        new WeatherCloudPoint(Instant.parse("2026-09-26T11:00:00Z"), 0.0),
+                        new WeatherCloudPoint(Instant.parse("2026-09-26T23:00:00Z"), 40.0),
+                        new WeatherCloudPoint(Instant.parse("2026-09-27T23:00:00Z"), 50.0),
+                        new WeatherCloudPoint(Instant.parse("2026-09-28T11:00:00Z"), 90.0)));
         when(provider.forecast(53.333, -6.248)).thenReturn(source);
         Clock clock = Clock.fixed(Instant.parse("2026-09-24T23:30:00Z"), ZoneOffset.UTC);
         WeatherService service = new WeatherService(provider, clock);
 
         var result = service.forecast(53.333, -6.248, "Europe/Dublin");
 
-        assertEquals(2, result.cloudForecast().size());
-        assertEquals(Instant.parse("2026-09-25T11:00:00Z"), result.cloudForecast().getFirst().validAt());
-        assertNull(result.cloudForecast().getFirst().cloudCoverPercent());
-        assertEquals(75.0, result.cloudForecast().getLast().cloudCoverPercent());
+        assertEquals(6, result.cloudForecast().size());
+        assertEquals(Instant.parse("2026-09-25T10:00:00Z"), result.cloudForecast().getFirst().validAt());
+        assertNull(result.cloudForecast().get(1).cloudCoverPercent());
+        assertEquals(50.0, result.cloudForecast().getLast().cloudCoverPercent());
     }
 
     @Test

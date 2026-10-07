@@ -29,13 +29,15 @@ public class ObservationFactsService {
     private final AuroraMapService aurora;
     private final WeatherService weather;
     private final Clock clock;
+    private final ViewingConditionsService conditions;
 
     public ObservationFactsService(OutlookService outlooks, AuroraMapService aurora,
-                                   WeatherService weather, Clock clock) {
+                                   WeatherService weather, Clock clock, ViewingConditionsService conditions) {
         this.outlooks = outlooks;
         this.aurora = aurora;
         this.weather = weather;
         this.clock = clock;
+        this.conditions = conditions;
     }
 
     public ObservationFactsResponse forLocation(long locationId) {
@@ -51,7 +53,8 @@ public class ObservationFactsService {
         FactFetchStatus aggregate = usableSources == providerFacts.size() ? FactFetchStatus.CURRENT
                 : usableSources == 0 ? FactFetchStatus.UNAVAILABLE : FactFetchStatus.PARTIAL;
         return new ObservationFactsResponse(clock.instant(), outlook, auroraFact, cloudFact, solarFact,
-                compareCoverage(auroraFact, cloudFact), aggregate);
+                compareCoverage(auroraFact, cloudFact), aggregate, null,
+                conditions.evaluate(location, auroraFact, cloudFact, clock.instant()));
     }
 
     private SourceFact<LocalAuroraActivityResponse> loadAurora(double latitude, double longitude) {
@@ -88,7 +91,7 @@ public class ObservationFactsService {
             List<Instant> times = response.cloudForecast().stream().map(point -> point.validAt()).sorted().toList();
             FactFetchStatus status = response.cloudForecast().stream().noneMatch(point -> point.cloudCoverPercent() != null)
                     ? FactFetchStatus.NO_COVERAGE : FactFetchStatus.CURRENT;
-            return new SourceFact<>(status, FactTimeScope.TONIGHT, response.retrievedAt(), null, null,
+            return new SourceFact<>(status, FactTimeScope.THREE_LOCAL_NIGHTS, response.retrievedAt(), null, null,
                     times.stream().min(Comparator.naturalOrder()).orElse(null),
                     times.stream().max(Comparator.naturalOrder()).orElse(null), response.source(), MET_NO_URL,
                     null, response);
@@ -98,7 +101,7 @@ public class ObservationFactsService {
     }
 
     private <T> SourceFact<T> unavailable(String source, String sourceUrl, ProviderFailure failure) {
-        FactTimeScope scope = source.equals("NOAA OVATION") ? FactTimeScope.SHORT_RANGE : FactTimeScope.TONIGHT;
+        FactTimeScope scope = source.equals("NOAA OVATION") ? FactTimeScope.SHORT_RANGE : FactTimeScope.THREE_LOCAL_NIGHTS;
         return new SourceFact<>(FactFetchStatus.UNAVAILABLE, scope, null, null, null, null, null,
                 source, sourceUrl, failure, null);
     }

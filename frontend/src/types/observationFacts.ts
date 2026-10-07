@@ -21,6 +21,17 @@ export type SourceFact<T> = {
 }
 
 export type ObservationFacts = {
+  viewingConditions?: {
+    level: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT_DATA'
+    evaluatedAtUtc: string | null
+    validUntilUtc: string | null
+    modelSignal: number | null
+    cloudPercent: number | null
+    dark: boolean | null
+    reasons: string[]
+    ruleVersion: string
+    probabilityCalibrated: boolean
+  }
   runId?: string
   generatedAtUtc: string
   outlook: Outlook
@@ -30,7 +41,7 @@ export type ObservationFacts = {
   coverage: {
     status: 'OVERLAPS' | 'NO_OVERLAP' | 'CANNOT_CHECK'
     firstScope: 'SHORT_RANGE' | 'TONIGHT'
-    secondScope: 'SHORT_RANGE' | 'TONIGHT'
+    secondScope: 'SHORT_RANGE' | 'TONIGHT' | 'THREE_LOCAL_NIGHTS'
     shortRangeStartUtc: string | null
     shortRangeEndUtc: string | null
     cloudPointsWithValuesInsideShortRange: number

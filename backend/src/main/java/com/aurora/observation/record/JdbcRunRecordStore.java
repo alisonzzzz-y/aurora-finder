@@ -182,7 +182,7 @@ public class JdbcRunRecordStore implements RunRecordStore {
         LocalAuroraActivityResponse data = facts.auroraActivity().data();
         if (data == null) return "{}";
         return mapper.writeValueAsString(new AuroraEvidence(data.status().name(),
-                data.level() == null ? null : data.level().name(), data.modelValue()));
+                data.level() == null ? null : data.level().name(), data.modelValue(), facts.viewingConditions()));
     }
 
     private String cloudEvidence(ObservationFactsResponse facts) {
@@ -194,5 +194,5 @@ public class JdbcRunRecordStore implements RunRecordStore {
         return value == null ? null : Timestamp.from(value);
     }
 
-    private record AuroraEvidence(String status, String level, Integer modelValue) {}
+    private record AuroraEvidence(String status, String level, Integer modelValue, com.aurora.observation.dto.ViewingConditions viewingConditions) {}
 }

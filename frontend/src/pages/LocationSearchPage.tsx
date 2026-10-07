@@ -38,7 +38,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   }
 
   return <>
-    <section className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
+    <section id="aurora-dashboard" className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
           <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={facts?.outlook.location} />
@@ -71,7 +71,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <LatestAuroraForecast />
       </div>
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
-        <NextAuroraStormForecast />
+        <NextAuroraStormForecast onSelect={location => { selectLocation(location); document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: 'smooth' }) }} />
       </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('historicalReportsTitle')}>
         <HistoricalReportsChart />

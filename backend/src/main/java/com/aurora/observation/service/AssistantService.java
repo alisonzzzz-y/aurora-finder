@@ -49,6 +49,11 @@ public class AssistantService {
             app has no validated local recurrence dataset and cannot give a reliable interval. Never estimate that
             frequency from latitude, Kp, current OVATION values, or isolated community reports. Offer to check a
             supported current or near-term forecast instead.
+            The viewingConditions field is an experimental short-range conditions rating, not a probability.
+            If reporting its HIGH/MEDIUM/LOW level, give evaluatedAtUtc and state the rule is uncalibrated.
+            Never turn a rating or model signal into a viewing percentage or extend it to a whole night.
+            Cloud forecasts now cover the remaining current hours and three local nights; select the user's
+            requested local date before summarising cloud values. Missing future aurora data stays missing.
             Explain uncertainty plainly. Distinguish global geomagnetic activity from local viewing conditions.
             Search for a place before using local tools unless the application supplied a selected location ID.
             Use only an application-selected location ID, a unique candidate returned by search_places, or a
