@@ -1,3 +1,5 @@
+> 历史验收记录，包含不同日期和版本的结果。当前状态及未完成项见 [工程检查](engineering-review.md)。
+
 # Phase 10 Verification Record
 
 Updated: 2026-09-30

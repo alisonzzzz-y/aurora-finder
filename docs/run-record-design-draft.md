@@ -1,8 +1,6 @@
-> 2026-10-06 更新：当前部署方案改为 Railway MySQL + Render，连接配置见 [database-setup.md](database-setup.md)。以下 PostgreSQL 描述保留为早期设计记录。
-
 # 运行记录与持久化
 
-状态：代码已实现并通过本地文件数据库重启读回测试；线上 PostgreSQL 尚需配置和部署验收。2026-10-01。
+2026-10-07：当前实现使用 Railway MySQL + Render；配置见 [数据库接入](database-setup.md)。生产启动日志已确认迁移到版本 2，地点查询返回非空 runId。重启后同一记录读回和生产过期清理仍待单独验收。
 
 ## 用途与边界
 
@@ -12,7 +10,7 @@
 
 ## 数据内容
 
-迁移文件 `backend/src/main/resources/db/migration/V1__run_records.sql` 建立：
+生产迁移位于 `backend/src/main/resources/db/mysql/`；`db/migration/` 供默认 H2 测试使用。迁移建立：
 
 - `evaluation_run`：运行 ID、类型、开始/结束时间、完成状态、所选地点 ID、规则版本、验证与覆盖状态。
 - `evaluation_night`：当地日期、UTC 评价窗口、等级和原因码。
@@ -25,20 +23,13 @@
 
 ## 部署设置
 
-在 Render 后端接入 PostgreSQL 后设置以下环境变量；不要把数据库密码提交到 Git。若 Render 提供的是 `postgresql://...` 地址，需转换为 JDBC 格式 `jdbc:postgresql://...`，用户名和密码分别填到独立变量。数据库必须允许该后端访问。
-
-| 名称 | 值 |
-| --- | --- |
-| `APP_RUN_RECORD_ENABLED` | `true` |
-| `APP_RUN_RECORD_JDBC_URL` | `jdbc:postgresql://主机:5432/数据库名` |
-| `APP_RUN_RECORD_USERNAME` | 数据库用户名 |
-| `APP_RUN_RECORD_PASSWORD` | 数据库密码 |
+在 Render 后端设置 MySQL JDBC 地址、用户名、密码和启用开关，具体变量见 [数据库接入](database-setup.md)。使用 Railway 的公网地址连接；密码只存放在部署平台的环境变量中。
 
 启动时 Flyway 自动执行迁移。若数据库地址无效或迁移失败，后端不会假装成功启动。运行中数据库写入失败时，相关请求返回 `RUN_RECORD_UNAVAILABLE` 的 HTTP 503，不会被误报成观测等级。默认不开启，故未配置数据库的现有部署仍可启动，但不会持久化运行记录。
 
 ## 验收
 
-本地自动化测试覆盖空库迁移、同一数据库重启后读回、来源/工具证据、7 天到期删除和数据库故障。上线还需在 Render 配置 PostgreSQL 后依次确认：服务健康、页面地点查询及 AI 问答返回非空 `runId`、数据库中能按该 ID 读到运行/夜晚/来源/工具行、后端重启后仍可读到同一 ID，以及超过保留期的记录被清理。线上测试只使用合成问题，不保存真实用户聊天。
+本地自动化测试覆盖空库迁移、同一数据库重启后读回、来源/工具证据、7 天到期删除和数据库故障。上线还需在 Render 配置 MySQL 后依次确认：服务健康、页面地点查询及 AI 问答返回非空 `runId`、数据库中能按该 ID 读到运行/夜晚/来源/工具行、后端重启后仍可读到同一 ID，以及超过保留期的记录被清理。线上测试只使用合成问题，不保存真实用户聊天。
 
 ### 多地点记录复查
 

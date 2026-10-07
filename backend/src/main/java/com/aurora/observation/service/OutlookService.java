@@ -36,9 +36,9 @@ public class OutlookService {
         List<NightOutlook> nights = IntStream.range(0, 3)
                 .mapToObj(offset -> {
                     LocalDate localDate = tonight.plusDays(offset);
-                    ZoneOffset utcOffset = zone.getRules().getOffset(localDate.atStartOfDay(zone).toInstant());
-                    String offsetId = utcOffset.equals(ZoneOffset.UTC) ? "+00:00" : utcOffset.getId();
                     Instant windowStart = localDate.atTime(LocalTime.NOON).atZone(zone).toInstant();
+                    ZoneOffset utcOffset = zone.getRules().getOffset(windowStart);
+                    String offsetId = utcOffset.equals(ZoneOffset.UTC) ? "+00:00" : utcOffset.getId();
                     Instant windowEnd = localDate.plusDays(1).atTime(LocalTime.NOON).atZone(zone).toInstant();
                     return new NightOutlook(localDate, offsetId, windowStart, windowEnd,
                             OutlookLevel.INSUFFICIENT_DATA,

@@ -12,3 +12,10 @@ backend/target/
 # Local planning documents
 /PROJECT_PLAN.md
 /DEVELOPMENT_GUIDE.md
+
+# Local execution notes and generated evaluation reports
+/docs/review-2026-10-04.md
+__pycache__/
+*.pyc
+/aurora-assistant-evaluation*.json
+/aurora-smoke*.json

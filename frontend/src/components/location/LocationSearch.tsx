@@ -72,6 +72,9 @@ export function LocationSearch({ busy, onSelect }: Props) {
   }
 
   function choose(location: Location) {
+    searchRequest.current?.abort()
+    searchRequest.current = null
+    setActiveIndex(-1)
     setResults([])
     setState('idle')
     setSelectedLocation(location)

@@ -39,6 +39,12 @@ To show the map locally, add a restricted MapTiler key as `VITE_MAPTILER_KEY` in
 
 To enable AI chat, set `OPENAI_API_KEY` on the backend. You can optionally set `OPENAI_MODEL`; the default is `gpt-6-luna`. Keep the API key in the backend or Render environment only, never in Vercel or frontend files.
 
+### Engineering notes
+
+The frontend uses React and TypeScript, and the backend uses Java 21 and Spring Boot. Optional MySQL storage keeps short-lived run records through Flyway migrations. GitHub Actions runs backend, frontend, and script checks. Run `bash scripts/check_local.sh` from the repository root after installing dependencies.
+
+See the [engineering review](docs/engineering-review.md) for test coverage, current limitations, and remaining work, and the [database setup](docs/database-setup.md) for storage configuration.
+
 ### Data and credits
 
 Aurora activity, weather, and place information come from separate public data services. The app shows their sources and update times so you can understand what each result is based on. The map background is provided by MapTiler. Place search uses Open-Meteo data under CC BY 4.0. Credit: Open-Meteo.
@@ -79,6 +85,12 @@ npm run dev
 如需在本地显示地图，请在 `frontend/.env.local` 中设置受来源限制的 MapTiler key，变量名为 `VITE_MAPTILER_KEY`。具体说明见 [API 获取说明](docs/api-access.md)。不要将本地 key 文件提交到 Git。
 
 如需启用 AI 对话，请在后端设置 `OPENAI_API_KEY`。也可以用 `OPENAI_MODEL` 更换模型，默认使用 `gpt-6-luna`。API key 只能放在后端或 Render 的环境变量中，不要放进 Vercel 或前端文件。
+
+### 工程说明
+
+前端使用 React 和 TypeScript，后端使用 Java 21 和 Spring Boot。可选的 MySQL 存储通过 Flyway 迁移保存短期运行记录。GitHub Actions 执行后端、前端和脚本检查。安装依赖后，在仓库根目录运行 `bash scripts/check_local.sh`。
+
+测试覆盖、当前限制和待完成工作见[工程检查](docs/engineering-review.md)，存储配置见[数据库接入](docs/database-setup.md)。
 
 ### 数据与署名
 
