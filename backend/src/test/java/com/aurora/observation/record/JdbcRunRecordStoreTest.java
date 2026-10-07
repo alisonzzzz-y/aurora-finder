@@ -112,10 +112,23 @@ class JdbcRunRecordStoreTest {
     void deletesExpiredRunAndChildRecordsTogether() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:runretention;DB_CLOSE_DELAY=-1");
         Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
-        String old = store(jdbc, NOW).begin("ASSISTANT", null);
-        store(jdbc, NOW.plusSeconds(8 * 86400L)).begin("ASSISTANT", null);
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM evaluation_run WHERE run_id = ?", Integer.class, old));
-        assertTrue(store(jdbc, NOW.plusSeconds(8 * 86400L)).find(old).isEmpty());
+        JdbcRunRecordStore initial = store(jdbc, NOW);
+        String old = initial.begin("ASSISTANT", null);
+        initial.recordFacts(old, facts());
+        initial.recordTool(old, 1, "get_local_night_facts", "OK", "{}");
+        initial.finish(old, "COMPLETED");
+        String retained = store(jdbc, NOW.plusSeconds(2 * 86400L)).begin("PAGE_FACTS", 2964574L);
+        store(jdbc, NOW.plusSeconds(2 * 86400L)).recordFacts(retained, facts());
+
+        store(jdbc, NOW.plusSeconds(8 * 86400L)).purgeExpired();
+
+        for (String table : List.of("evaluation_run", "evaluation_night", "evaluation_source", "assistant_tool_call")) {
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM " + table + " WHERE run_id = ?", Integer.class, old));
+        }
+        assertTrue(initial.find(old).isEmpty());
+        RunRecord remaining = initial.find(retained).orElseThrow();
+        assertEquals(1, remaining.nights().size());
+        assertEquals(3, remaining.sources().size());
     }
 
     @Test

@@ -78,6 +78,8 @@ class OutlookServiceTest {
         assertEquals(Instant.parse("2026-10-25T12:00:00Z"), transitionNight.evaluationWindowEndUtc());
         assertEquals(25, between(transitionNight.evaluationWindowStartUtc(),
                 transitionNight.evaluationWindowEndUtc()).toHours());
+        assertEquals("+01:00", transitionNight.utcOffsetAtStart());
+        assertEquals("+00:00", followingNight.utcOffsetAtStart());
         assertEquals(Instant.parse("2026-10-25T12:00:00Z"), followingNight.evaluationWindowStartUtc());
         assertEquals(Instant.parse("2026-10-26T12:00:00Z"), followingNight.evaluationWindowEndUtc());
         assertEquals(24, between(followingNight.evaluationWindowStartUtc(),

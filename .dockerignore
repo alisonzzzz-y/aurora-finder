@@ -1,0 +1,6 @@
+# Only the backend sources and Maven configuration are needed by this image.
+**
+!backend/
+!backend/pom.xml
+!backend/src/
+!backend/src/**
