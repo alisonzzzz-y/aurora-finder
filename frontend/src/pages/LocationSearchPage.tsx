@@ -1,3 +1,4 @@
+import { PlaceComparison } from '../components/location/PlaceComparison'
 import { LocationSearch } from '../components/location/LocationSearch'
 import { LocalOutlookDashboard } from '../components/outlook/LocalOutlookDashboard'
 import { LatestAuroraForecast } from '../components/aurora/LatestAuroraForecast'
@@ -67,11 +68,17 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       </aside>
     </section>
     <div className="home-content-sections">
+      <div className="home-section-band home-section-band-even" role="region" aria-label={t('compareTitle')}>
+        <PlaceComparison onSelect={location => {
+          selectLocation(location)
+          document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+        }} />
+      </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
         <LatestAuroraForecast />
       </div>
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
-        <NextAuroraStormForecast onSelect={location => { selectLocation(location); document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: 'smooth' }) }} />
+        <NextAuroraStormForecast />
       </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('historicalReportsTitle')}>
         <HistoricalReportsChart />

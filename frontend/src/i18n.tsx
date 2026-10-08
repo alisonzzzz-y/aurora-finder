@@ -5,6 +5,8 @@ export type Language = 'en' | 'zh'
 
 const messages = {
   en: {
+    activityPeakTitle: 'Upcoming activity peaks',
+    activityPeakNote: 'The highest predicted three-hour Kp period for each available day, grouped by UTC date. Times use your device time zone. This describes global activity, not a forecast for the map locations above.',
     conditionsTitle: "Short-range viewing conditions (experimental)",
     conditionsHigh: "High",
     conditionsMedium: "Medium",
@@ -288,6 +290,8 @@ const messages = {
     apiOriginMissing: 'This deployment has no backend API address configured. Set VITE_API_BASE_URL in Vercel to the deployed Spring Boot API origin.',
   },
   zh: {
+    activityPeakTitle: '未来较强活动时段',
+    activityPeakNote: '按 UTC 日期选出每天预测最高的三小时 Kp 时段，时间按设备时区显示。这是全球活动趋势，不是上方坐标的当地预报。',
     conditionsTitle: "短时观测条件（试验性）",
     conditionsHigh: "高",
     conditionsMedium: "中",

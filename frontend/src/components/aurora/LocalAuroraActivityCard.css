@@ -13,10 +13,10 @@
 }
 
 .local-aurora-heading h2 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.6rem); }
-.local-aurora-heading a { color: var(--accent); font-size: .9rem; white-space: nowrap; }
+.local-aurora-heading a { color: var(--accent); font-size: 1rem; white-space: normal; }
 .local-aurora-message { margin: 1.25rem 0 0; color: var(--muted); }
 .local-aurora-content { margin-top: 1.25rem; }
-.local-aurora-value > span:last-child { color: var(--muted); font-size: .95rem; }
+.local-aurora-value > span:last-child { color: var(--muted); font-size: 1rem; }
 .local-aurora-value strong { color: var(--text); }
 .local-activity-badge { padding: .4rem 0; border-bottom: 1px solid currentColor; font-weight: 650; }
 .local-activity-low { color: #c3b0ed; }
@@ -25,7 +25,7 @@
 .local-activity-insufficient_data { color: #b7b0c5; }
 .local-aurora-meta { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin: 1.2rem 0 0; }
 .local-aurora-meta div { display: grid; gap: .25rem; }
-.local-aurora-meta dt { color: var(--muted); font-size: .8rem; }
+.local-aurora-meta dt { color: var(--muted); font-size: 1rem; }
 .local-aurora-meta dd { margin: 0; }
 .local-aurora-note { margin: 1.1rem 0 0; color: var(--muted); line-height: 1.6; }
 

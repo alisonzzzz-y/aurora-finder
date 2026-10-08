@@ -1,3 +1,4 @@
+import { KpPeakForecast } from './KpPeakForecast'
 import { InfoHint } from '../InfoHint'
 import type { AuroraMapData } from '../../types/auroraMap'
 import { useI18n } from '../../i18n'
@@ -21,7 +22,6 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
   const points = data?.status === 'CURRENT' ? strongestDistinctPoints(data.points) : []
 
   return <section className="current-activity-areas" aria-labelledby="current-activity-title">
-    <p className="eyebrow">{t('currentAreasLabel')}</p>
     <h2 id="current-activity-title">{t('currentAreasTitle')}<InfoHint>{t('currentAreasNote')}</InfoHint></h2>
     <p className="activity-areas-hint">{t('activityAreasMapHint')}</p>
     {loading && <p className="activity-areas-message" role="status">{t('activityAreasLoading')}</p>}
@@ -40,7 +40,6 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
             <span className="activity-area-number" aria-hidden="true">{index + 1}</span>
             <span className="activity-area-location">
             <span className="activity-area-coordinates">{formatCoordinate(point.latitude, 'N', 'S')} · {formatCoordinate(point.longitude, 'E', 'W')}</span>
-            <span className="activity-area-caption">{t('modelGridPoint')}</span>
             </span>
           <span className={`activity-area-level activity-area-level-${level.slice('activity'.length).toLowerCase()}`}>
             <span className="activity-mini-bar" aria-hidden="true"><i style={{ width: `${point.auroraValue}%` }} /></span>{t(level)} <small>{t('activityValue')} {point.auroraValue}</small>
@@ -50,5 +49,6 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
       })}
     </ol>}
     {!loading && !error && data?.status === 'CURRENT' && points.length === 0 && <p className="activity-areas-message">{t('activityAreasUnavailable')}</p>}
+    <KpPeakForecast />
   </section>
 }
