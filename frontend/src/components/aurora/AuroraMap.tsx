@@ -137,6 +137,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       minZoom: 0.6,
       maxZoom: 8,
       attributionControl: false,
+      scrollZoom: false,
+      cooperativeGestures: true,
     })
     map.current = instance
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
