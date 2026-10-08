@@ -29,7 +29,7 @@ h1 { font-size: clamp(42px, 5vw, 68px); line-height: 1.05; letter-spacing: -.05e
 .aurora-resource-source { margin-top: 12px; color: var(--muted); font-size: 16px; }
 .aurora-resource:hover .aurora-resource-title { color: var(--accent); }
 .map-sidebar { display: flex; flex-direction: column; gap: 15px; height: clamp(480px, calc(100svh - 150px), 840px); min-width: 0; overflow: hidden; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #15131f; }
-.map-sidebar-content { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
+.map-sidebar-content { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: auto; scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
 .map-sidebar-switch { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; border-bottom: 1px solid var(--line); background: #15131f; }
 .map-sidebar-switch button { min-height: 38px; padding: 7px 1px 8px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
 .map-sidebar-switch button[aria-pressed="true"] { border-bottom-color: var(--accent); color: var(--text); }
@@ -282,7 +282,22 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 16px;
 small { font-size: 1rem; }
 #aurora-dashboard { scroll-margin-top: 20px; }
 
-.map-sidebar .activity-area-select { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; padding: 14px 2px; }
-.map-sidebar .activity-area-level { grid-column: 2; display: flex; flex-wrap: wrap; white-space: normal; gap: 8px; }
-.map-sidebar .activity-area-level small { flex-basis: 100%; }
-.map-sidebar .activity-area-coordinates { line-height: 1.5; }
+/* Keep the activity overview in the page flow, without a nested scroll area. */
+.map-sidebar-activity { height: auto; min-height: clamp(480px, calc(100svh - 150px), 840px); overflow: visible; }
+.map-sidebar-activity .map-sidebar-content { flex: 0 0 auto; overflow: visible; }
+.map-sidebar .current-activity-areas { padding: 8px 0 0; font-size: 13px; line-height: 1.35; }
+.map-sidebar .current-activity-areas h2 { margin-bottom: 6px; font-size: 15px; }
+.map-sidebar .activity-areas-hint, .map-sidebar .activity-areas-message { font-size: 13px; line-height: 1.35; }
+.map-sidebar .activity-area-select { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 3px 7px; padding: 7px 2px; }
+.map-sidebar .activity-area-number { width: 20px; height: 20px; font-size: 12px; }
+.map-sidebar .activity-area-coordinates { font-size: 13px; line-height: 1.35; }
+.map-sidebar .activity-area-level { grid-column: 2; display: flex; flex-wrap: wrap; white-space: normal; gap: 5px; font-size: 12px; }
+.map-sidebar .activity-area-level small { font-size: 12px; }
+.map-sidebar .activity-peak-forecast { margin-top: 12px; padding-top: 10px; }
+.map-sidebar .activity-peak-forecast h3 { margin-bottom: 5px; font-size: 15px; }
+.map-sidebar .activity-peak-forecast li { grid-template-columns: 62px minmax(0, 1fr); align-items: baseline; gap: 6px; padding: 6px 0; }
+.map-sidebar .activity-peak-forecast strong { font-size: 14px; }
+.map-sidebar .activity-peak-forecast span, .map-sidebar .activity-peak-forecast p { font-size: 13px; line-height: 1.4; }
+@media (max-width: 900px) {
+  .map-sidebar-activity { min-height: 0; }
+}

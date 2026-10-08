@@ -50,7 +50,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         </Suspense>
         <p className="map-scope-note">{t('mapScopeNote')}</p>
       </div>
-      <aside className="map-sidebar">
+      <aside className={`map-sidebar${hasLocationRequest && showLocalOutlook ? "" : " map-sidebar-activity"}`}>
         <div className="map-context-heading" aria-label={t('auroraForecast')}>
           <p className="eyebrow">{t('globalActivity')}</p>
           <h2>{t('auroraForecast')}</h2>
