@@ -339,7 +339,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       instance.flyTo({
         center: [selectedLocation.longitude, selectedLocation.latitude],
         zoom: Math.max(instance.getZoom(), 3.2),
-        duration: 700,
+        duration: 1500,
       })
     }
   }, [selectedLocation])
@@ -358,10 +358,11 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     if (instance.getLayer('strong-activity-circles')) {
       instance.setPaintProperty('strong-activity-circles', 'circle-radius', ['case', ['==', ['get', 'index'], selectedActivityIndex ?? -1], 12, 10])
     }
+    activityPopup.current?.remove()
+    activityPopup.current = null
     if (selectedActivityIndex !== null) {
       const point = activityPoints[selectedActivityIndex]
       if (!point) return
-      activityPopup.current?.remove()
       instance.easeTo({ center: [point.longitude, point.latitude], zoom: Math.max(instance.getZoom(), 2.2), duration: 1500 })
       activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
         .setLngLat([point.longitude, point.latitude])

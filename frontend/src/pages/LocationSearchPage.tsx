@@ -27,6 +27,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const auroraMap = useAuroraMapData()
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
   const [showLocalOutlook, setShowLocalOutlook] = useState(false)
+  const [mapLocation, setMapLocation] = useState<Location | null>(null)
   const activityPoints = useMemo(
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
@@ -34,6 +35,9 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const hasLocationRequest = busy || Boolean(facts) || Boolean(error)
 
   function selectLocation(location: Location) {
+    setSelectedActivityIndex(null)
+    // A new object also lets a repeated click recenter after manually panning.
+    setMapLocation({ ...location })
     setShowLocalOutlook(true)
     onSelect(location)
   }
@@ -42,7 +46,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     <section id="aurora-dashboard" className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
-          <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={facts?.outlook.location} />
+          <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={mapLocation} />
         </Suspense>
         <p className="map-scope-note">{t('mapScopeNote')}</p>
       </div>
