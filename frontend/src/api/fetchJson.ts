@@ -18,7 +18,12 @@ export async function fetchJson<T>(
   }, timeoutMs)
   try {
     const response = await fetch(url, { ...options, signal: controller.signal })
-    if (!response.ok) throw new ApiRequestError(errorMessage, response.status)
+    if (!response.ok) {
+      const problem: unknown = await response.json().catch(() => null)
+      const code = problem && typeof problem === 'object' && 'code' in problem
+        && typeof problem.code === 'string' ? problem.code : undefined
+      throw new ApiRequestError(errorMessage, response.status, code)
+    }
     return await response.json() as T
   } catch (error) {
     if (timedOut && !options.signal?.aborted) throw new ApiRequestError('The request timed out.', 408)

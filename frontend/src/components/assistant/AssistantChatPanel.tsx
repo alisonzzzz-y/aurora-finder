@@ -129,7 +129,9 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),
       }])
     } catch (cause) {
-      setError(t(cause instanceof ApiRequestError && cause.status === 429
+      setError(t(cause instanceof ApiRequestError && cause.code === 'RUN_RECORD_UNAVAILABLE'
+        ? 'assistantRecordUnavailable'
+        : cause instanceof ApiRequestError && cause.status === 429
         ? 'assistantRateLimited'
         : cause instanceof ApiRequestError && cause.status === 408
           ? 'assistantTimedOut' : 'assistantRequestFailed'))
