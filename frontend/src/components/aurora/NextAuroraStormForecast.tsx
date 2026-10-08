@@ -1,37 +1,19 @@
-import { PlaceComparison } from '../location/PlaceComparison'
-import type { Location } from '../../types/location'
 import { InfoHint } from '../InfoHint'
 import { StormComparisonChart, WarningTimeline } from './StormComparisonChart'
 import { useEffect, useState } from 'react'
 import { getGeomagneticStormForecast } from '../../api/geomagneticStorm'
-import { getKpIndex } from '../../api/kpIndex'
 import { getGeomagneticWarnings } from '../../api/geomagneticWarnings'
 import { localizeError, useI18n } from '../../i18n'
 import type { GeomagneticStormForecast } from '../../types/geomagneticStorm'
-import type { KpIndexData, KpIndexRecord } from '../../types/kpIndex'
 import type { GeomagneticWarnings } from '../../types/geomagneticWarnings'
-
-function dayPeak(records: KpIndexRecord[], date: string) {
-  return records.filter(record => record.type === 'PREDICTED' && record.periodStart.slice(0, 10) === date)
-    .sort((a, b) => b.kp - a.kp)[0]
-}
 
 function localDateTime(value: string, locale: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(locale, options).format(new Date(value))
 }
 
-function kpPeriodRange(value: string, locale: string) {
-  const start = new Date(value)
-  const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
-  const startLabel = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(start)
-  const endLabel = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(end)
-  return `${startLabel}–${endLabel}`
-}
-
-export function NextAuroraStormForecast({ onSelect }: { onSelect: (location: Location) => void }) {
+export function NextAuroraStormForecast() {
   const { language, t } = useI18n()
   const [forecast, setForecast] = useState<GeomagneticStormForecast | null>(null)
-  const [kp, setKp] = useState<KpIndexData | null>(null)
   const [warnings, setWarnings] = useState<GeomagneticWarnings | null>(null)
   const [warningsError, setWarningsError] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -46,13 +28,12 @@ export function NextAuroraStormForecast({ onSelect }: { onSelect: (location: Loc
       const current = new AbortController()
       controller = current
       const results = await Promise.allSettled([
-        getGeomagneticStormForecast(current.signal), getKpIndex(current.signal), getGeomagneticWarnings(current.signal),
+        getGeomagneticStormForecast(current.signal), getGeomagneticWarnings(current.signal),
       ])
       if (current.signal.aborted) return
-      const [stormResult, kpResult, warningsResult] = results
+      const [stormResult, warningsResult] = results
       if (stormResult.status === 'fulfilled') { setForecast(stormResult.value); setError(null) }
       else { setForecast(null); setError(stormResult.reason) }
-      setKp(kpResult.status === 'fulfilled' ? kpResult.value : null)
       if (warningsResult.status === 'fulfilled') { setWarnings(warningsResult.value); setWarningsError(false) }
       else { setWarnings(null); setWarningsError(true) }
       setNow(Date.now())
@@ -96,21 +77,6 @@ export function NextAuroraStormForecast({ onSelect }: { onSelect: (location: Loc
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="storm-outlook-message error">{localizeError(error, t)}</p>}
     {!loading && forecast && <StormComparisonChart days={forecast.days} />}
-    <div className="storm-forecast-columns">
-      <section className="storm-peak-column">
-        <h3>{t('kpPeak')}</h3>
-        {!loading && forecast ? <>
-          {forecast.days.map(day => {
-            const peak = kp ? dayPeak(kp.records, day.date) : undefined
-            return <p key={day.date}>{day.date} (UTC): {peak ? <>Kp {peak.kp.toFixed(2)} · {kpPeriodRange(peak.periodStart, locale)}</> : t('kpPeakUnavailable')}</p>
-          })}
-          <p className="storm-outlook-meta">{t('forecastIssued')}: {localDateTime(forecast.issuedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })} · {t('dataRetrieved')}: {localDateTime(forecast.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
-        </> : <p>{loading ? t('loading') : t('kpPeakUnavailable')}</p>}
-      </section>
-      <section className="storm-best-places">
-        <PlaceComparison onSelect={onSelect} />
-      </section>
-    </div>
     <p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
   </section>
 }

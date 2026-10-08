@@ -26,6 +26,6 @@ export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts })
     <p>{data && (current || data.level === 'INSUFFICIENT_DATA') ? data.reasons.map(reason => reasons[reason] ?? t('conditionsUnknown')).join(' · ') : t('conditionsRefresh')}</p>
     {current && data.evaluatedAtUtc && <p><time>{new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:facts.outlook.location.timezone,timeZoneName:'short'}).format(new Date(data.evaluatedAtUtc))}</time> · {t('conditionsSample')}</p>}
     {current && <div className="conditions-factors"><span>{t('nearbyActivityShort')} {data.modelSignal}/100</span><span>{t('cloudCoverLegend')} {data.cloudPercent}%</span><span>{data.dark ? t('conditionsDark') : t('conditionsNotDark')}</span></div>}
-    <small>{t('conditionsProbability')}</small>
+
   </div>
 }

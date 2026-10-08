@@ -20,7 +20,7 @@ const thresholdOrder = ['CIVIL_TWILIGHT', 'NAUTICAL_TWILIGHT', 'ASTRONOMICAL_TWI
 export function CloudDarknessTimeline({ points, night, timezone, highlightedPointTimes = [], auroraFact }: Props) {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(380)
+  const [width, setWidth] = useState(600)
   const [selectedPointAt, setSelectedPointAt] = useState<string | null>(null)
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const start = Date.parse(night.evaluationWindowStartUtc)
@@ -33,8 +33,8 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
   const highlightedPointSet = new Set(highlightedPointTimes)
   const hasHighlightedPoints = validPoints.some(point => highlightedPointSet.has(point.validAt))
   const selectedPoint = validPoints.find(point => point.validAt === selectedPointAt)
-  const left = 110
-  const right = 10
+  const left = 215
+  const right = 28
   const top = 25
   const cloudBottom = 164
   const height = 344
@@ -64,7 +64,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
     if (!element) return
     const observer = new ResizeObserver(entries => {
       const nextWidth = entries[0]?.contentRect.width
-      if (nextWidth) setWidth(nextWidth)
+      if (nextWidth) setWidth(Math.max(600, nextWidth))
     })
     observer.observe(element)
     return () => observer.disconnect()

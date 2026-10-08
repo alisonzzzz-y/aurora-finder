@@ -19,7 +19,7 @@ export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) 
     return () => observer.disconnect()
   }, [])
   const plotStart = 235
-  const plotEnd = width - 14
+  const plotEnd = width - 28
   const xFor = (value: number) => plotStart + value / 100 * (plotEnd - plotStart)
   const categories = [ ['activeGeomagnetic', 'activeChancePercent'], ['minorStorm', 'minorStormChancePercent'], ['moderateStorm', 'moderateStormChancePercent'], ['strongStorm', 'strongExtremeStormChancePercent'] ] as const
   const date = (value: string) => new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`))
