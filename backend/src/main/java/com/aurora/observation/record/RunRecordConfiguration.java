@@ -26,7 +26,7 @@ public class RunRecordConfiguration {
         if (url.isBlank() || retentionDays < 1) {
             throw new IllegalStateException("Run records require a JDBC URL and a positive retention period.");
         }
-        DriverManagerDataSource source = new DriverManagerDataSource(url, username, password);
+        DriverManagerDataSource source = new RetryingDriverDataSource(url, username, password);
         Flyway.configure().dataSource(source).locations(url.startsWith("jdbc:mysql:") ? "classpath:db/mysql" : "classpath:db/migration").load().migrate();
         return new JdbcRunRecordStore(new JdbcTemplate(source), mapper, clock, retentionDays);
     }

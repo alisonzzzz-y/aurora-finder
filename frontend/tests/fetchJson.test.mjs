@@ -31,3 +31,12 @@ test('caller cancellation is preserved instead of becoming a timeout', async (t)
   controller.abort()
   await assert.rejects(request, { name: 'AbortError' })
 })
+
+test('preserves record-service error code without exposing server details', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+    code: 'RUN_RECORD_UNAVAILABLE', detail: 'Internal database details',
+  }), { status: 503 }))
+  await assert.rejects(fetchJson('https://example.test', {}, 'Unavailable'), error =>
+    error instanceof ApiRequestError && error.status === 503
+      && error.code === 'RUN_RECORD_UNAVAILABLE' && error.message === 'Unavailable')
+})
