@@ -24,7 +24,7 @@ export function LocalAuroraActivityCard({ fact, timezone }: Props) {
 
   return <section className="local-aurora-card" aria-labelledby="local-aurora-title" aria-live="polite">
     <div className="local-aurora-heading">
-      <div><p className="eyebrow">{t('localAuroraForecast')}</p><h2 id="local-aurora-title">{t('localActivityTitle')}</h2></div>
+      <div><h2 id="local-aurora-title">{t('localActivityTitle')}</h2></div>
     </div>
     <p className="forecast-source-note"><a href={fact.sourceUrl} target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>
     {fact.status === 'UNAVAILABLE' && <p className="local-aurora-message error">{t('sourceUnavailable')} {t(fact.failureCode === 'TIMEOUT' ? 'sourceTimeout' : fact.failureCode === 'RATE_LIMITED' ? 'sourceRateLimited' : fact.failureCode === 'FORBIDDEN' ? 'sourceForbidden' : 'sourceFailed')}</p>}

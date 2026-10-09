@@ -46,9 +46,8 @@ export function NextAuroraStormForecast() {
 
   return <section className="storm-outlook" aria-labelledby="storm-outlook-title" aria-live="polite">
     <div className="storm-outlook-heading">
-      <div><p className="eyebrow">{t('stormOutlookEyebrow')}</p><h2 id="storm-outlook-title">{t('stormOutlookTitle')}<InfoHint><p>{t('stormOutlookIntro')}</p><p>{t('geomagneticScaleNote')}</p></InfoHint></h2></div>
+      <div><h2 id="storm-outlook-title">{t('stormOutlookTitle')}<InfoHint><p>{t('stormOutlookIntro')}</p><p>{t('geomagneticScaleNote')}</p><p>{t('stormOutlookLimit')}</p><p><a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p></InfoHint></h2></div>
     </div>
-    <p className="forecast-source-note"><a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>
     {warningsError && <p className="storm-outlook-message">{t('geomagneticWarningsUnavailable')}</p>}
     {!warningsError && warnings && <div className="geomagnetic-warning-list" aria-label={t('geomagneticWarningsTitle')}>
       <h3>{t('geomagneticWarningsTitle')}</h3>
@@ -77,6 +76,5 @@ export function NextAuroraStormForecast() {
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="storm-outlook-message error">{localizeError(error, t)}</p>}
     {!loading && forecast && <StormComparisonChart days={forecast.days} />}
-    <p className="storm-outlook-note">{t('stormOutlookLimit')}</p>
   </section>
 }

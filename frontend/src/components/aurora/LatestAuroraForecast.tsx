@@ -103,7 +103,7 @@ export function LatestAuroraForecast() {
     return () => observer.disconnect()
   }, [forecast])
 
-  const chartHeight = 320
+  const chartHeight = 420
   const chartPadding = { top: 14, right: 14, bottom: 34, left: 34 }
   const chartStart = chartPadding.left
   const chartEnd = Math.max(chartStart + 1, chartWidth - chartPadding.right)
@@ -125,11 +125,10 @@ export function LatestAuroraForecast() {
   return <section className="latest-aurora-forecast" aria-labelledby="latest-forecast-title" aria-live="polite">
     <div className="latest-forecast-heading">
       <div>
-        <p className="eyebrow">{t('latestForecast')}</p>
-        <h2 id="latest-forecast-title">{t('globalKpActivity')}</h2>
+
+        <h2 id="latest-forecast-title">{t('globalKpActivity')}<InfoHint><p><a href="https://www.spaceweather.gov/products/planetary-k-index" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>{data && <p>{t('dataRetrieved')}: {formatLocalTime(data.retrievedAt, locale)}</p>}</InfoHint></h2>
       </div>
     </div>
-    <p className="forecast-source-note"><a href="https://www.spaceweather.gov/products/planetary-k-index" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>
     {loading && <p className="latest-forecast-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="latest-forecast-message error">{localizeError(error, t)}</p>}
     {!loading && error === null && !forecast && <p className="latest-forecast-message">{t('noUpcomingForecast')}</p>}
@@ -145,13 +144,10 @@ export function LatestAuroraForecast() {
           <span>{t('forecastPeriod')}</span>
           <time dateTime={forecast.periodStart}>{t(forecast.type === 'ESTIMATED' ? 'estimatedKp' : forecast.type === 'OBSERVED' ? 'observedKp' : 'predictedKp')} · {formatLocalTime(forecast.periodStart, locale)}</time>
         </div>
-        {data && <div>
-          <span>{t('dataRetrieved')}</span>
-          <time dateTime={data.retrievedAt}>{formatLocalTime(data.retrievedAt, locale)}</time>
-        </div>}
+
       </div>
       <div className="kp-trend">
-        <div className="kp-trend-heading"><h3>{t('kpChartTitle')}</h3><span>{t('kpTrendLocalTime')}</span></div>
+        <div className="kp-trend-heading"><h3>{t('kpChartTitle')}<InfoHint>{t('kpTrendLocalTime')}</InfoHint></h3></div>
         <div className="kp-trend-layout">
           {periods.reported && <div className="kp-latest-reported">
             <span>{t('latestReportedKp')}</span>

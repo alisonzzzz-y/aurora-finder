@@ -1,3 +1,4 @@
+import { InfoHint } from '../components/InfoHint'
 import { PlaceComparison } from '../components/location/PlaceComparison'
 import { LocationSearch } from '../components/location/LocationSearch'
 import { LocalOutlookDashboard } from '../components/outlook/LocalOutlookDashboard'
@@ -48,12 +49,12 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
           <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={mapLocation} />
         </Suspense>
-        <p className="map-scope-note">{t('mapScopeNote')}</p>
+
       </div>
       <aside className={`map-sidebar${hasLocationRequest && showLocalOutlook ? "" : " map-sidebar-activity"}`}>
         <div className="map-context-heading" aria-label={t('auroraForecast')}>
           <p className="eyebrow">{t('globalActivity')}</p>
-          <h2>{t('auroraForecast')}</h2>
+          <h2>{t('auroraForecast')}<InfoHint>{t('mapScopeNote')}</InfoHint></h2>
           <span>{t('shortRange')}</span>
         </div>
         <LocationSearch busy={busy} onSelect={selectLocation} />
@@ -109,9 +110,8 @@ function ForecastGuide() {
   ] as const
 
   return <section className="forecast-guide" aria-labelledby="forecast-guide-title">
-    <p className="eyebrow">{t('forecastGuideEyebrow')}</p>
-    <h2 id="forecast-guide-title">{t('forecastGuideTitle')}</h2>
-    <p className="forecast-guide-intro">{t('forecastGuideIntro')}</p>
+
+    <h2 id="forecast-guide-title">{t('forecastGuideTitle')}<InfoHint>{t('forecastGuideIntro')}</InfoHint></h2>
     <ol className="forecast-guide-list">
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
@@ -131,7 +131,7 @@ function UpcomingFeatures() {
   ] as const
 
   return <section className="upcoming-features" aria-labelledby="upcoming-features-title">
-    <p className="eyebrow">{t('upcomingFeaturesEyebrow')}</p>
+
     <h2 id="upcoming-features-title">{t('upcomingFeaturesTitle')}</h2>
     <p className="upcoming-features-intro">{t('upcomingFeaturesIntro')}</p>
     <ol className="upcoming-feature-list">

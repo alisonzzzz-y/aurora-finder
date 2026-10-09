@@ -48,8 +48,8 @@ export function HistoricalReportsChart() {
   }, [])
 
   return <section className="historical-reports" aria-labelledby="historical-reports-title">
-    <p className="eyebrow">{t('historicalReportsEyebrow')}</p>
-    <h2 id="historical-reports-title">{t('historicalReportsTitle')}<InfoHint>{t('historicalReportsIntro')}</InfoHint></h2>
+
+    <h2 id="historical-reports-title">{t('historicalReportsTitle')}<InfoHint><p>{t('historicalReportsIntro')}</p><p>{t('historyPartialYears')}</p><p>{t('historicalReportsNote')}</p></InfoHint></h2>
     <div className="history-stats"><div><strong>{number.format(reportSummary.totalReports)}</strong><span>{t('historicalReportsCountLabel')}</span></div><div><strong className="history-coverage-range">{reportSummary.coverageStart} – {reportSummary.coverageEnd}</strong><span>{t('historyCoverage')}</span></div><div><strong>{peakYear.year}</strong><span>{t('historyPeakYear')} · {number.format(peakYear.reports)} {t('historicalReportsCountLabel')}</span></div></div>
     <figure className="historical-reports-figure">
       <div className="historical-reports-chart-wrap" ref={chartRef}>
@@ -83,9 +83,8 @@ export function HistoricalReportsChart() {
           {item.year}: {number.format(item.reports)} {t('historicalReportsCountLabel')}
         </li>)}
       </ol>
-      <figcaption><span>{t('historyPartialYears')}</span>
+      <figcaption>
         <a href={reportSummary.sourceUrl} target="_blank" rel="noreferrer">{t('historicalReportsSource')} ↗</a>
-        <span>{t('historicalReportsNote')}</span>
       </figcaption>
     </figure>
   </section>

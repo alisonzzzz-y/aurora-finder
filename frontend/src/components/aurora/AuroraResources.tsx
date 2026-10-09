@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { useI18n } from '../../i18n'
 
 const resources = [
@@ -9,20 +10,16 @@ const resources = [
 export function AuroraResources() {
   const { t } = useI18n()
   return <section className="aurora-resources" aria-labelledby="aurora-resources-title">
-    <p className="eyebrow">{t('auroraResourcesEyebrow')}</p>
+
     <h2 id="aurora-resources-title">{t('auroraResourcesTitle')}</h2>
     <div className="aurora-resource-list">
-      {resources.map(resource => <a
+      {resources.map(resource => <article
         className="aurora-resource"
-        href={resource.href}
         key={resource.title}
-        target="_blank"
-        rel="noreferrer"
       >
-        <span className="aurora-resource-title">{t(resource.title)} <span aria-hidden="true">↗</span></span>
-        <span className="aurora-resource-copy">{t(resource.copy)}</span>
-        <span className="aurora-resource-source">{t('noaaSource')}</span>
-      </a>)}
+        <div className="aurora-resource-title"><a href={resource.href} target="_blank" rel="noreferrer">{t(resource.title)} ↗</a><InfoHint>{t(resource.copy)}</InfoHint></div>
+      </article>)}
     </div>
+    <p className="forecast-source-note">{t('noaaSource')}</p>
   </section>
 }
