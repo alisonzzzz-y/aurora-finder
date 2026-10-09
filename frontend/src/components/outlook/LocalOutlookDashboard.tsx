@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { ViewingConditionsSummary } from './ViewingConditionsSummary'
 import { useState } from 'react'
 import type { ObservationFacts } from '../../types/observationFacts'
@@ -18,13 +19,12 @@ export function LocalOutlookDashboard({ facts }: { facts: ObservationFacts }) {
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const generatedAt = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: outlook.location.timezone }).format(new Date(facts.generatedAtUtc))
   return <section className="selected-location-outlook" aria-live="polite">
-    <div className="selected-location-heading"><h2>{outlook.location.name}, {outlook.location.country}</h2><p>{outlook.location.timezone}</p></div>
+    <div className="selected-location-heading"><h2>{outlook.location.name}, {outlook.location.country}<InfoHint>{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidatedShort')}</InfoHint></h2><p>{outlook.location.timezone}</p></div>
     <ViewingConditionsSummary facts={facts} />
     <div className="local-summary-strip">
       <div><span>{t('nearbyActivityShort')}</span><strong>{value === null ? t('insufficientData') : t(value < 18 ? 'localActivityLow' : value < 50 ? 'localActivityMedium' : 'localActivityHigh')}</strong></div>
       <div><span>{t('dataStatusShort')}</span><strong>{t(facts.sourceStatus === 'CURRENT' ? 'sourcesCurrentShort' : facts.sourceStatus === 'PARTIAL' ? 'sourcesPartialShort' : 'sourceUnavailable')}</strong></div>
     </div>
-    <p className="visual-chart-note">{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidatedShort')}</p>
     {night && <>
       <div className="local-night-switch" role="group" aria-label={t('chooseNight')}>
         {outlook.nights.map((item, index) => <button type="button" key={item.localDate} aria-pressed={night.localDate === item.localDate} onClick={() => setSelectedIndex(index)}>{index === 0 ? t('tonight') : `${t('nightNumber')}${index + 1}${language === 'zh' ? '晚' : ''}`}</button>)}

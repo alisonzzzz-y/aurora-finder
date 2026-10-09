@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { useId } from 'react'
 import type { NightOutlook } from '../../types/outlook'
 import { useI18n } from '../../i18n'
@@ -14,7 +15,7 @@ export function NightDarknessChart({ nights, timezone, selectedIndex, onSelect }
   const dateLabel = (night: NightOutlook) => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${night.localDate}T12:00:00Z`))
   const timeLabel = (instant: string) => new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', timeZone: timezone }).format(new Date(instant))
   return <section className="night-comparison" aria-labelledby={id}>
-    <h3 id={id}>{t('threeNightDarkness')}</h3>
+    <h3 id={id}>{t('threeNightDarkness')}<InfoHint>{t('nightComparisonNote')}</InfoHint></h3>
     <div className="night-comparison-axis" aria-hidden="true">{['12:00', '18:00', '00:00', '06:00', '12:00'].map((label, index) => <span key={index}>{label}</span>)}</div>
     <div className="night-comparison-rows">
       {nights.map((night, index) => {
@@ -35,6 +36,5 @@ export function NightDarknessChart({ nights, timezone, selectedIndex, onSelect }
       })}
     </div>
     <div className="night-depth-legend">{thresholds.map((key, index) => <span key={key}><i className={`night-depth-${index}`} />{t(index === 0 ? 'civilTwilightShort' : index === 1 ? 'nauticalTwilightShort' : 'astronomicalTwilightShort')}</span>)}</div>
-    <p className="visual-chart-note">{t('nightComparisonNote')}</p>
   </section>
 }

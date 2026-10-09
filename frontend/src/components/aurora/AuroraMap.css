@@ -1,19 +1,19 @@
 .aurora-map-panel { position: relative; min-width: 0; height: 540px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #12111b; }
 .aurora-map-canvas { position: absolute; inset: 0; }
-.map-style-picker { position: absolute; z-index: 3; top: 14px; left: 14px; display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid #514765; border-radius: 7px; background: #15131fe8; color: #e1dcec; font-size: 16px; }
+.map-style-picker { position: absolute; z-index: 3; top: 14px; left: 14px; display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid #514765; border-radius: 7px; background: #15131fe8; color: #e1dcec; font-size: 15.04px; }
 .map-style-picker select { max-width: 150px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .map-style-picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .map-style-picker select:disabled { opacity: .7; cursor: wait; }
 .map-style-picker option { background: #171522; color: #e1dcec; }
-.map-message { position: absolute; z-index: 2; top: 18px; left: 18px; max-width: min(440px, calc(100% - 36px)); padding: 11px 14px; border-left: 3px solid var(--accent); background: #15131ff0; color: #e1dcec; font-size: 16px; line-height: 1.5; }
-.map-key { position: absolute; z-index: 2; left: 14px; bottom: 14px; width: 210px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 16px; }
+.map-message { position: absolute; z-index: 2; top: 18px; left: 18px; max-width: min(440px, calc(100% - 36px)); padding: 11px 14px; border-left: 3px solid var(--accent); background: #15131ff0; color: #e1dcec; font-size: 15.04px; line-height: 1.5; }
+.map-key { position: absolute; z-index: 2; left: 14px; bottom: 14px; width: 210px; padding: 11px 13px; border: 1px solid #514765; border-radius: 7px; background: #15131fec; color: #e1dcec; font-size: 15.04px; }
 .map-key-gradient { height: 7px; margin-top: 9px; border-radius: 7px; background: linear-gradient(90deg, #20d29d 0%, #49ebae 36%, #e1ea6b 68%, #ff875e 100%); }
 .map-key-labels { display: flex; justify-content: space-between; margin-top: 5px; color: #aaa2ba; }
 .map-credit { position: absolute; z-index: 3; right: 76px; bottom: 31px; padding: 3px 5px; background: rgb(21 19 31 / 88%); color: #cbc5d7; font-size: 10px; line-height: 1.3; }
 .map-credit a { color: #d5c8f2; }
 .maptiler-logo { position: absolute; z-index: 3; right: 8px; bottom: 27px; display: flex; align-items: center; min-height: 18px; padding: 2px 4px; border-radius: 3px; background: rgb(21 19 31 / 88%); }
 .maptiler-logo img { display: block; width: 54px; height: auto; }
-.map-timestamps { position: absolute; z-index: 2; top: 14px; right: 52px; max-width: min(48%, calc(100% - 220px)); margin: 0; color: #d4cfe0; font-size: 16px; text-align: right; text-shadow: 0 1px 3px #000; }
+.map-timestamps { position: absolute; z-index: 2; top: 14px; right: 52px; max-width: min(48%, calc(100% - 220px)); margin: 0; color: #d4cfe0; font-size: 15.04px; text-align: right; text-shadow: 0 1px 3px #000; }
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { margin: 0 !important; max-width: min(440px, calc(100vw - 16px)); padding: 2px 5px !important; border-radius: 5px 0 0 !important; background: rgb(21 19 31 / 94%) !important; color: #c9c3d2 !important; font-size: 9px !important; line-height: 1.3 !important; opacity: .82; }
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib { display: none !important; }
 .maplibregl-ctrl-attrib a { color: #d8ccf0 !important; }

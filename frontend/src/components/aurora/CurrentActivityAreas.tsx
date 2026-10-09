@@ -22,8 +22,7 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
   const points = data?.status === 'CURRENT' ? strongestDistinctPoints(data.points) : []
 
   return <section className="current-activity-areas" aria-labelledby="current-activity-title">
-    <h2 id="current-activity-title">{t('currentAreasTitle')}<InfoHint>{t('currentAreasNote')}</InfoHint></h2>
-    <p className="activity-areas-hint">{t('activityAreasMapHint')}</p>
+    <h2 id="current-activity-title">{t('currentAreasTitle')}<InfoHint><p>{t('currentAreasNote')}</p><p>{t('activityAreasMapHint')}</p></InfoHint></h2>
     {loading && <p className="activity-areas-message" role="status">{t('activityAreasLoading')}</p>}
     {!loading && error && <p className="activity-areas-message" role="status">{t('activityAreasUnavailable')}</p>}
     {!loading && !error && data?.status === 'EXPIRED' && <p className="activity-areas-message" role="status">{t('activityAreasExpired')}</p>}

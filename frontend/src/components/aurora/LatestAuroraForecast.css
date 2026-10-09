@@ -2,19 +2,19 @@
 .latest-aurora-forecast { margin-inline: clamp(18px, 3vw, 56px); padding: 22px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .latest-forecast-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .latest-forecast-heading .eyebrow { margin-bottom: 7px; }
-.latest-forecast-heading h2 { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 620; }
-.latest-forecast-heading a { color: var(--accent); font-size: 16px; white-space: normal; }
+.latest-forecast-heading h2 { margin: 0; font-size: 18.8px; line-height: 1.3; font-weight: 620; }
+.latest-forecast-heading a { color: var(--accent); font-size: 15.04px; white-space: normal; }
 .latest-forecast-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .8fr); gap: 12px 32px; margin-top: 18px; }
 .latest-forecast-value { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
-.latest-forecast-value strong { font-size: 30px; letter-spacing: -.04em; font-weight: 620; }
-.activity-badge { padding: 4px 0; border-bottom: 1px solid currentColor; font-size: 16px; font-weight: 650; }
+.latest-forecast-value strong { font-size: 28.2px; letter-spacing: -.04em; font-weight: 620; }
+.activity-badge { padding: 4px 0; border-bottom: 1px solid currentColor; font-size: 15.04px; font-weight: 650; }
 .activity-low { color: #bdabea; }
 .activity-medium { color: #e6c68d; }
 .activity-high { color: #eda4be; }
-.latest-forecast-meta { display: grid; gap: 12px; justify-items: end; text-align: right; color: var(--muted); font-size: 16px; }
+.latest-forecast-meta { display: grid; gap: 12px; justify-items: end; text-align: right; color: var(--muted); font-size: 15.04px; }
 .latest-forecast-meta > div { display: grid; gap: 4px; }
-.latest-forecast-meta time { color: var(--text); font-size: 16px; }
-.latest-forecast-message { margin: 18px 0 0; color: var(--muted); font-size: 16px; }
+.latest-forecast-meta time { color: var(--text); font-size: 15.04px; }
+.latest-forecast-message { margin: 18px 0 0; color: var(--muted); font-size: 15.04px; }
 @media (max-width: 720px) {
   .latest-aurora-forecast { margin-inline: 14px; padding-block: 19px; }
   .latest-forecast-content { grid-template-columns: 1fr; gap: 14px; }

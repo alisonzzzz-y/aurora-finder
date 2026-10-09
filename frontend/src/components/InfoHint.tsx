@@ -36,9 +36,10 @@ export function InfoHint({ children }: { children: ReactNode }) {
   }, [position])
   useEffect(() => () => clearTimeout(timer.current), [])
   return <span className="info-hint" ref={anchor} onMouseEnter={show} onMouseLeave={hideSoon}>
-    <span className="info-hint-icon" tabIndex={0} onFocus={show} onBlur={hideSoon}
-      aria-label={language === 'zh' ? '查看说明' : 'Information'} aria-describedby={position ? id : undefined}>i</span>
+    <button type="button" className="info-hint-icon" onClick={show} onFocus={show} onBlur={hideSoon}
+      aria-label={language === 'zh' ? '查看说明' : 'Information'} aria-describedby={position ? id : undefined}>i</button>
     {position && createPortal(<span className="info-hint-content" id={id} role="tooltip" style={position}
+      onFocus={() => clearTimeout(timer.current)} onBlur={hideSoon}
       onMouseEnter={() => clearTimeout(timer.current)} onMouseLeave={hideSoon}>{children}</span>, document.body)}
   </span>
 }

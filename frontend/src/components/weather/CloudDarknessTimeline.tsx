@@ -1,3 +1,4 @@
+import { InfoHint } from '../InfoHint'
 import { useEffect, useRef, useState } from 'react'
 import type { NightOutlook } from '../../types/outlook'
 import type { WeatherCloudPoint } from '../../types/weatherForecast'
@@ -74,8 +75,7 @@ export function CloudDarknessTimeline({ points, night, timezone, highlightedPoin
 
   return <section className="cloud-darkness-timeline" aria-labelledby="cloud-darkness-timeline-title">
     <div className="cloud-darkness-title-row">
-      <h3 id="cloud-darkness-timeline-title">{t('cloudDarknessTimelineTitle')}</h3>
-      <span>{t('localTimeNote')}</span>
+      <h3 id="cloud-darkness-timeline-title">{t('cloudDarknessTimelineTitle')}<InfoHint>{t('localTimeNote')}</InfoHint></h3>
     </div>
     <div className="cloud-darkness-legend" aria-hidden="true">
       <span><i className="cloud-line-key" />{t('cloudCoverLegend')}</span>
