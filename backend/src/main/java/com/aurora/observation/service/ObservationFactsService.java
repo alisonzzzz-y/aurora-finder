@@ -52,9 +52,15 @@ public class ObservationFactsService {
                 .filter(fact -> fact.status() == FactFetchStatus.CURRENT).count();
         FactFetchStatus aggregate = usableSources == providerFacts.size() ? FactFetchStatus.CURRENT
                 : usableSources == 0 ? FactFetchStatus.UNAVAILABLE : FactFetchStatus.PARTIAL;
+        com.aurora.observation.dto.AuroraMapResponse map = null;
+        try { map = aurora.latest(); } catch (ProviderUnavailableException ignored) { /* local and sky facts remain usable */ }
+        var sky = conditions.evaluate(location, auroraFact, cloudFact, clock.instant());
+        var combined = new com.aurora.observation.dto.ViewingConditions(sky.level(), sky.evaluatedAtUtc(),
+                sky.validUntilUtc(), sky.modelSignal(), sky.cloudPercent(), sky.dark(), sky.reasons(),
+                sky.ruleVersion(), false, HorizonAuroraService.evaluate(location, map, clock.instant()));
         return new ObservationFactsResponse(clock.instant(), outlook, auroraFact, cloudFact, solarFact,
                 compareCoverage(auroraFact, cloudFact), aggregate, null,
-                conditions.evaluate(location, auroraFact, cloudFact, clock.instant()));
+                combined);
     }
 
     private SourceFact<LocalAuroraActivityResponse> loadAurora(double latitude, double longitude) {

@@ -30,6 +30,17 @@ export type ObservationFacts = {
     dark: boolean | null
     reasons: string[]
     ruleVersion: string
+    horizonAurora?: {
+      status: 'CANDIDATE' | 'NO_CANDIDATE' | 'UNAVAILABLE'
+      direction: 'NORTH' | 'SOUTH'
+      distanceKm: number | null
+      bearingDegrees: number | null
+      modelSignal: number | null
+      latitude: number | null
+      longitude: number | null
+      forecastTime: string | null
+      ruleVersion: string
+    }
     probabilityCalibrated: boolean
   }
   runId?: string

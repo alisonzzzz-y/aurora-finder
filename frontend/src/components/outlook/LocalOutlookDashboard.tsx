@@ -15,14 +15,12 @@ export function LocalOutlookDashboard({ facts }: { facts: ObservationFacts }) {
   const { outlook } = facts
   const night = outlook.nights[selectedIndex] ?? outlook.nights[0]
   const activity = facts.auroraActivity
-  const value = activity.status === 'CURRENT' && activity.data?.status === 'CURRENT' ? activity.data.modelValue : null
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const generatedAt = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: outlook.location.timezone }).format(new Date(facts.generatedAtUtc))
   return <section className="selected-location-outlook" aria-live="polite">
     <div className="selected-location-heading"><h2>{outlook.location.name}, {outlook.location.country}<InfoHint>{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidatedShort')}</InfoHint></h2><p>{outlook.location.timezone}</p></div>
     <ViewingConditionsSummary facts={facts} />
     <div className="local-summary-strip">
-      <div><span>{t('nearbyActivityShort')}</span><strong>{value === null ? t('insufficientData') : t(value < 18 ? 'localActivityLow' : value < 50 ? 'localActivityMedium' : 'localActivityHigh')}</strong></div>
       <div><span>{t('dataStatusShort')}</span><strong>{t(facts.sourceStatus === 'CURRENT' ? 'sourcesCurrentShort' : facts.sourceStatus === 'PARTIAL' ? 'sourcesPartialShort' : 'sourceUnavailable')}</strong></div>
     </div>
     {night && <>

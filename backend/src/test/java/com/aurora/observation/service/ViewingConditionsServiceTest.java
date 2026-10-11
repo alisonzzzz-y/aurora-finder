@@ -16,10 +16,10 @@ class ViewingConditionsServiceTest {
         assertEquals(OutlookLevel.HIGH, high.level());
         assertFalse(high.probabilityCalibrated());
         assertEquals(night.plusSeconds(600), high.evaluatedAtUtc());
-        assertEquals(OutlookLevel.MEDIUM, evaluate(night, 49, 30.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
+        assertEquals(OutlookLevel.HIGH, evaluate(night, 49, 30.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
         assertEquals(OutlookLevel.MEDIUM, evaluate(night, 50, 31.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
         assertEquals(OutlookLevel.MEDIUM, evaluate(night, 18, 69.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
-        assertEquals(OutlookLevel.LOW, evaluate(night, 17, 0.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
+        assertEquals(OutlookLevel.HIGH, evaluate(night, 17, 0.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
         assertEquals(OutlookLevel.LOW, evaluate(night, 100, 70.0, night.plusSeconds(600), FactFetchStatus.CURRENT).level());
     }
     @Test void daylightIsLowEvenWithStrongAuroraAndClearSky() {
@@ -36,8 +36,10 @@ class ViewingConditionsServiceTest {
         for (Instant sample : List.of(night.minusSeconds(1), night.plusSeconds(3600), night.plusSeconds(86400)))
             assertEquals(OutlookLevel.INSUFFICIENT_DATA, evaluate(night, 100, 0.0, sample, FactFetchStatus.CURRENT).level());
     }
-    @Test void unavailableSourceDoesNotProduceGrade() {
-        assertEquals(OutlookLevel.INSUFFICIENT_DATA, evaluate(night, 100, 0.0, night.plusSeconds(600), FactFetchStatus.EXPIRED).level());
+    @Test void unavailableAuroraDoesNotDiscardUsableSkyConditions() {
+        var result = evaluate(night, 100, 0.0, night.plusSeconds(600), FactFetchStatus.EXPIRED);
+        assertEquals(OutlookLevel.HIGH, result.level());
+        assertNull(result.modelSignal());
     }
     private ViewingConditions evaluate(Instant now, int signal, Double cloud, Instant sample, FactFetchStatus status) {
         var activity = new LocalAuroraActivityResponse(ForecastStatus.CURRENT, LocalAuroraActivityLevel.HIGH, signal,
