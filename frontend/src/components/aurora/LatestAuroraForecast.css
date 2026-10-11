@@ -20,3 +20,21 @@
   .latest-forecast-content { grid-template-columns: 1fr; gap: 14px; }
   .latest-forecast-meta { justify-items: start; text-align: left; }
 }
+.kp-timezone-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; }
+.kp-timezone-picker select { min-width: 0; max-width: 240px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; }
+.kp-timezone-picker select:focus-visible, .kp-time-navigation button:focus-visible, .kp-time-slider input:focus-visible, .kp-interactive-chart svg:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.kp-interactive-chart { position: relative; }
+.kp-interactive-chart svg { cursor: grab; touch-action: pan-y; user-select: none; }
+.kp-interactive-chart svg.is-dragging { cursor: grabbing; }
+.kp-hover-guide { pointer-events: none; }
+.kp-hover-guide line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+.kp-hover-guide circle { fill: var(--accent); stroke: var(--text); stroke-width: 2; }
+.kp-hover-readout { position: absolute; display: grid; gap: 6px; width: min(240px, calc(100% - 16px)); padding: 11px 13px; border: 1px solid var(--line-strong); border-radius: 7px; background: #211b30; color: var(--text); box-shadow: 0 5px 20px #0005; font-size: 13px; line-height: 1.45; pointer-events: none; }
+.kp-hover-readout strong { font-size: 19px; color: var(--accent); }
+.kp-hover-readout span { color: var(--muted); }
+.kp-time-navigation { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.kp-time-navigation button { min-width: 38px; min-height: 38px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--accent-wash); color: var(--text); font: inherit; cursor: pointer; }
+.kp-time-navigation button:disabled { opacity: .4; cursor: default; }
+.kp-time-slider { flex: 1; min-width: 0; display: flex; }
+.kp-time-slider input { width: 100%; margin: 0; accent-color: var(--accent); cursor: ew-resize; }
+@media (max-width: 720px) { .latest-forecast-heading { flex-direction: column; } .kp-time-reset { font-size: 12px !important; } .kp-time-navigation { gap: 6px; } }
