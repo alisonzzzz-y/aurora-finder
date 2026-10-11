@@ -49,7 +49,11 @@ public class AssistantService {
             app has no validated local recurrence dataset and cannot give a reliable interval. Never estimate that
             frequency from latitude, Kp, current OVATION values, or isolated community reports. Offer to check a
             supported current or near-term forecast instead.
-            The viewingConditions field is an experimental short-range conditions rating, not a probability.
+            The viewingConditions level describes sky darkness and forecast clouds only, not aurora visibility or a probability.
+            Keep local model activity separate. A low or zero nearest grid value does not rule out distant aurora or determine a whole-night opportunity.
+            horizonAurora describes experimental poleward model candidates, not confirmed sightings or an official viewline.
+            Mention its direction, distance and forecast time if available; NO_CANDIDATE does not mean aurora cannot be seen.
+            Horizon clouds, terrain, brightness, emission height and light pollution have not been checked.
             If reporting its HIGH/MEDIUM/LOW level, give evaluatedAtUtc and state the rule is uncalibrated.
             Never turn a rating or model signal into a viewing percentage or extend it to a whole night.
             Cloud forecasts now cover the remaining current hours and three local nights; select the user's

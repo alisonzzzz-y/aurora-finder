@@ -39,3 +39,6 @@
 .storm-bar-reading:focus-visible .storm-bar, .storm-bar-reading:hover .storm-bar { stroke: #f5efff; stroke-width: 1; }
 .storm-bar-tooltip { position: fixed; z-index: 100; width: 280px; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #211a30; color: var(--text); box-shadow: 0 6px 24px #0005; pointer-events: none; display: grid; gap: 7px; font-size: 14px; line-height: 1.5; }
 .storm-bar-tooltip > span:last-child { color: var(--muted); }
+
+.horizon-activity { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.horizon-activity > strong { display: block; margin-top: 8px; font-size: 15px; }
