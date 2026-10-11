@@ -1,0 +1,26 @@
+.monitoring-section { padding: 32px clamp(18px, 3vw, 56px); min-width: 0; }
+.monitoring-section h2 { font-size: 22px; margin: 0 0 24px; }
+.monitoring-section h3 { font-size: 16px; margin: 0 0 14px; }
+.monitoring-headline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.monitoring-plots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 24px; }
+.monitoring-plots article { min-width: 0; }
+.monitoring-value { display: block; color: var(--accent); font-size: 26px; margin-bottom: 16px; }
+.evidence-chart { width: 100%; min-width: 0; }
+.evidence-chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.evidence-chart svg line { stroke: var(--line); }
+.evidence-chart svg text { fill: var(--muted); font-size: 12px; }
+.evidence-chart svg path { stroke: var(--accent); fill: none; stroke-width: 2; }
+.evidence-chart svg circle { fill: var(--accent); }
+.evidence-chart .evidence-cursor line { stroke: var(--accent); stroke-dasharray: 3 4; }
+.evidence-readout { min-height: 44px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.camera-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; }
+.camera-links article { padding: 20px 0; border-top: 1px solid var(--line); }
+.camera-links p { color: var(--muted); }
+.history-controls { display: flex; flex-wrap: wrap; gap: 18px; margin: 18px 0; }
+.history-controls label { display: grid; gap: 8px; min-width: 0; max-width: 100%; }
+.history-controls select, .history-controls input, .history-review textarea { max-width: 100%; min-width: 0; background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); padding: 10px; border-radius: 6px; font: inherit; }
+.history-review textarea { display: block; width: 100%; margin: 12px 0; }
+.history-review summary { cursor: pointer; color: var(--accent); margin: 16px 0; }
+.history-review button { background: var(--accent-wash); color: var(--text); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 16px; cursor: pointer; font: inherit; }
+.history-plots { grid-template-columns: repeat(2,minmax(0,1fr)); }
+@media(max-width: 900px) { .monitoring-plots, .camera-links { grid-template-columns: minmax(0,1fr); } }

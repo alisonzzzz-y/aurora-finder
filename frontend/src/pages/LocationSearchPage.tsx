@@ -1,3 +1,4 @@
+import { MonitoringSections } from '../components/monitoring/MonitoringSections'
 import { InfoHint } from '../components/InfoHint'
 import { PlaceComparison } from '../components/location/PlaceComparison'
 import { LocationSearch } from '../components/location/LocationSearch'
@@ -107,6 +108,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
         <NextAuroraStormForecast />
       </div>
+      <MonitoringSections facts={facts} />
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('historicalReportsTitle')}>
         <HistoricalReportsChart />
       </div>

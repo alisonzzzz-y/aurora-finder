@@ -38,11 +38,13 @@ public class ObservationController {
     private final GeomagneticStormForecastService geomagneticStormForecast;
     private final GeomagneticWarningsService geomagneticWarnings;
     private final RunRecordStore records;
+    private final com.aurora.observation.monitoring.ObservationHistoryService history;
 
     public ObservationController(LocationService locations, OutlookService outlook, AuroraMapService auroraMap,
                                  KpIndexService kpIndex, WeatherService weather, ObservationFactsService facts,
                                  GeomagneticStormForecastService geomagneticStormForecast,
-                                 GeomagneticWarningsService geomagneticWarnings, RunRecordStore records) {
+                                 GeomagneticWarningsService geomagneticWarnings, RunRecordStore records,
+                                 com.aurora.observation.monitoring.ObservationHistoryService history) {
         this.locations = locations;
         this.outlook = outlook;
         this.auroraMap = auroraMap;
@@ -52,6 +54,7 @@ public class ObservationController {
         this.geomagneticStormForecast = geomagneticStormForecast;
         this.geomagneticWarnings = geomagneticWarnings;
         this.records = records;
+        this.history = history;
     }
 
     @GetMapping("/locations")
@@ -71,6 +74,7 @@ public class ObservationController {
             ObservationFactsResponse result = facts.forLocation(locationId);
             records.recordFacts(runId, result);
             records.finish(runId, "COMPLETED");
+            history.capture(result);
             return new ObservationFactsResponse(result.generatedAtUtc(), result.outlook(), result.auroraActivity(),
                     result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId, result.viewingConditions());
         } catch (RuntimeException failure) {
