@@ -107,7 +107,7 @@ export function LatestAuroraForecast() {
         <div className="kp-trend-layout">
           {periods.reported && <div className="kp-latest-reported">
             <span>{t('latestReportedKp')}</span>
-            <span className="kp-value-with-info"><strong>Kp {periods.reported.kp.toFixed(2)}</strong><InfoHint><p>{t('globalKpNote')}</p><p>{t('geomagneticScaleNote')}</p></InfoHint></span>
+            <span className="kp-value-with-info"><strong className="kp-featured-value"><span className="kp-featured-unit">Kp</span> <span className="kp-featured-number">{periods.reported.kp.toFixed(2)}</span></strong><InfoHint><p>{t('globalKpNote')}</p><p>{t('geomagneticScaleNote')}</p></InfoHint></span>
             <small>{t(periods.reported.type === 'OBSERVED' ? 'observedKp' : 'estimatedKp')} · {formatKpTime(periods.reported.periodStart, locale, timeZone)}</small>
           </div>}
           <KpTrendChart records={data?.records ?? []} timeZone={timeZone} />
