@@ -27,7 +27,9 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const { t } = useI18n()
   const auroraMap = useAuroraMapData()
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
-  const [showLocalOutlook, setShowLocalOutlook] = useState(false)
+  const [sidebarView, setSidebarView] = useState<'activity' | 'local' | 'comparison'>('activity')
+  const [comparisonPlaces, setComparisonPlaces] = useState<Location[]>([])
+  const [comparisonLimit, setComparisonLimit] = useState(false)
   const [mapLocation, setMapLocation] = useState<Location | null>(null)
   const activityPoints = useMemo(
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
@@ -39,8 +41,20 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     setSelectedActivityIndex(null)
     // A new object also lets a repeated click recenter after manually panning.
     setMapLocation({ ...location })
-    setShowLocalOutlook(true)
+    setSidebarView('local')
     onSelect(location)
+  }
+
+  function addComparisonPlace(location: Location) {
+    if (!comparisonPlaces.some(place => place.id === location.id)) {
+      if (comparisonPlaces.length >= 3) {
+        setComparisonLimit(true)
+        return
+      }
+      setComparisonPlaces(previous => [...previous, location])
+    }
+    setComparisonLimit(false)
+    setSidebarView('comparison')
   }
 
   return <>
@@ -51,34 +65,38 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         </Suspense>
 
       </div>
-      <aside className={`map-sidebar${hasLocationRequest && showLocalOutlook ? "" : " map-sidebar-activity"}`}>
+      <aside className={`map-sidebar${sidebarView === 'comparison' || (hasLocationRequest && sidebarView === 'local') ? "" : " map-sidebar-activity"}`}>
         <div className="map-context-heading" aria-label={t('auroraForecast')}>
           <p className="eyebrow">{t('globalActivity')}</p>
           <h2>{t('auroraForecast')}<InfoHint>{t('mapScopeNote')}</InfoHint></h2>
           <span>{t('shortRange')}</span>
         </div>
-        <LocationSearch busy={busy} onSelect={selectLocation} />
+        <LocationSearch busy={sidebarView === 'comparison' ? false : busy} buttonLabel={sidebarView === 'comparison' ? t('compareButton') : undefined} onSelect={sidebarView === 'comparison' ? addComparisonPlace : selectLocation} />
         <div className="map-sidebar-content">
-          {hasLocationRequest && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
-            <button type="button" aria-pressed={!showLocalOutlook} onClick={() => setShowLocalOutlook(false)}>{t('activityAreasTab')}</button>
-            <button type="button" aria-pressed={showLocalOutlook} onClick={() => setShowLocalOutlook(true)}>{t('localOutlook')}</button>
+          {(hasLocationRequest || comparisonPlaces.length > 0) && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
+            <button type="button" aria-pressed={sidebarView === 'activity'} onClick={() => setSidebarView('activity')}>{t('activityAreasTab')}</button>
+            <button type="button" aria-pressed={sidebarView === 'local'} onClick={() => setSidebarView('local')}>{t('localOutlook')}</button>
+            <button type="button" aria-pressed={sidebarView === 'comparison'} onClick={() => setSidebarView('comparison')}>{t('compareTitle')}{comparisonPlaces.length > 0 && ` (${comparisonPlaces.length})`}</button>
           </div>}
-          {(!hasLocationRequest || !showLocalOutlook) && <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
-          {hasLocationRequest && showLocalOutlook && <div className="map-sidebar-location-panel">
+          {sidebarView === 'activity' && <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
+          {sidebarView === 'local' && <div className="map-sidebar-location-panel">
+            {mapLocation && <button className="comparison-action comparison-add-current" type="button" disabled={comparisonPlaces.some(place => place.id === mapLocation.id) || comparisonPlaces.length >= 3} onClick={() => addComparisonPlace(mapLocation)}>{t(comparisonPlaces.some(place => place.id === mapLocation.id) ? 'compareAdded' : 'compareButton')}</button>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
             {facts && <LocalOutlookDashboard key={facts.outlook.location.id} facts={facts} />}
           </div>}
+          {sidebarView === 'comparison' && <PlaceComparison places={comparisonPlaces} limit={comparisonLimit} onSelect={location => {
+            selectLocation(location)
+            document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+          }} onRemove={id => {
+            setComparisonPlaces(previous => previous.filter(place => place.id !== id))
+            setComparisonLimit(false)
+          }} />}
+
         </div>
       </aside>
     </section>
     <div className="home-content-sections">
-      <div className="home-section-band home-section-band-even" role="region" aria-label={t('compareTitle')}>
-        <PlaceComparison onSelect={location => {
-          selectLocation(location)
-          document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
-        }} />
-      </div>
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
         <LatestAuroraForecast />
       </div>
