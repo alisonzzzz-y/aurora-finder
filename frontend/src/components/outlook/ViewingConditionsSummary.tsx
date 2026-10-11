@@ -16,6 +16,7 @@ export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts })
   const localCurrent = activity.status === 'CURRENT' && activity.data?.status === 'CURRENT'
     && activity.data.forecastTime && Date.parse(activity.data.forecastTime) > now
   const localValue = localCurrent ? activity.data?.modelValue : null
+  const localLevel = localValue == null ? 'insufficient_data' : localValue < 18 ? 'low' : localValue < 50 ? 'medium' : 'high'
   const time = (value: string) => new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:facts.outlook.location.timezone,timeZoneName:'short'}).format(new Date(value))
   const horizon = data?.horizonAurora
   const horizonCurrent = horizon?.forecastTime && Date.parse(horizon.forecastTime) > now
@@ -30,18 +31,26 @@ export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts })
   return <div className="viewing-conditions">
     <div className="conditions-heading">{t('conditionsTitle')}<InfoHint><p>{t('conditionsRules')}</p><p>{t('conditionsProbability')}</p></InfoHint></div>
     <strong className={`conditions-level conditions-${level.toLowerCase()}`}>{t(labels[level])}</strong>
-    <p>{data && (current || data.level === 'INSUFFICIENT_DATA') ? data.reasons.map(reason => reasons[reason] ?? t('conditionsUnknown')).join(' · ') : t('conditionsRefresh')}</p>
-    {current && data.evaluatedAtUtc && <p><time>{new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:facts.outlook.location.timezone,timeZoneName:'short'}).format(new Date(data.evaluatedAtUtc))}</time> · {t('conditionsSample')}</p>}
-    {current && <div className="conditions-factors"><span>{t('cloudCoverLegend')} {data.cloudPercent}%</span><span>{data.dark ? t('conditionsDark') : t('conditionsNotDark')}</span></div>}
+    <details className="conditions-details">
+      <summary>{t('conditionsDetails')}</summary>
+      {current ? <>
+        <div className="conditions-factors"><span>{t('cloudCoverLegend')} {data.cloudPercent}%</span><span>{data.dark ? t('conditionsDark') : t('conditionsNotDark')}</span></div>
+        {data.evaluatedAtUtc && <p><time>{time(data.evaluatedAtUtc)}</time> · {t('conditionsSample')}</p>}
+      </> : <p>{data && data.level === 'INSUFFICIENT_DATA'
+        ? [...new Set(data.reasons.map(reason => reasons[reason] ?? t('conditionsUnknown')))].join(' · ')
+        : t('conditionsRefresh')}</p>}
+    </details>
     <div className="horizon-activity">
       <div className="conditions-heading">{t('nearbyActivityShort')}<InfoHint>{t('localAuroraNote')}</InfoHint></div>
-      <strong>{localValue == null ? t('conditionsNoAurora') : `${t(localValue < 18 ? 'localActivityLow' : localValue < 50 ? 'localActivityMedium' : 'localActivityHigh')} · ${localValue}/100`}</strong>
+      <strong className={`local-activity-${localLevel}`}>{localValue == null ? t('conditionsNoAurora') : `${t(localValue < 18 ? 'localActivityLow' : localValue < 50 ? 'localActivityMedium' : 'localActivityHigh')} · ${localValue}/100`}</strong>
     </div>
     <div className="horizon-activity">
       <div className="conditions-heading">{t('horizonTitle')}<InfoHint>{t('horizonRules')}</InfoHint></div>
       <strong>{t(horizonCurrent && horizon?.status === 'CANDIDATE' ? 'horizonCandidate' : horizonCurrent && horizon?.status === 'NO_CANDIDATE' ? 'horizonNone' : 'horizonUnavailable')}</strong>
-      {horizonCurrent && horizon?.forecastTime && <p><time>{time(horizon.forecastTime)}</time></p>}
+      {horizonCurrent && <details className="conditions-details"><summary>{t('conditionsDetails')}</summary>
+      {horizon?.forecastTime && <p><time>{time(horizon.forecastTime)}</time></p>}
       {horizonCurrent && horizon?.status === 'CANDIDATE' && <p>{t(horizon.direction === 'SOUTH' ? 'horizonSouth' : 'horizonNorth')} · {horizon.distanceKm} km · {t('horizonSignal')} {horizon.modelSignal}/100</p>}
+      </details>}
     </div>
   </div>
 }

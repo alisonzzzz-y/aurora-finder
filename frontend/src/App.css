@@ -85,8 +85,9 @@ h1 { font-size: clamp(39.48px, 4.7vw, 63.92px); line-height: 1.05; letter-spacin
 .activity-area-caption { margin-top: 3px; color: var(--muted); font-size: 15.04px; }
 .activity-area-level { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; color: #cfc4e5; font-size: 15.04px; }
 .activity-area-level small { color: var(--muted); font-variant-numeric: tabular-nums; }
-.activity-area-level-medium { color: #dfc68d; }
-.activity-area-level-high { color: #e69bc2; }
+.activity-area-level-low { color: var(--activity-low); }
+.activity-area-level-medium { color: var(--activity-medium); }
+.activity-area-level-high { color: var(--activity-high); }
 .activity-areas-message { margin: 10px 0 0; color: #b7b1c6; font-size: 15.04px; line-height: 1.6; }
 .foundation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin: 42px clamp(16px, 3vw, 56px) 0; }
 .feature-card { min-height: 0; padding: 24px 0 0; border-top: 1px solid var(--line); background: transparent; }

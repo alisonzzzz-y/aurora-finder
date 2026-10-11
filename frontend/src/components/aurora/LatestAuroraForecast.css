@@ -8,9 +8,9 @@
 .latest-forecast-value { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
 .latest-forecast-value strong { font-size: 28.2px; letter-spacing: -.04em; font-weight: 620; }
 .activity-badge { padding: 4px 0; border-bottom: 1px solid currentColor; font-size: 15.04px; font-weight: 650; }
-.activity-low { color: #bdabea; }
-.activity-medium { color: #e6c68d; }
-.activity-high { color: #eda4be; }
+.activity-low { color: var(--activity-low); }
+.activity-medium { color: var(--activity-medium); }
+.activity-high { color: var(--activity-high); }
 .latest-forecast-meta { display: grid; gap: 12px; justify-items: end; text-align: right; color: var(--muted); font-size: 15.04px; }
 .latest-forecast-meta > div { display: grid; gap: 4px; }
 .latest-forecast-meta time { color: var(--text); font-size: 15.04px; }

@@ -42,3 +42,10 @@
 .map-sidebar .conditions-factors { flex-direction: row; flex-wrap: wrap; gap: 5px 12px; margin: 8px 0; }
 .comparison-add-current { margin-top: 12px; }
 .comparison-empty { color: var(--muted); line-height: 1.5; }
+
+.viewing-conditions .local-activity-high { color: var(--activity-high); }
+.viewing-conditions .local-activity-medium { color: var(--activity-medium); }
+.viewing-conditions .local-activity-low { color: var(--activity-low); }
+.conditions-details { margin: 10px 0; }
+.conditions-details > summary { color: var(--accent); cursor: pointer; width: fit-content; }
+.conditions-details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
