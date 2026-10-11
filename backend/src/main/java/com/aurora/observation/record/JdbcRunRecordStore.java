@@ -40,6 +40,22 @@ public class JdbcRunRecordStore implements RunRecordStore {
         this.retentionDays = retentionDays;
     }
 
+    @Override public boolean historyAvailable() { return true; }
+
+    @Override public void saveHistory(com.aurora.observation.monitoring.ObservationSnapshot snapshot) {
+        try {
+            jdbc.update("INSERT INTO observation_history(location_ref, bucket_utc, captured_at_utc, snapshot_json) VALUES (?, ?, ?, ?)",
+                    snapshot.locationId(), snapshot.capturedAt().getEpochSecond()/900,
+                    timestamp(snapshot.capturedAt()), mapper.writeValueAsString(snapshot));
+        } catch (org.springframework.dao.DuplicateKeyException ignored) { /* First snapshot per city and 15-minute bucket. */ }
+    }
+
+    @Override public List<com.aurora.observation.monitoring.ObservationSnapshot> history(long locationId) {
+        return jdbc.query("SELECT snapshot_json FROM observation_history WHERE location_ref = ? AND captured_at_utc >= ? ORDER BY captured_at_utc DESC LIMIT 672",
+                (rs, row) -> mapper.readValue(rs.getString(1), com.aurora.observation.monitoring.ObservationSnapshot.class),
+                locationId, timestamp(clock.instant().minus(7, ChronoUnit.DAYS)));
+    }
+
     @Override
     public String begin(String kind, Long locationId) {
         String id = UUID.randomUUID().toString();
@@ -163,6 +179,7 @@ public class JdbcRunRecordStore implements RunRecordStore {
     }
 
     private void deleteExpired() {
+        jdbc.update("DELETE FROM observation_history WHERE captured_at_utc < ?", timestamp(clock.instant().minus(7, ChronoUnit.DAYS)));
         jdbc.update("DELETE FROM evaluation_run WHERE created_at_utc < ?",
                 timestamp(clock.instant().minus(retentionDays, ChronoUnit.DAYS)));
     }

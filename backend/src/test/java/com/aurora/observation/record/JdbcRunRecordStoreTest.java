@@ -29,10 +29,27 @@ class JdbcRunRecordStoreTest {
     private final List<String> mysqlSchemas = new java.util.ArrayList<>();
 
     @Test
+    void publicHistorySurvivesRestartDeduplicatesAndExpires() {
+        String url = "jdbc:h2:file:" + directory.resolve("history") + ";DB_CLOSE_ON_EXIT=FALSE";
+        JdbcTemplate jdbc=jdbc(url);
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
+        var records=store(jdbc,NOW);
+        var snapshot=new com.aurora.observation.monitoring.ObservationSnapshot(2964574L,"Dublin","Europe/Dublin",NOW,
+                12,"CURRENT",NOW.minusSeconds(60),NOW.plusSeconds(1800),42.5,true,"MEDIUM",NOW,NOW.plusSeconds(1800),"sky-conditions-v2","CURRENT",NOW);
+        records.saveHistory(snapshot); records.saveHistory(snapshot);
+        var loaded=store(jdbc(url),NOW).history(2964574L);
+        assertEquals(1,loaded.size()); assertEquals(snapshot,loaded.getFirst());
+        assertTrue(records.history(2965768L).isEmpty());
+        assertTrue(store(jdbc,NOW.plusSeconds(8*86400)).history(2964574L).isEmpty());
+        store(jdbc,NOW.plusSeconds(8*86400)).begin("PAGE_FACTS",2964574L);
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM observation_history",Integer.class));
+    }
+
+    @Test
     void migratesEmptyDatabaseAndReadsMinimalEvidenceAfterRestart() {
         String url = "jdbc:h2:file:" + directory.resolve("records") + ";DB_CLOSE_ON_EXIT=FALSE";
         JdbcTemplate first = jdbc(url);
-        assertEquals(2, Flyway.configure().dataSource(first.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
+        assertEquals(3, Flyway.configure().dataSource(first.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
         JdbcRunRecordStore records = store(first, NOW);
         String id = records.begin("PAGE_FACTS", 2964574L);
         records.recordFacts(id, facts());
@@ -80,7 +97,9 @@ class JdbcRunRecordStoreTest {
     void upgradesExistingRecordsWithoutLosingEvidence() {
         JdbcTemplate jdbc = jdbc("jdbc:h2:mem:upgradefacts;DB_CLOSE_DELAY=-1");
         Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).target("1").load().migrate();
-        String id = store(jdbc, NOW).begin("PAGE_FACTS", 2964574L);
+        String id = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, location_ref, rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                id, "PAGE_FACTS", java.sql.Timestamp.from(NOW), "RUNNING", 2964574L, JdbcRunRecordStore.RULE_VERSION, "NOT_VALIDATED");
         jdbc.update("INSERT INTO evaluation_night(run_id, local_date, window_start_utc, window_end_utc, level, reason_code) VALUES (?, ?, ?, ?, ?, ?)",
                 id, java.sql.Date.valueOf("2026-10-01"), java.sql.Timestamp.from(NOW), java.sql.Timestamp.from(NOW.plusSeconds(86400)), "INSUFFICIENT_DATA", "RULES_NOT_VALIDATED");
         Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
