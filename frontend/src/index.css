@@ -18,6 +18,9 @@
   --accent-wash: #29213c;
   --warning: #f0c98b;
   --error: #f0a3a7;
+  --activity-high: #ff929b;
+  --activity-medium: #75dcb5;
+  --activity-low: #c3b0ed;
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: var(--page); }
