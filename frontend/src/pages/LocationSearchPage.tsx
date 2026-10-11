@@ -11,7 +11,7 @@ import type { Location } from '../types/location'
 import type { ObservationFacts } from '../types/observationFacts'
 import { localizeError, useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
@@ -26,6 +26,7 @@ type Props = {
 export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const { t } = useI18n()
   const auroraMap = useAuroraMapData()
+  const sidebarContentRef = useRef<HTMLDivElement>(null)
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
   const [sidebarView, setSidebarView] = useState<'activity' | 'local' | 'comparison'>('activity')
   const [comparisonPlaces, setComparisonPlaces] = useState<Location[]>([])
@@ -35,6 +36,9 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
   )
+  useLayoutEffect(() => {
+    if (sidebarContentRef.current) sidebarContentRef.current.scrollTop = 0
+  }, [sidebarView, mapLocation])
   const hasLocationRequest = busy || Boolean(facts) || Boolean(error)
 
   function selectLocation(location: Location) {
@@ -72,7 +76,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           <span>{t('shortRange')}</span>
         </div>
         <LocationSearch busy={sidebarView === 'comparison' ? false : busy} buttonLabel={sidebarView === 'comparison' ? t('compareButton') : undefined} onSelect={sidebarView === 'comparison' ? addComparisonPlace : selectLocation} />
-        <div className="map-sidebar-content">
+        <div className="map-sidebar-content" ref={sidebarContentRef}>
           {(hasLocationRequest || comparisonPlaces.length > 0) && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
             <button type="button" aria-pressed={sidebarView === 'activity'} onClick={() => setSidebarView('activity')}>{t('activityAreasTab')}</button>
             <button type="button" aria-pressed={sidebarView === 'local'} onClick={() => setSidebarView('local')}>{t('localOutlook')}</button>
