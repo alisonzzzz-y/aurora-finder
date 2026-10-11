@@ -3,7 +3,7 @@ import type { ObservationFacts } from '../../types/observationFacts'
 import { useI18n } from '../../i18n'
 import { InfoHint } from '../InfoHint'
 
-export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts }) {
+export function ViewingConditionsSummary({ facts, compact = false }: { facts: ObservationFacts; compact?: boolean }) {
   const { t, language } = useI18n()
   const [now, setNow] = useState(Date.now)
   useEffect(() => {
@@ -28,7 +28,12 @@ export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts })
     AURORA_UNAVAILABLE: t('conditionsNoAurora'), CLOUD_UNAVAILABLE: t('conditionsNoCloud'),
     NO_SHARED_TIME: t('conditionsNoOverlap'), NO_CURRENT_CLOUD_SAMPLE: t('conditionsNoCloud'), DARKNESS_UNAVAILABLE: t('conditionsNoDarkness'),
   }
+  if (compact) return <dl className="location-quick-facts" aria-live="polite">
+    <div><dt>{t('nearbyActivityShort')}</dt><dd className={`local-activity-${localLevel}`}>{localValue == null ? t('conditionsNoAurora') : t(localValue < 18 ? 'localActivityLow' : localValue < 50 ? 'localActivityMedium' : 'localActivityHigh')}</dd></div>
+    <div><dt>{t('conditionsTitle')}<InfoHint>{t('conditionsProbability')}</InfoHint></dt><dd className={`conditions-${level.toLowerCase()}`}>{t(labels[level])}</dd></div>
+  </dl>
   return <div className="viewing-conditions">
+    <div className="conditions-sky">
     <div className="conditions-heading">{t('conditionsTitle')}<InfoHint><p>{t('conditionsRules')}</p><p>{t('conditionsProbability')}</p></InfoHint></div>
     <strong className={`conditions-level conditions-${level.toLowerCase()}`}>{t(labels[level])}</strong>
     <details className="conditions-details">
@@ -40,6 +45,7 @@ export function ViewingConditionsSummary({ facts }: { facts: ObservationFacts })
         ? [...new Set(data.reasons.map(reason => reasons[reason] ?? t('conditionsUnknown')))].join(' · ')
         : t('conditionsRefresh')}</p>}
     </details>
+    </div>
     <div className="horizon-activity">
       <div className="conditions-heading">{t('nearbyActivityShort')}<InfoHint>{t('localAuroraNote')}</InfoHint></div>
       <strong className={`local-activity-${localLevel}`}>{localValue == null ? t('conditionsNoAurora') : `${t(localValue < 18 ? 'localActivityLow' : localValue < 50 ? 'localActivityMedium' : 'localActivityHigh')} · ${localValue}/100`}</strong>
