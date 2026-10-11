@@ -310,3 +310,35 @@ small { font-size: 1rem; }
 @media (max-width: 900px) {
   .map-sidebar-activity { min-height: 0; }
 }
+
+/* Keep the map sidebar brief; detailed charts use the page width below it. */
+.map-sidebar-summary .map-sidebar-content { overflow: visible; }
+.map-sidebar-summary .map-sidebar-switch { position: static; }
+.location-quick-facts { margin: 20px 0; display: grid; gap: 18px; }
+.location-quick-facts > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; }
+.location-quick-facts dt { color: var(--muted); }
+.location-quick-facts dd { margin: 0; font-weight: 650; }
+.location-quick-facts .local-activity-high { color: var(--activity-high); }
+.location-quick-facts .local-activity-medium { color: var(--activity-medium); }
+.location-quick-facts .local-activity-low { color: var(--activity-low); }
+.location-summary-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.location-details-band { scroll-margin-top: 20px; }
+.location-details-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.location-details-heading h2 { margin: 0; font-size: 24px; }
+.location-details-band .selected-location-outlook { border-top: 0; padding: 24px 0; }
+.location-details-band .selected-location-heading { display: none; }
+.location-details-band .selected-location-outlook > .viewing-conditions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.location-details-band .selected-location-outlook > .viewing-conditions .horizon-activity { margin: 0; padding: 0; border: 0; }
+.location-details-comparison { margin-top: 24px; padding-top: 28px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+.location-details-comparison > .search-panel { max-width: 640px; }
+.location-details-comparison .comparison-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#aurora-dashboard:focus, #location-details:focus, #location-comparison:focus { outline: none; }
+@media(max-width: 900px) {
+  .location-details-comparison .comparison-grid { grid-template-columns: minmax(0, 1fr); }
+  .map-sidebar-summary { min-height: 0; height: auto; }
+}
+
+@media(max-width: 900px) {
+  .location-details-band .selected-location-outlook > .viewing-conditions { grid-template-columns: minmax(0, 1fr); }
+  .location-details-band .cloud-forecast-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+}

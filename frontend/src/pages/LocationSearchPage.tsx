@@ -1,3 +1,4 @@
+import { ViewingConditionsSummary } from '../components/outlook/ViewingConditionsSummary'
 import { MonitoringSections } from '../components/monitoring/MonitoringSections'
 import { InfoHint } from '../components/InfoHint'
 import { PlaceComparison } from '../components/location/PlaceComparison'
@@ -12,7 +13,7 @@ import type { Location } from '../types/location'
 import type { ObservationFacts } from '../types/observationFacts'
 import { localizeError, useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
-import { lazy, Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
@@ -25,11 +26,10 @@ type Props = {
 }
 
 export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const auroraMap = useAuroraMapData()
-  const sidebarContentRef = useRef<HTMLDivElement>(null)
   const [selectedActivityIndex, setSelectedActivityIndex] = useState<number | null>(null)
-  const [sidebarView, setSidebarView] = useState<'activity' | 'local' | 'comparison'>('activity')
+  const [sidebarView, setSidebarView] = useState<'activity' | 'local'>('activity')
   const [comparisonPlaces, setComparisonPlaces] = useState<Location[]>([])
   const [comparisonLimit, setComparisonLimit] = useState(false)
   const [mapLocation, setMapLocation] = useState<Location | null>(null)
@@ -37,10 +37,16 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
   )
-  useLayoutEffect(() => {
-    if (sidebarContentRef.current) sidebarContentRef.current.scrollTop = 0
-  }, [sidebarView, mapLocation])
   const hasLocationRequest = busy || Boolean(facts) || Boolean(error)
+  const visibleFacts = !busy && !error && facts && (!mapLocation || facts.outlook.location.id === mapLocation.id) ? facts : null
+  const c = language === 'zh' ? {
+    details: '查看详细预报 ↓', back: '返回地图 ↑', title: '的极光与观测条件', compare: '添加对比地点',
+  } : { details: 'View detailed forecast ↓', back: 'Back to map ↑', title: 'Aurora and viewing conditions in ', compare: 'Add a place to compare' }
+  function moveTo(id: string) {
+    const target = document.getElementById(id)
+    target?.focus({ preventScroll: true })
+    target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+  }
 
   function selectLocation(location: Location) {
     setSelectedActivityIndex(null)
@@ -59,49 +65,64 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       setComparisonPlaces(previous => [...previous, location])
     }
     setComparisonLimit(false)
-    setSidebarView('comparison')
+    moveTo('location-comparison')
   }
 
   return <>
-    <section id="aurora-dashboard" className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
+    <section id="aurora-dashboard" tabIndex={-1} className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
           <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={mapLocation} />
         </Suspense>
 
       </div>
-      <aside className={`map-sidebar${sidebarView === 'comparison' || (hasLocationRequest && sidebarView === 'local') ? "" : " map-sidebar-activity"}`}>
+      <aside className="map-sidebar map-sidebar-activity map-sidebar-summary">
         <div className="map-context-heading" aria-label={t('auroraForecast')}>
           <p className="eyebrow">{t('globalActivity')}</p>
           <h2>{t('auroraForecast')}<InfoHint>{t('mapScopeNote')}</InfoHint></h2>
           <span>{t('shortRange')}</span>
         </div>
-        <LocationSearch busy={sidebarView === 'comparison' ? false : busy} buttonLabel={sidebarView === 'comparison' ? t('compareButton') : undefined} onSelect={sidebarView === 'comparison' ? addComparisonPlace : selectLocation} />
-        <div className="map-sidebar-content" ref={sidebarContentRef}>
+        <LocationSearch busy={busy} onSelect={selectLocation} />
+        <div className="map-sidebar-content">
           {(hasLocationRequest || comparisonPlaces.length > 0) && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
             <button type="button" aria-pressed={sidebarView === 'activity'} onClick={() => setSidebarView('activity')}>{t('activityAreasTab')}</button>
             <button type="button" aria-pressed={sidebarView === 'local'} onClick={() => setSidebarView('local')}>{t('localOutlook')}</button>
-            <button type="button" aria-pressed={sidebarView === 'comparison'} onClick={() => setSidebarView('comparison')}>{t('compareTitle')}{comparisonPlaces.length > 0 && ` (${comparisonPlaces.length})`}</button>
           </div>}
           {sidebarView === 'activity' && <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
           {sidebarView === 'local' && <div className="map-sidebar-location-panel">
-            {mapLocation && <button className="comparison-action comparison-add-current" type="button" disabled={comparisonPlaces.some(place => place.id === mapLocation.id) || comparisonPlaces.length >= 3} onClick={() => addComparisonPlace(mapLocation)}>{t(comparisonPlaces.some(place => place.id === mapLocation.id) ? 'compareAdded' : 'compareButton')}</button>}
+            {mapLocation && <h3>{mapLocation.name}, {mapLocation.country}</h3>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
-            {facts && <LocalOutlookDashboard key={facts.outlook.location.id} facts={facts} />}
+            {visibleFacts && <>
+              <ViewingConditionsSummary facts={visibleFacts} compact />
+              <div className="location-summary-actions">
+                <button className="comparison-action" type="button" onClick={() => moveTo('location-details')}>{c.details}</button>
+                <button className="comparison-action" type="button" disabled={comparisonPlaces.some(place => place.id === visibleFacts.outlook.location.id)} onClick={() => addComparisonPlace(visibleFacts.outlook.location)}>{t(comparisonPlaces.some(place => place.id === visibleFacts.outlook.location.id) ? 'compareAdded' : 'compareButton')}</button>
+              </div>
+              {comparisonLimit && <p role="status">{t('compareLimit')}</p>}
+            </>}
           </div>}
-          {sidebarView === 'comparison' && <PlaceComparison places={comparisonPlaces} limit={comparisonLimit} onSelect={location => {
-            selectLocation(location)
-            document.getElementById('aurora-dashboard')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
-          }} onRemove={id => {
-            setComparisonPlaces(previous => previous.filter(place => place.id !== id))
-            setComparisonLimit(false)
-          }} />}
 
         </div>
       </aside>
     </section>
     <div className="home-content-sections">
+      {(hasLocationRequest || comparisonPlaces.length > 0) && <section id="location-details" tabIndex={-1} className="home-section-band home-section-band-even location-details-band" aria-labelledby="location-details-title">
+        <header className="location-details-heading"><h2 id="location-details-title">{mapLocation ? language === 'zh' ? `${mapLocation.name}${c.title}` : `${c.title}${mapLocation.name}` : t('localOutlook')}</h2><button className="comparison-action" type="button" onClick={() => moveTo('aurora-dashboard')}>{c.back}</button></header>
+        {busy && <p role="status">{t('loading')}</p>}
+        {error && <p role="alert" className="error">{localizeError(new Error(error), t)}</p>}
+        {visibleFacts && <LocalOutlookDashboard key={visibleFacts.outlook.location.id} facts={visibleFacts} />}
+        <div id="location-comparison" tabIndex={-1} className="location-details-comparison">
+          <LocationSearch busy={false} title={c.compare} buttonLabel={t('compareButton')} onSelect={addComparisonPlace} />
+          <PlaceComparison places={comparisonPlaces} limit={comparisonLimit} onSelect={location => {
+            selectLocation(location)
+            moveTo('aurora-dashboard')
+          }} onRemove={id => {
+            setComparisonPlaces(previous => previous.filter(place => place.id !== id))
+            setComparisonLimit(false)
+          }} />
+        </div>
+      </section>}
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('globalKpActivity')}>
         <LatestAuroraForecast />
       </div>
