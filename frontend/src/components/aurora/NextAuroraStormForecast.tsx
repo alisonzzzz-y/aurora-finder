@@ -68,10 +68,6 @@ export function NextAuroraStormForecast() {
           })}</ul>}
       </div>
       <WarningTimeline warnings={warnings.warnings} now={now} />
-      <details className="visual-details"><summary>{t('warningValidWindow')}</summary>{warnings.warnings.map(warning => <article key={`${warning.productId}:${warning.validFrom}`}>
-        <strong>{warning.noaaScale ?? `${t('expectedKIndex')}: ${warning.expectedKIndex}`}</strong>
-        <span>{t('warningValidWindow')}: {localDateTime(warning.validFrom, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}–{localDateTime(warning.validTo, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
-      </article>)}</details>
     </div>}
     {loading && <p className="storm-outlook-message">{t('loading')}</p>}
     {!loading && error !== null && <p className="storm-outlook-message error">{localizeError(error, t)}</p>}
