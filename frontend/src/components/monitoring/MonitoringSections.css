@@ -9,9 +9,9 @@
 .evidence-chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
 .evidence-chart svg line { stroke: var(--line); }
 .evidence-chart svg text { fill: var(--muted); font-size: 12px; }
-.evidence-chart svg path { stroke: var(--accent); fill: none; stroke-width: 2; }
-.evidence-chart svg circle { fill: var(--accent); }
-.evidence-chart .evidence-cursor line { stroke: var(--accent); stroke-dasharray: 3 4; }
+.evidence-chart svg path { stroke: var(--evidence-color); fill: none; stroke-width: 2; }
+.evidence-chart svg circle { fill: var(--evidence-color); }
+.evidence-chart .evidence-cursor line { stroke: var(--evidence-color); stroke-dasharray: 3 4; }
 .evidence-readout { min-height: 44px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .camera-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; }
 .camera-links article { padding: 20px 0; border-top: 1px solid var(--line); }
@@ -24,3 +24,10 @@
 .history-review button { background: var(--accent-wash); color: var(--text); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 16px; cursor: pointer; font: inherit; }
 .history-plots { grid-template-columns: repeat(2,minmax(0,1fr)); }
 @media(max-width: 900px) { .monitoring-plots, .camera-links { grid-template-columns: minmax(0,1fr); } }
+
+.evidence-gap { fill: #aebbd31a; }
+.monitoring-source { font-size: 13px; color: var(--muted); }
+.history-plots article:first-child .monitoring-value { color: #83b8ee; }
+.history-plots article:last-child .monitoring-value { color: #eef3fa; }
+
+.aurora-camera-frame { display: block; width: 100%; height: 420px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; background: #111; }

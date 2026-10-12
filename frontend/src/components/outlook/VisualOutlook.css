@@ -41,3 +41,7 @@
 
 .horizon-activity { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
 .horizon-activity > strong { display: block; margin-top: 8px; font-size: 15px; }
+
+.comparison-chart.storm-daily-chart { overflow-x: visible; }
+.comparison-chart.storm-daily-chart svg { min-width: 0; }
+.storm-daily-chart .chart-legend { gap: 10px 20px; margin-bottom: 16px; }

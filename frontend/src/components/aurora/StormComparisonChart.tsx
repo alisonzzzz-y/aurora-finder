@@ -3,7 +3,7 @@ import type { GeomagneticStormDay } from '../../types/geomagneticStorm'
 import type { GeomagneticWarning } from '../../types/geomagneticWarnings'
 import { useI18n } from '../../i18n'
 import '../outlook/VisualOutlook.css'
-const colors = ['#c8b8ed', '#9b7dcf', '#725397']
+const colors = ['#83b8ee', '#f2ce72', '#ffa36b', '#ff7f91']
 export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) {
   const { language, t } = useI18n()
   const chartRef = useRef<HTMLElement>(null)
@@ -17,35 +17,40 @@ export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) 
     if (!element) return
     const observer = new ResizeObserver(entries => {
       const measuredWidth = entries[0]?.contentRect.width
-      if (measuredWidth) setWidth(Math.max(760, measuredWidth))
+      if (measuredWidth) setWidth(Math.max(280, measuredWidth))
     })
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
-  const plotStart = 235
+  const plotStart = 48
   const plotEnd = width - 28
-  const xFor = (value: number) => plotStart + value / 100 * (plotEnd - plotStart)
+  const yFor = (value: number) => 330 - value / 100 * 300
+  const groupWidth = (plotEnd - plotStart) / Math.max(1, days.length)
+  const gap = width < 500 ? 3 : 8
+  const barWidth = Math.min(64, (groupWidth * .8 - gap * 3) / 4)
+  const center = (index: number) => plotStart + groupWidth * (index + .5)
   const categories = [ ['activeGeomagnetic', 'activeChancePercent'], ['minorStorm', 'minorStormChancePercent'], ['moderateStorm', 'moderateStormChancePercent'], ['strongStorm', 'strongExtremeStormChancePercent'] ] as const
   const date = (value: string) => new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`))
-  return <figure ref={chartRef} className="comparison-chart">
-    <div className="chart-legend">{days.map((day,index)=><span key={day.date}><i style={{background:colors[index % colors.length]}} />{date(day.date)} (UTC)</span>)}</div>
-    <svg viewBox={`0 0 ${width} 360`} role="group" aria-label={t('stormProbabilityExplanation')}>
-      {[0,25,50,75,100].map(value=><g key={value}><line x1={xFor(value)} x2={xFor(value)} y1={12} y2={326}/><text x={xFor(value)} y={350} textAnchor="middle">{value}%</text></g>)}
-      {categories.map(([label,field],category)=><g key={field}>
-        <text x={34} y={43+category*78} textAnchor="start">{t(label)}</text>
-        {days.map((day,index)=>{
+  return <figure ref={chartRef} className="comparison-chart storm-daily-chart">
+    <div className="chart-legend">{categories.map(([label,field],index)=><span key={field}><i style={{background:colors[index]}} />{t(label)}</span>)}</div>
+    <svg viewBox={`0 0 ${width} 385`} role="group" aria-label={t('stormProbabilityExplanation')}>
+      {[0,25,50,75,100].map(value=><g key={value}><line x1={plotStart} x2={plotEnd} y1={yFor(value)} y2={yFor(value)}/><text x={plotStart-8} y={yFor(value)+5} textAnchor="end">{value}%</text></g>)}
+      {days.map((day,index)=><g key={day.date}>
+        <text x={center(index)} y={354} textAnchor="middle">{date(day.date)}<tspan x={center(index)} dy="19">UTC</tspan></text>
+        {categories.map(([label,field],category)=>{
           const selected = active?.day === index && active.category === category
-          const y = 14+category*78+index*19
-          return <g key={day.date} className="storm-bar-reading" tabIndex={0} role="img"
-            aria-label={`${date(day.date)} UTC, ${t(label)}: ${day[field]}%. ${t('stormProbabilityExplanation')}`}
+          const x = center(index) - (barWidth*4+gap*3)/2 + category*(barWidth+gap)
+          const y = yFor(day[field])
+          return <g key={field} className="storm-bar-reading" tabIndex={0} role="img"
+            aria-label={`${date(day.date)} UTC, ${t(label)}: ${day[field]}%. ${t('stormProbabilityReading')}`}
             onPointerMove={event=>showReading(index, category, event.clientX, event.clientY)}
             onPointerLeave={()=>setActive(null)}
-            onFocus={event=>{const bounds=event.currentTarget.getBoundingClientRect(); showReading(index, category, bounds.left, bounds.bottom)}}
+            onFocus={event=>{const bounds=event.currentTarget.getBoundingClientRect(); showReading(index, category, bounds.left, bounds.top)}}
             onBlur={()=>setActive(null)} onKeyDown={event=>{if(event.key==='Escape') setActive(null)}}>
-            <rect className="storm-bar-hit" x={plotStart} y={y-2} width={plotEnd-plotStart} height={19} fill="transparent" />
-            {selected && <rect className="storm-bar-highlight" x={plotStart} y={y-2} width={plotEnd-plotStart} height={19} />}
-            <rect className="storm-bar" x={plotStart} y={y} width={xFor(day[field])-plotStart} height={14} fill={colors[index % colors.length]} />
-            <text x={day[field] > 95 ? xFor(day[field])-6 : xFor(day[field])+8} textAnchor={day[field] > 95 ? 'end' : 'start'} y={y+11}>{day[field]}%</text>
+            <rect className="storm-bar-hit" x={x-gap/2} y={30} width={barWidth+gap} height={300} fill="transparent" />
+            {selected && <rect className="storm-bar-highlight" x={x-gap/2} y={30} width={barWidth+gap} height={300} />}
+            <rect className="storm-bar" x={x} y={y} width={barWidth} height={330-y} fill={colors[category]} />
+            {width >= 600 && <text x={x+barWidth/2} textAnchor="middle" y={y-8}>{day[field]}%</text>}
           </g>
         })}
       </g>)}
