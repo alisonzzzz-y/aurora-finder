@@ -33,7 +33,7 @@ class ObservationToolsServiceTest {
         KpIndexService kpIndex = mock(KpIndexService.class);
         GeomagneticStormForecastService stormForecast = mock(GeomagneticStormForecastService.class);
         GeomagneticWarningsService warnings = mock(GeomagneticWarningsService.class);
-        ObservationToolsService tools = new ObservationToolsService(locations, facts, outlooks, kpIndex, stormForecast, warnings);
+        ObservationToolsService tools = new ObservationToolsService(locations, facts, outlooks, kpIndex, stormForecast, warnings, mock(com.aurora.observation.monitoring.ObservationHistoryService.class), java.time.Clock.systemUTC());
 
         Location dublin = new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");

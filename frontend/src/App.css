@@ -342,3 +342,8 @@ small { font-size: 1rem; }
   .location-details-band .selected-location-outlook > .viewing-conditions { grid-template-columns: minmax(0, 1fr); }
   .location-details-band .cloud-forecast-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
+.activity-period-switch { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.activity-period-switch button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: inherit; padding: 6px 0; cursor: pointer; }
+.activity-period-switch button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.activity-period-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.map-sidebar .activity-peak-forecast li { grid-template-columns: 90px minmax(0,1fr); }

@@ -28,3 +28,13 @@ A snapshot preserves the model reading and its original status/times, the evalua
 Backend tests cover source parsing, quality filtering, stale data, XML external-entity protection, station identity, and database restart/deduplication/retention. Frontend checks cover chart hover, snapshot switching, review export and narrow layouts. Live provider checks are separate from fixtures: fixtures verify interactions, not present-day conditions.
 
 后端测试覆盖来源解析、质量过滤、过期状态、XML 安全、测站一致性和数据库重启、去重、清理。前端检查悬停、快照切换、导出和窄屏布局。交互样例与真实接口检查分开，不把测试数据作为当前实况。
+
+## Recent activity and assistant tools / 近期活动与 AI 查询
+
+The map sidebar separates recent events from predictions. Recent events group adjacent completed Kp 5+ intervals in the available 72-hour feed; gaps split events, and observed values take precedence over estimates at the same timestamp. This is a rolling source window, not a permanent event catalogue or a record of local sightings.
+
+地图右侧分别展示历史事件与预测。历史事件合并最近七十二小时来源数据中相邻、已结束的 Kp 5 以上时段；缺测不连成一次事件，同一时间优先采用观测值。这是滚动数据窗口，并非永久事件档案，也不是当地实际观测记录。
+
+The assistant can call `get_recent_geomagnetic_history` for past global readings and a current reference timestamp, and `get_local_history` for a resolved city's saved snapshots between local noon and next noon on the requested date. Empty local history does not imply no aurora. These tools do not provide web search or a verified sighting feed. Recurrence-frequency claims still require a validated dataset.
+
+AI 可以查询过去的全球读数、当前参考时间，以及已确认地点在指定日期当地中午至次日中午保存的快照。没有当地历史记录不代表没出现极光。这些工具不含联网搜索或已核实的观测报告流；观测频率仍需经过验证的数据集支持。
