@@ -14,6 +14,7 @@ import type { ObservationFacts } from '../types/observationFacts'
 import { localizeError, useI18n } from '../i18n'
 import { useAuroraMapData } from '../hooks/useAuroraMapData'
 import { lazy, Suspense, useMemo, useState } from 'react'
+import { useActivityAreaNames } from '../hooks/useActivityAreaNames'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
@@ -37,6 +38,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
   )
+  const activityAreaNames = useActivityAreaNames(activityPoints, language)
   const hasLocationRequest = busy || Boolean(facts) || Boolean(error)
   const visibleFacts = !busy && !error && facts && (!mapLocation || facts.outlook.location.id === mapLocation.id) ? facts : null
   const c = language === 'zh' ? {
@@ -72,7 +74,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     <section id="aurora-dashboard" tabIndex={-1} className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
-          <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={mapLocation} />
+          <AuroraMap data={auroraMap.data} forecastError={auroraMap.error} forecastLoading={auroraMap.loading} activityPoints={activityPoints} activityAreaNames={activityAreaNames} selectedActivityIndex={selectedActivityIndex} onSelectActivity={setSelectedActivityIndex} selectedLocation={mapLocation} />
         </Suspense>
 
       </div>
@@ -88,7 +90,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
             <button type="button" aria-pressed={sidebarView === 'activity'} onClick={() => setSidebarView('activity')}>{t('activityAreasTab')}</button>
             <button type="button" aria-pressed={sidebarView === 'local'} onClick={() => setSidebarView('local')}>{t('localOutlook')}</button>
           </div>}
-          {sidebarView === 'activity' && <CurrentActivityAreas data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
+          {sidebarView === 'activity' && <CurrentActivityAreas points={activityPoints} areaNames={activityAreaNames} data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
           {sidebarView === 'local' && <div className="map-sidebar-location-panel">
             {mapLocation && <h3>{mapLocation.name}, {mapLocation.country}</h3>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}

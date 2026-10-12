@@ -3,6 +3,7 @@ import { AttributionControl, Map as MapLibreMap, NavigationControl, Popup, setWo
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
+import { activityCoordinates, activityPointKey } from './activityAreaNames'
 import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -55,10 +56,11 @@ function asActivityGeoJson(points: AuroraMapPoint[]): FeatureCollection<Point, {
   }
 }
 
-function createActivityPopup(number: number, value: number, pointLabel: string, signalLabel: string) {
+function createActivityPopup(number: number, value: number, pointLabel: string, signalLabel: string, coordinates: string) {
   const content = document.createElement('div')
   const title = document.createElement('strong')
   title.textContent = `${number}. ${pointLabel}`
+  title.title = coordinates
   const signal = document.createElement('div')
   signal.textContent = `${signalLabel}: ${value}`
   content.append(title, signal)
@@ -70,6 +72,7 @@ type Props = {
   forecastError: string
   forecastLoading: boolean
   activityPoints: AuroraMapPoint[]
+  activityAreaNames: Record<string, string>
   selectedActivityIndex: number | null
   onSelectActivity: (index: number) => void
   selectedLocation?: Location | null
@@ -82,7 +85,7 @@ const baseMaps = [
 ] as const
 const initialBaseMapId = baseMaps[0].id
 
-export function AuroraMap({ data, forecastError, forecastLoading, activityPoints, selectedActivityIndex, onSelectActivity, selectedLocation = null }: Props) {
+export function AuroraMap({ data, forecastError, forecastLoading, activityPoints, activityAreaNames, selectedActivityIndex, onSelectActivity, selectedLocation = null }: Props) {
   const { language, t } = useI18n()
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY?.trim()
@@ -90,6 +93,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   const map = useRef<MapLibreMap | null>(null)
   const dataRef = useRef<AuroraMapData | null>(null)
   const activityPointsRef = useRef(activityPoints)
+  const activityAreaNamesRef = useRef(activityAreaNames)
   const selectedLocationRef = useRef(selectedLocation)
   const activityPopup = useRef<Popup | null>(null)
   const selectActivityRef = useRef(onSelectActivity)
@@ -110,6 +114,13 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   useEffect(() => {
     activityPointsRef.current = activityPoints
   }, [activityPoints])
+
+  useEffect(() => {
+    activityAreaNamesRef.current = activityAreaNames
+    if (selectedActivityIndex === null || !activityPopup.current?.isOpen()) return
+    const point = activityPointsRef.current[selectedActivityIndex]
+    if (point) activityPopup.current.setDOMContent(createActivityPopup(selectedActivityIndex + 1, point.auroraValue, activityAreaNames[activityPointKey(point)] || t('modelGridPoint'), t('activityValue'), activityCoordinates(point)))
+  }, [activityAreaNames, selectedActivityIndex, t])
 
   useEffect(() => {
     selectedLocationRef.current = selectedLocation
@@ -275,7 +286,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
         selectActivityRef.current(properties.index)
         activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
           .setLngLat(coordinates as [number, number])
-          .setDOMContent(createActivityPopup(properties.index + 1, properties.auroraValue ?? 0, translateRef.current('modelGridPoint'), translateRef.current('activityValue')))
+          .setDOMContent(createActivityPopup(properties.index + 1, properties.auroraValue ?? 0, activityAreaNamesRef.current[activityPointKey({ longitude: coordinates[0], latitude: coordinates[1] })] || translateRef.current('modelGridPoint'), translateRef.current('activityValue'), activityCoordinates({ longitude: coordinates[0], latitude: coordinates[1] })))
           .addTo(instance)
       })
       instance.on('click', 'selected-location-circle', event => {
@@ -354,7 +365,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
 
   useEffect(() => {
     const instance = map.current
-    if (!instance?.getStyle()) return
+    if (!tilesReady || !instance?.getStyle()) return
     const source = instance.getSource('strong-activity-points') as GeoJSONSource | undefined
     source?.setData(asActivityGeoJson(activityPoints))
     if (instance.getLayer('strong-activity-circles')) {
@@ -368,10 +379,10 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       instance.easeTo({ center: [point.longitude, point.latitude], zoom: Math.max(instance.getZoom(), 2.2), duration: 1500 })
       activityPopup.current = new Popup({ closeButton: true, closeOnClick: true })
         .setLngLat([point.longitude, point.latitude])
-        .setDOMContent(createActivityPopup(selectedActivityIndex + 1, point.auroraValue, t('modelGridPoint'), t('activityValue')))
+        .setDOMContent(createActivityPopup(selectedActivityIndex + 1, point.auroraValue, activityAreaNamesRef.current[activityPointKey(point)] || t('modelGridPoint'), t('activityValue'), activityCoordinates(point)))
         .addTo(instance)
     }
-  }, [activityPoints, selectedActivityIndex, t])
+  }, [activityPoints, selectedActivityIndex, t, tilesReady])
 
   const mapLabel = selectedLocation
     ? `${t('mapAria')}: ${selectedLocation.name}, ${selectedLocation.country}`

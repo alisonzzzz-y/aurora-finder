@@ -1,25 +1,21 @@
 import { KpPeakForecast } from './KpPeakForecast'
 import { InfoHint } from '../InfoHint'
-import type { AuroraMapData } from '../../types/auroraMap'
+import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
 import { useI18n } from '../../i18n'
-import { strongestDistinctPoints } from './activityPoints'
+import { activityCoordinates, activityPointKey } from './activityAreaNames'
 
 type Props = {
   data: AuroraMapData | null
+  points: AuroraMapPoint[]
+  areaNames: Record<string, string>
   error: string
   loading: boolean
   selectedIndex: number | null
   onSelect: (index: number) => void
 }
 
-function formatCoordinate(value: number, positive: string, negative: string) {
-  const direction = value < 0 ? negative : positive
-  return `${Math.abs(value).toFixed(1)}° ${direction}`
-}
-
-export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSelect }: Props) {
+export function CurrentActivityAreas({ data, points, areaNames, error, loading, selectedIndex, onSelect }: Props) {
   const { t } = useI18n()
-  const points = data?.status === 'CURRENT' ? strongestDistinctPoints(data.points) : []
 
   return <section className="current-activity-areas" aria-labelledby="current-activity-title">
     <h2 id="current-activity-title">{t('currentAreasTitle')}<InfoHint><p>{t('currentAreasNote')}</p><p>{t('activityAreasMapHint')}</p></InfoHint></h2>
@@ -34,11 +30,12 @@ export function CurrentActivityAreas({ data, error, loading, selectedIndex, onSe
             className={`activity-area-select${selectedIndex === index ? ' is-selected' : ''}`}
             type="button"
             aria-pressed={selectedIndex === index}
+            title={activityCoordinates(point)}
             onClick={() => onSelect(index)}
           >
             <span className="activity-area-number" aria-hidden="true">{index + 1}</span>
             <span className="activity-area-location">
-            <span className="activity-area-coordinates">{formatCoordinate(point.latitude, 'N', 'S')} · {formatCoordinate(point.longitude, 'E', 'W')}</span>
+            <span className="activity-area-name">{areaNames[activityPointKey(point)] || t('modelGridPoint')}</span>
             </span>
           <span className={`activity-area-level activity-area-level-${level.slice('activity'.length).toLowerCase()}`}>
             <span className="activity-mini-bar" aria-hidden="true"><i style={{ width: `${point.auroraValue}%` }} /></span>{t(level)} <small>{t('activityValue')} {point.auroraValue}</small>
