@@ -51,6 +51,7 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
   const locale = language === 'zh' ? 'zh-CN' : 'en'
   const solar = useMonitoring<Solar>('/api/v1/solar-wind')
   const regional = useMonitoring<Regional>('/api/v1/regional-activity')
+  const [cameraOpen, setCameraOpen] = useState(false)
   const r = regional.data
   const last = r?.points.at(-1), previous = r?.points.at(-2)
   const recentPair = last && previous && Date.parse(last.at) - Date.parse(previous.at) <= 7200000
@@ -83,7 +84,7 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
           { name: language === 'zh' ? '基律纳，瑞典' : 'Kiruna, Sweden', source: 'Swedish Institute of Space Physics', url: 'https://www.irf.se/en/forskning/kago/firmamentkamera/' },
           { name: language === 'zh' ? 'Poker Flat，阿拉斯加' : 'Poker Flat, Alaska', source: 'University of Alaska Fairbanks', url: 'https://allsky.gi.alaska.edu/' },
           { name: language === 'zh' ? '芬兰观测站' : 'Stations in Finland', source: 'Finnish Meteorological Institute', url: 'https://rwc-finland.fmi.fi/' },
-        ].map(camera => <article key={camera.url}><h3>{camera.name}</h3><p>{camera.source}</p>{camera.url === 'https://allsky.gi.alaska.edu/' && <iframe className="aurora-camera-frame" src={camera.url} title={camera.name} loading="lazy" referrerPolicy="no-referrer" allow="fullscreen" />}<a href={camera.url} target="_blank" rel="noreferrer">{c.view}</a></article>)}
+        ].map(camera => <article key={camera.url}><h3>{camera.name}</h3><p>{camera.source}</p>{camera.url === 'https://allsky.gi.alaska.edu/' && <><div className="camera-viewer">{cameraOpen ? <iframe className="aurora-camera-frame" src={camera.url} title={camera.name} referrerPolicy="no-referrer" allow="fullscreen" /> : <button type="button" className="camera-start" onClick={() => setCameraOpen(true)} aria-label={language === 'zh' ? '开始查看阿拉斯加摄像头' : 'Start Alaska camera viewer'}><span aria-hidden="true">▶</span>{language === 'zh' ? '开始查看' : 'Start viewing'}</button>}</div>{cameraOpen && <button className="camera-stop" type="button" onClick={() => setCameraOpen(false)}>{language === 'zh' ? '■ 停止查看' : '■ Stop viewing'}</button>}</>}<a href={camera.url} target="_blank" rel="noreferrer">{c.view}</a></article>)}
       </div>
     </section>
     <ObservationHistory key={facts?.outlook.location.id ?? 'default'} facts={facts} />
