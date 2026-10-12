@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeKpRecords, nearestKpRecord, formatKpTime, KP_PERIOD_MS } from '../src/components/aurora/kpChartData.ts'
+import { kpStormBand, normalizeKpRecords, nearestKpRecord, formatKpTime, KP_PERIOD_MS } from '../src/components/aurora/kpChartData.ts'
 const record = (periodStart, kp = 2, type = 'OBSERVED') => ({periodStart,kp,type,noaaScale:null,activityLevel:'LOW'})
 
 test('chart sorts valid source readings and prefers observations over duplicate predictions', () => {
@@ -25,4 +25,10 @@ test('time zone formatting keeps the source instant and changes calendar dates a
   assert.match(formatKpTime(instant,'zh-CN','Asia/Shanghai',true),/10月11日.*07:00/)
   assert.match(formatKpTime(instant,'en','Europe/Dublin'),/Oct 11.*00:00.*GMT\+1/)
   assert.match(formatKpTime('2026-10-25T02:00:00Z','en','Europe/Dublin'),/Oct 25.*02:00.*GMT/)
+})
+
+test('storm highlights include each threshold and retain the strongest band above G3', () => {
+  for (const [kp, band] of [[0, ''], [4.67, ''], [5, 'kp-storm-g1'], [5.67, 'kp-storm-g1'], [6, 'kp-storm-g2'], [6.67, 'kp-storm-g2'], [7, 'kp-storm-g3'], [8.67, 'kp-storm-g3'], [9, 'kp-storm-g3']]) {
+    assert.equal(kpStormBand(kp), band)
+  }
 })

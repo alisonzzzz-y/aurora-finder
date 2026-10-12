@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type PointerEvent, type Ke
 import type { KpIndexRecord } from '../../types/kpIndex'
 import { useI18n } from '../../i18n'
 import { canConnectKpPeriods, selectKpPeriods } from './kpPeriods'
-import { formatKpTime, KP_PERIOD_MS, KP_WINDOW_MS, kpStormScale, nearestKpRecord, normalizeKpRecords } from './kpChartData'
+import { formatKpTime, KP_PERIOD_MS, KP_WINDOW_MS, kpStormBand, kpStormScale, nearestKpRecord, normalizeKpRecords } from './kpChartData'
 
 export function KpTrendChart({ records, timeZone }: { records: KpIndexRecord[]; timeZone: string }) {
   const { t, language } = useI18n()
@@ -98,18 +98,18 @@ export function KpTrendChart({ records, timeZone }: { records: KpIndexRecord[]; 
       }} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
         <title>{t('kpChartTitle')}</title><desc>{t('kpChartDescription')}</desc>
         <defs><clipPath id={clipId}><rect x={left - 5} y={top - 5} width={right - left + 10} height={bottom - top + 10} /></clipPath></defs>
-        {[0, 3, 5, 6, 9].map(tick => <g key={tick}><line className={tick === 5 ? 'kp-gridline kp-threshold' : 'kp-gridline'} x1={left} x2={right} y1={yFor(tick)} y2={yFor(tick)} /><text className="kp-axis-label" x={left - 9} y={yFor(tick) + 4} textAnchor="end">{tick}</text></g>)}
-        <text className="kp-threshold-label" x={right} y={yFor(5) - 6} textAnchor="end">{t('kpThresholdLabel')}</text>
+        {[0, 3, 5, 6, 7, 9].map(tick => <g key={tick}><line className={tick >= 5 && tick <= 7 ? `kp-gridline kp-threshold kp-storm-g${tick - 4}` : 'kp-gridline'} x1={left} x2={right} y1={yFor(tick)} y2={yFor(tick)} /><text className="kp-axis-label" x={left - 9} y={yFor(tick) + 4} textAnchor="end">{tick}</text></g>)}
+        {[5, 6, 7].map(threshold => <text key={threshold} className={`kp-threshold-label kp-storm-g${threshold - 4}`} x={right} y={yFor(threshold) - 6} textAnchor="end">{t('kpThresholdLabel').replace('G1', `G${threshold - 4}`)} · Kp {threshold}</text>)}
         <g clipPath={`url(#${clipId})`}>
           {sorted.slice(0, -1).map((record, index) => {
             const next = sorted[index + 1]
             if (Date.parse(next.periodStart) < start || Date.parse(record.periodStart) > end || !canConnectKpPeriods(record, next)) return null
             return <path key={record.periodStart} className={`kp-chart-segment ${record.type.toLowerCase()}`} d={`M ${xFor(record.periodStart)} ${yFor(record.kp)} L ${xFor(next.periodStart)} ${yFor(next.kp)}`} />
           })}
-          {visible.map(record => <g key={record.periodStart} className={`kp-chart-mark ${record.type.toLowerCase()}`}>
+          {visible.map(record => <g key={record.periodStart} className={`kp-chart-mark ${record.type.toLowerCase()} ${kpStormBand(record.kp)}`}>
             {record.type === 'ESTIMATED' ? <rect x={xFor(record.periodStart) - 4} y={yFor(record.kp) - 4} width="8" height="8" transform={`rotate(45 ${xFor(record.periodStart)} ${yFor(record.kp)})`} /> : <circle cx={xFor(record.periodStart)} cy={yFor(record.kp)} r="4" />}
           </g>)}
-          {active && <g className="kp-hover-guide"><line x1={xFor(active.periodStart)} x2={xFor(active.periodStart)} y1={top} y2={bottom} /><circle cx={xFor(active.periodStart)} cy={yFor(active.kp)} r="6" /></g>}
+          {active && <g className={`kp-hover-guide ${kpStormBand(active.kp)}`}><line x1={xFor(active.periodStart)} x2={xFor(active.periodStart)} y1={top} y2={bottom} /><circle cx={xFor(active.periodStart)} cy={yFor(active.kp)} r="6" /></g>}
         </g>
         {ticks.map((time, index) => <text key={time} className="kp-time-label" x={xFor(time)} y={height - 28} textAnchor={index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle'}>
           <tspan x={xFor(time)}>{new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone }).format(time)}</tspan>
@@ -126,6 +126,6 @@ export function KpTrendChart({ records, timeZone }: { records: KpIndexRecord[]; 
       <button type="button" aria-label={t('kpLater')} title={t('kpLater')} disabled={start >= lastStart} onClick={() => moveWindow(start + KP_PERIOD_MS)}>→</button>
       <button type="button" className="kp-time-reset" onClick={() => moveWindow(defaultStart)}>{t('kpRecentWindow')}</button>
     </div>
-    <ol className="sr-only">{visible.map(record => <li key={record.periodStart}>{format(record.periodStart)} · {typeLabel(record)} · Kp {record.kp.toFixed(2)}</li>)}</ol>
+    <ol className="sr-only">{visible.map(record => <li key={record.periodStart}>{format(record.periodStart)} · {typeLabel(record)} · Kp {record.kp.toFixed(2)} · {scale(record)}</li>)}</ol>
   </div>
 }
