@@ -150,8 +150,17 @@ public class AssistantService {
         }
         input.add(message("user", userMessage.toString()));
 
+        boolean retriedIncomplete = false;
         for (int turn = 0; turn < MAX_MODEL_TURNS; turn++) {
             JsonNode response = openAi.respond(INSTRUCTIONS, input, toolDefinitions);
+            if ("incomplete".equals(response.path("status").asText())) {
+                if (!retriedIncomplete && "max_output_tokens".equals(response.path("incomplete_details").path("reason").asText())) {
+                    retriedIncomplete = true;
+                    input.add(message("user", "Give a complete, concise answer using the evidence already returned. Use at most 180 Chinese characters or 120 English words. Do not repeat a summary."));
+                    continue;
+                }
+                throw new AssistantUnavailableException("The AI answer was incomplete. Please retry.");
+            }
             JsonNode output = response.path("output");
             if (!output.isArray()) {
                 throw new AssistantUnavailableException("The AI service returned an invalid response.");
