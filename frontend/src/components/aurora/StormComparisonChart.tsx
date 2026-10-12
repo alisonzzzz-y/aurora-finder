@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { GeomagneticStormDay } from '../../types/geomagneticStorm'
 import type { GeomagneticWarning } from '../../types/geomagneticWarnings'
 import { useI18n } from '../../i18n'
-import { InfoHint } from '../InfoHint'
 import '../outlook/VisualOutlook.css'
 const colors = ['#c8b8ed', '#9b7dcf', '#725397']
 export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) {
@@ -29,9 +28,8 @@ export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) 
   const categories = [ ['activeGeomagnetic', 'activeChancePercent'], ['minorStorm', 'minorStormChancePercent'], ['moderateStorm', 'moderateStormChancePercent'], ['strongStorm', 'strongExtremeStormChancePercent'] ] as const
   const date = (value: string) => new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`))
   return <figure ref={chartRef} className="comparison-chart">
-    <div className="storm-probability-heading">{t('stormProbabilityTitle')}<InfoHint>{t('stormProbabilityExplanation')}</InfoHint></div>
     <div className="chart-legend">{days.map((day,index)=><span key={day.date}><i style={{background:colors[index % colors.length]}} />{date(day.date)} (UTC)</span>)}</div>
-    <svg viewBox={`0 0 ${width} 360`} role="group" aria-label={t('stormOutlookTitle')}>
+    <svg viewBox={`0 0 ${width} 360`} role="group" aria-label={t('stormProbabilityExplanation')}>
       {[0,25,50,75,100].map(value=><g key={value}><line x1={xFor(value)} x2={xFor(value)} y1={12} y2={326}/><text x={xFor(value)} y={350} textAnchor="middle">{value}%</text></g>)}
       {categories.map(([label,field],category)=><g key={field}>
         <text x={34} y={43+category*78} textAnchor="start">{t(label)}</text>

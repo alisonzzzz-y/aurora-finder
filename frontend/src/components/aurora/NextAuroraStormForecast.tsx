@@ -46,12 +46,11 @@ export function NextAuroraStormForecast() {
 
   return <section className="storm-outlook" aria-labelledby="storm-outlook-title" aria-live="polite">
     <div className="storm-outlook-heading">
-      <div><h2 id="storm-outlook-title">{t('stormOutlookTitle')}<InfoHint><p>{t('stormOutlookIntro')}</p><p>{t('geomagneticScaleNote')}</p><p>{t('stormOutlookLimit')}</p><p><a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p></InfoHint></h2></div>
+      <div><h2 id="storm-outlook-title">{t('stormOutlookTitle')}<InfoHint><p>{t('stormOutlookIntro')}</p><p>{t('geomagneticScaleNote')}</p><p>{t('stormProbabilityExplanation')}</p><p>{t('stormOutlookLimit')}</p><p><a href="https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p></InfoHint></h2></div>
     </div>
     {warningsError && <p className="storm-outlook-message">{t('geomagneticWarningsUnavailable')}</p>}
     {!warningsError && warnings && <div className="geomagnetic-warning-list" aria-label={t('geomagneticWarningsTitle')}>
-      <h3>{t('geomagneticWarningsTitle')}</h3>
-      <p className="geomagnetic-warning-checked">{t('warningChecked')}: {localDateTime(warnings.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</p>
+      <h3>{t('geomagneticWarningsTitle')}<InfoHint>{t('warningChecked')}: {localDateTime(warnings.retrievedAt, locale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</InfoHint></h3>
       {warnings.warnings.length === 0 && <p>{t('noActiveGeomagneticWarnings')}</p>}
       <div className="storm-watch">
         <h4>{t('stormWatchTitle')}<InfoHint>{t('stormWatchExplanation')}</InfoHint></h4>
