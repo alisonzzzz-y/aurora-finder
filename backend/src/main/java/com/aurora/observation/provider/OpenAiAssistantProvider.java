@@ -54,7 +54,7 @@ public class OpenAiAssistantProvider {
         payload.put("tool_choice", "auto");
         payload.put("parallel_tool_calls", false);
         payload.put("store", false);
-        payload.put("max_output_tokens", 1200);
+        payload.put("max_output_tokens", 2400);
 
         HttpRequest request = HttpRequest.newBuilder(responsesUri)
                 .timeout(requestTimeout)

@@ -41,6 +41,21 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void retriesTruncatedOutputOnceInsteadOfReturningHalfASentence() {
+        var openAi = mock(OpenAiAssistantProvider.class);
+        var mapper = new ObjectMapper();
+        var partial = responseWithText(mapper, "The result was");
+        partial.put("status", "incomplete");
+        partial.putObject("incomplete_details").put("reason", "max_output_tokens");
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(partial).thenReturn(responseWithText(mapper, "Global activity was strong. Local sightings are unverified."));
+        var result = new AssistantService(openAi, mock(ObservationToolsService.class), mapper)
+                .chat(new AssistantChatRequest("What happened?", "en", null, List.of()));
+        assertEquals("Global activity was strong. Local sightings are unverified.", result.answer());
+        verify(openAi, times(2)).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+    }
+
+    @Test
     void historicalLocalToolDoesNotRequireCurrentNightFacts() {
         var openAi = mock(OpenAiAssistantProvider.class);
         var tools = mock(ObservationToolsService.class);
