@@ -41,6 +41,21 @@ import static org.mockito.Mockito.when;
 
 class AssistantServiceTest {
     @Test
+    void historicalLocalToolDoesNotRequireCurrentNightFacts() {
+        var openAi = mock(OpenAiAssistantProvider.class);
+        var tools = mock(ObservationToolsService.class);
+        var mapper = new ObjectMapper();
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_recent_geomagnetic_history", "{}"))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_history", "{\"location_id\":42,\"local_date\":\"2026-10-09\"}"))
+                .thenReturn(responseWithText(mapper, "Past global activity is available, but local sightings are unverified."));
+        new AssistantService(openAi, tools, mapper).chat(new AssistantChatRequest("What happened two nights ago?", "en", 42L, List.of()));
+        verify(tools).getRecentGeomagneticHistory();
+        verify(tools).getLocalHistory(42, LocalDate.of(2026,10,9));
+        verify(tools, never()).getLocalNightFacts(42);
+    }
+
+    @Test
     void oversizedNumericCandidateReplyAsksAgainInsteadOfThrowing() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObservationToolsService tools = mock(ObservationToolsService.class);

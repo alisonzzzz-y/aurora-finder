@@ -45,6 +45,17 @@ public class AssistantService {
             Use the provided tools for current aurora, geomagnetic, cloud, darkness, location, and source facts.
             Do not rely on remembered forecast data. Never invent observations, dates, source status, or a person's
             probability of seeing aurora. The OVATION value is a model signal, not a calibrated viewing probability.
+            For questions about a recent past event, always call get_recent_geomagnetic_history before answering.
+            It includes queriedAtUtc, the actual reference time. Interpret yesterday or previous nights in the
+            requested place's timezone, never relative to an old forecast timestamp. State the dates you used.
+            Use observed/estimated past Kp readings to explain global activity even when local history is absent.
+            Do not claim that no historical data exists without checking. Distinguish global readings, saved local
+            forecasts and confirmed local sightings. The app has no verified live sighting feed or web search tool.
+            A missing snapshot is not evidence that aurora was absent. A user's report can be acknowledged as
+            user-provided, not independently verified. Do not substitute current conditions for a past night.
+            After resolving the place, call get_local_history for the requested local date; it does not require
+            get_local_night_facts or a date from the current forecast window. Historical dates are allowed.
+            Explain basic aurora science when helpful, but use tools for event-specific claims and cite their source.
             For questions about how often aurora has historically been visible in a city or region, state that this
             app has no validated local recurrence dataset and cannot give a reliable interval. Never estimate that
             frequency from latitude, Kp, current OVATION values, or isolated community reports. Offer to check a
@@ -63,7 +74,7 @@ public class AssistantService {
             Use only an application-selected location ID, a unique candidate returned by search_places, or a
             location explicitly selected by the application from the previous turn's candidate list. If multiple
             candidates match, show them and ask the user to choose; do not query any candidate until the user has
-            clarified. For local dates, call get_local_night_facts first and use only the exact
+            clarified. For current/future outlook dates only, call get_local_night_facts first and use only the exact
             localDate values returned for that place. Map tonight/tomorrow to a returned date only when unambiguous;
             otherwise ask the user to choose a date. Never guess a date or use the server's date. Include the place's
             UTC offset when tool data provides it. Keep answers concise and practical. Mention unavailable or
@@ -440,6 +451,12 @@ public class AssistantService {
                 }
                 yield tools.getNightOutlook(locationId, localDate);
             }
+            case "get_recent_geomagnetic_history" -> tools.getRecentGeomagneticHistory();
+            case "get_local_history" -> {
+                long locationId = requiredPositiveLong(arguments, "location_id");
+                requirePermittedLocation(locationId, context);
+                yield tools.getLocalHistory(locationId, LocalDate.parse(requiredText(arguments, "local_date")));
+            }
             case "get_global_kp_forecast" -> tools.getGlobalKpForecast();
             case "get_three_day_storm_forecast" -> tools.getThreeDayStormForecast();
             case "get_active_geomagnetic_warnings" -> tools.getActiveGeomagneticWarnings();
@@ -545,6 +562,10 @@ public class AssistantService {
         nightProperties.set("location_id", property("integer", "Selected provider location ID"));
         nightProperties.set("local_date", property("string", "Local calendar date in YYYY-MM-DD format"));
         definitions.add(tool("get_night_outlook", "Get one local night outlook using a permitted location ID and an exact localDate returned by get_local_night_facts.",
+                nightProperties, List.of("location_id", "local_date")));
+        definitions.add(tool("get_recent_geomagnetic_history", "Read available completed observed/estimated global Kp intervals in the past 72 hours and the current reference time. Use for past-event questions before claiming history is unavailable. Not proof of local sightings.",
+                objectMapper.createObjectNode(), List.of()));
+        definitions.add(tool("get_local_history", "Read saved local forecast snapshots for a permitted location and historical local date (noon to next noon). Empty means no stored evidence, not no aurora. No current-night restriction.",
                 nightProperties, List.of("location_id", "local_date")));
         definitions.add(tool("get_global_kp_forecast", "Get the latest source-backed global Kp forecast.",
                 objectMapper.createObjectNode(), List.of()));
