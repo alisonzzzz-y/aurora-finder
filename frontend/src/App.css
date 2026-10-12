@@ -238,6 +238,15 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .kp-chart-mark.observed circle { fill: #d9cff2; stroke: #d9cff2; }
 .kp-chart-mark.estimated rect { fill: #a49bb3; stroke: #d5cee0; stroke-width: 1; }
 .kp-chart-mark.predicted circle { fill: #1b1828; stroke: var(--accent); }
+.kp-storm-g1 { --storm-color: #f2ce72; }
+.kp-storm-g2 { --storm-color: #ffa36b; }
+.kp-storm-g3 { --storm-color: #ff7f91; }
+.kp-gridline.kp-threshold { stroke: var(--storm-color); opacity: .65; }
+.kp-threshold-label { fill: var(--storm-color); }
+.kp-chart-mark[class*="kp-storm-"] > :is(circle, rect) { fill: var(--storm-color); stroke: var(--storm-color); stroke-width: 2; }
+.kp-chart-mark.predicted[class*="kp-storm-"] circle { fill: #1b1828; stroke-width: 2.5; }
+.kp-hover-guide[class*="kp-storm-"] circle { stroke: var(--storm-color); }
+
 @media (max-width: 900px) {
   .home-content-sections .activity-area-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .forecast-guide-list, .upcoming-feature-list { grid-template-columns: 1fr; gap: 14px; }

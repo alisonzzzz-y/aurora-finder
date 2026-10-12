@@ -38,3 +38,8 @@ export function kpStormScale(kp: number, names: string[], belowG1: string, scale
   if (!Number.isFinite(level) || level < 1 || level > 5) return belowG1
   return `G${level} · ${names[level - 1]}`
 }
+
+// G3 colour includes higher storms; the readout retains the exact G level.
+export function kpStormBand(kp: number) {
+  return kp >= 7 ? 'kp-storm-g3' : kp >= 6 ? 'kp-storm-g2' : kp >= 5 ? 'kp-storm-g1' : ''
+}
