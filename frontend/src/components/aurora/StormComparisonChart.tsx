@@ -57,7 +57,6 @@ export function StormComparisonChart({ days }: { days: GeomagneticStormDay[] }) 
       <strong>{t(categories[active.category][0])} · {days[active.day][categories[active.category][1]]}%</strong>
       <span>{t('stormProbabilityReading')}</span>
     </div>}
-    <details className="visual-details"><summary>{t('cloudDetails')}</summary>{days.map(day=><p key={day.date}>{date(day.date)} (UTC): {categories.map(([label,field])=>`${t(label)} ${day[field]}%`).join(' · ')}</p>)}</details>
   </figure>
 }
 export function WarningTimeline({ warnings, now }: { warnings: GeomagneticWarning[]; now: number }) {
