@@ -1,0 +1,8 @@
+.storm-activity-alert { margin: 0 0 1.2rem; padding: 1rem 1.3rem; border: 1px solid #514567; border-radius: 16px; background: #1b1728; }
+.storm-activity-alert header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.storm-activity-alert h2 { margin: 0; font-size: 1.1rem; }
+.storm-activity-alert p { margin: .6rem 0; }
+.storm-alert-reading { display: flex; justify-content: space-between; gap: .6rem 1.5rem; flex-wrap: wrap; padding: .7rem 0; color: #f2ce72; }
+.storm-alert-severe { color: #ff8fa1; }
+.storm-alert-reading time { color: #ded8e8; }
+.storm-alert-source { font-size: .85rem; color: #bcb1cf; }
