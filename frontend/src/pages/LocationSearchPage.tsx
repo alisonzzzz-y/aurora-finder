@@ -1,3 +1,4 @@
+import { StormActivityAlert } from '../components/aurora/StormActivityAlert'
 import { ViewingConditionsSummary } from '../components/outlook/ViewingConditionsSummary'
 import { MonitoringSections } from '../components/monitoring/MonitoringSections'
 import { InfoHint } from '../components/InfoHint'
@@ -71,6 +72,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   }
 
   return <>
+    <StormActivityAlert />
     <section id="aurora-dashboard" tabIndex={-1} className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
