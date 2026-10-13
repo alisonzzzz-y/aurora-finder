@@ -138,9 +138,6 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('forecastGuideTitle')}>
         <ForecastGuide />
       </div>
-      <div className="home-section-band home-section-band-odd" role="region" aria-label={t('upcomingFeaturesTitle')}>
-        <details className="visual-details"><summary>{t('upcomingFeaturesTitle')}</summary><UpcomingFeatures /></details>
-      </div>
     </div>
     <div className="home-section-band home-section-band-even resources-band" role="region" aria-label={t('sourceNotesTitle')}>
       <AuroraResources />
@@ -163,28 +160,6 @@ function ForecastGuide() {
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
         <div><h3>{t(title)}</h3><details className="visual-details"><summary>{t('guideDetails')}</summary><p>{t(copy)}</p></details></div>
-      </li>)}
-    </ol>
-  </section>
-}
-
-function UpcomingFeatures() {
-  const { t } = useI18n()
-  const items = [
-    ['nextStormTitle', 'nextStormCopy', 'inDevelopment'],
-    ['nextSpotsTitle', 'nextSpotsCopy', 'inDevelopment'],
-    ['nextAiTitle', 'nextAiCopy', 'availableNow'],
-    ['nextCompareTitle', 'nextCompareCopy', 'inDevelopment'],
-  ] as const
-
-  return <section className="upcoming-features" aria-labelledby="upcoming-features-title">
-
-    <h2 id="upcoming-features-title">{t('upcomingFeaturesTitle')}</h2>
-    <p className="upcoming-features-intro">{t('upcomingFeaturesIntro')}</p>
-    <ol className="upcoming-feature-list">
-      {items.map(([title, copy, state], index) => <li key={title}>
-        <span className="upcoming-feature-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><p>{t(copy)}</p><span className="upcoming-feature-state">{t(state)}</span></div>
       </li>)}
     </ol>
   </section>
