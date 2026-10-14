@@ -1,0 +1,6 @@
+.popular-places h2 { margin-top:0; }
+.popular-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:1rem; }
+.popular-grid article { padding:1.2rem; border:1px solid var(--line-strong); border-radius:14px; background:var(--accent-wash); }
+.popular-grid h4 { font-size:1.3rem; margin:0; }
+.popular-grid p { margin:.5rem 0 1rem; }
+.popular-grid a { display:block; margin-top:.8rem; font-size:.8rem; color:var(--muted); }

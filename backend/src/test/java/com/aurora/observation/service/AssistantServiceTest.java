@@ -118,6 +118,13 @@ class AssistantServiceTest {
         assertFalse(chatWithCloudSource("At 20:00 cloud cover is 72%.", true).answer().contains("Sample readings"));
     }
 
+    @Test
+    void validatesChineseHourAndFullWidthPercentReadings() {
+        assertTrue(chatWithCloudSource("云量20时约72％，21点约18.7%。").answer().contains("couldn't verify"));
+        String supported = "云量20时78.9％，21点18.7%。";
+        assertEquals(supported, chatWithCloudSource(supported).answer());
+    }
+
     private AssistantChatResponse chatWithCloudSource(String answer) {
         return chatWithCloudSource(answer, false);
     }

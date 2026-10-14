@@ -353,3 +353,5 @@ small { font-size: 1rem; }
 .activity-period-switch button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 .activity-period-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .map-sidebar .activity-peak-forecast li { grid-template-columns: 90px minmax(0,1fr); }
+
+.guide-inline-explanation { font-size: .85rem; color: var(--muted); line-height: 1.65; margin: .6rem 0 0; }

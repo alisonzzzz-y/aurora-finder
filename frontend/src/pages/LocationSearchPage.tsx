@@ -1,3 +1,5 @@
+import { PopularPlaces } from '../components/location/PopularPlaces'
+import { NearbyComparison } from '../components/location/NearbyComparison'
 import { StormActivityAlert } from '../components/aurora/StormActivityAlert'
 import { ViewingConditionsSummary } from '../components/outlook/ViewingConditionsSummary'
 import { MonitoringSections } from '../components/monitoring/MonitoringSections'
@@ -100,6 +102,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
             {visibleFacts && <>
               <ViewingConditionsSummary facts={visibleFacts} compact />
               <div className="location-summary-actions">
+                <button className="comparison-action" type="button" onClick={() => moveTo('nearby-title')}>{language === 'zh' ? '比较附近地点' : 'Compare nearby places'}</button>
                 <button className="comparison-action" type="button" onClick={() => moveTo('location-details')}>{c.details}</button>
                 <button className="comparison-action" type="button" disabled={comparisonPlaces.some(place => place.id === visibleFacts.outlook.location.id)} onClick={() => addComparisonPlace(visibleFacts.outlook.location)}>{t(comparisonPlaces.some(place => place.id === visibleFacts.outlook.location.id) ? 'compareAdded' : 'compareButton')}</button>
               </div>
@@ -116,6 +119,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         {busy && <p role="status">{t('loading')}</p>}
         {error && <p role="alert" className="error">{localizeError(new Error(error), t)}</p>}
         {visibleFacts && <LocalOutlookDashboard key={visibleFacts.outlook.location.id} facts={visibleFacts} />}
+        {visibleFacts && <NearbyComparison key={visibleFacts.outlook.location.id} origin={visibleFacts.outlook.location} onSelect={location => { selectLocation(location); moveTo('aurora-dashboard') }} />}
         <div id="location-comparison" tabIndex={-1} className="location-details-comparison">
           <LocationSearch busy={false} title={c.compare} buttonLabel={t('compareButton')} onSelect={addComparisonPlace} />
           <PlaceComparison places={comparisonPlaces} limit={comparisonLimit} onSelect={location => {
@@ -133,6 +137,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
       <div className="home-section-band home-section-band-even" role="region" aria-label={t('stormOutlookTitle')}>
         <NextAuroraStormForecast />
       </div>
+      <div className="home-section-band home-section-band-odd"><PopularPlaces onSelect={location => { selectLocation(location); moveTo('aurora-dashboard') }} /></div>
       <MonitoringSections facts={facts} />
       <div className="home-section-band home-section-band-odd" role="region" aria-label={t('historicalReportsTitle')}>
         <HistoricalReportsChart />
@@ -161,7 +166,7 @@ function ForecastGuide() {
     <ol className="forecast-guide-list">
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><details className="visual-details"><summary>{t('guideDetails')}</summary><p>{t(copy)}</p></details></div>
+        <div><h3>{t(title)}</h3><p className="guide-inline-explanation">{t('guideDetails')}：{t(copy)}</p></div>
       </li>)}
     </ol>
   </section>

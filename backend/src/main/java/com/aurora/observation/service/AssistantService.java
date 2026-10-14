@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
     private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
-            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3])):([0-5]\\d)[^\\n%]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*%");
+            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3]))(?::([0-5]\\d)|[时点])[^\\n%％]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*[%％]");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
     private static final Pattern CLOUD_CONTEXT = Pattern.compile("(?i)cloud|云量|云层|云覆盖");
@@ -79,7 +79,8 @@ public class AssistantService {
             otherwise ask the user to choose a date. Never guess a date or use the server's date. Include the place's
             UTC offset when tool data provides it. Keep answers concise and practical. Mention unavailable or
             incomplete source data instead of filling gaps.
-            For cloud cover, use the returned percentages and local hours. When summarizing an interval with a
+            For cloud cover, use the returned percentages and local hours. Write samples as HH:mm: X%,
+            preserving the source decimal values and local date. Use at most three samples from the requested night. When summarizing an interval with a
             numeric range, include its lowest and highest available values; do not omit hourly dips or peaks to
             make the trend smoother. Prefer a few exact hour/value examples when the interval is not clearly defined.
             Before finishing an hourly cloud summary, check that you have not assigned conflicting percentages to
@@ -198,7 +199,7 @@ public class AssistantService {
         Map<String, String> percentagesByHour = new HashMap<>();
         Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
         while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
             String percentage = new BigDecimal(matcher.group(3)).stripTrailingZeros().toPlainString();
             String previous = percentagesByHour.putIfAbsent(hour, percentage);
             if (previous != null && !previous.equals(percentage)) return true;
@@ -216,7 +217,7 @@ public class AssistantService {
         if (!context.cloudFactsRequested || !CLOUD_CONTEXT.matcher(answer).find()) return false;
         Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
         while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2));
+            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
             Set<BigDecimal> sourceValues = context.cloudPercentagesByLocalHour.get(hour);
             if (sourceValues == null || sourceValues.isEmpty()) return true;
 
@@ -259,7 +260,7 @@ public class AssistantService {
                     .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
         }
         summary.append(chinese ? "数据来源：" : "Source: ").append(facts.cloudForecast().source());
-        if (facts.cloudForecast().sourceUrl() != null) summary.append("\n").append(facts.cloudForecast().sourceUrl());
+        if (facts.cloudForecast().sourceUrl() != null && !facts.cloudForecast().sourceUrl().equals(facts.cloudForecast().source())) summary.append("\n").append(facts.cloudForecast().sourceUrl());
         return summary.toString();
     }
 
