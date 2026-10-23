@@ -1,8 +1,15 @@
-.storm-activity-alert { margin: 0 0 1.2rem; padding: 1rem 1.3rem; border: 1px solid #514567; border-radius: 16px; background: #1b1728; }
+.storm-activity-alert { margin: 0 0 1.2rem; padding: 1rem 1.3rem; border: 1px solid #a57435; border-radius: 16px; background: #241e19; }
 .storm-activity-alert header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.storm-activity-alert h2 { margin: 0; font-size: 1.1rem; }
+.storm-activity-alert h2 { margin: 0; font-size: 1.1rem; color: #ffd18a; }
 .storm-activity-alert p { margin: .6rem 0; }
 .storm-alert-reading { display: flex; justify-content: space-between; gap: .6rem 1.5rem; flex-wrap: wrap; padding: .7rem 0; color: #f2ce72; }
 .storm-alert-severe { color: #ff8fa1; }
 .storm-alert-reading time { color: #ded8e8; }
 .storm-alert-source { font-size: .85rem; color: #bcb1cf; }
+
+.storm-activity-alert .comparison-action { background: #f0b660; color: #241609; border-color: #f0b660; min-height: 44px; }
+.storm-activity-alert .comparison-action:hover { background: #ffd18a; }
+.storm-activity-alert .comparison-action[aria-pressed="true"] { background: #48331a; color: #ffd18a; }
+.storm-activity-alert[data-severity="severe"] { border-color: #ff8fa1; }
+.storm-activity-alert[data-severity="severe"] h2 { color: #ffacb8; }
+@media (max-width: 560px) { .storm-activity-alert { padding: 16px; } .storm-alert-reading time { font-size: 14px; overflow-wrap: anywhere; } }

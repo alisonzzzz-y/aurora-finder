@@ -5,10 +5,10 @@
 .cloud-darkness-legend { display: flex; flex-wrap: wrap; gap: 7px 14px; margin: 10px 0 2px; color: var(--muted); font-size: 15.04px; }
 .cloud-darkness-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .cloud-darkness-legend i { display: inline-block; width: 17px; height: 3px; border-radius: 3px; }
-.cloud-line-key { background: #c5a6ff; }
-.darkness-band-key { height: 8px !important; background: #8b6bb8; }
-.cloud-darkness-overlap-key { width: 9px !important; height: 9px !important; border: 2px solid #a56df6; border-radius: 50%; background: #fff1c2; }
-.cloud-darkness-point-overlap { fill: #fff1c2; stroke: #a56df6; stroke-width: 3; }
+.cloud-line-key { background: #9ed7f5; }
+.darkness-band-key { height: 8px !important; background: #6f91b4; }
+.cloud-darkness-overlap-key { width: 9px !important; height: 9px !important; border: 2px solid #5caddc; border-radius: 50%; background: #fff1c2; }
+.cloud-darkness-point-overlap { fill: #fff1c2; stroke: #5caddc; stroke-width: 3; }
 .cloud-darkness-chart-wrap { width: 100%; min-width: 0; max-width: 100%; }
 .cloud-darkness-chart { display: block; min-width: 0; max-width: 100%; width: 100%; height: auto; overflow: visible; }
 .cloud-darkness-gridline { stroke: var(--line); stroke-width: 1; }
@@ -16,19 +16,19 @@
 .cloud-darkness-axis-label, .cloud-darkness-row-label, .cloud-darkness-row-heading, .cloud-darkness-no-interval, .cloud-darkness-empty { fill: var(--muted); font-family: inherit; font-size: 15.04px; }
 .cloud-darkness-row-heading { fill: var(--text); font-size: 15.04px; font-weight: 700; letter-spacing: .04em; }
 .cloud-darkness-row-label { font-size: 15.04px; }
-.cloud-darkness-line { fill: none; stroke: #c5a6ff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.cloud-darkness-point { fill: #171321; stroke: #c5a6ff; stroke-width: 2; }
+.cloud-darkness-line { fill: none; stroke: #9ed7f5; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cloud-darkness-point { fill: #171321; stroke: #9ed7f5; stroke-width: 2; }
 .cloud-darkness-point { cursor: pointer; }
 .cloud-darkness-point:focus-visible { stroke: #fff; stroke-width: 4; outline: none; }
 .cloud-darkness-track { stroke: var(--line); stroke-width: 7; stroke-linecap: round; }
-.cloud-darkness-band { fill: #aa88dc; }
+.cloud-darkness-band { fill: #87a9ca; }
 .darkness-band-0 { opacity: .38; }
 .darkness-band-1 { opacity: .62; }
 .darkness-band-2 { opacity: .9; }
 .cloud-darkness-no-interval { font-size: 15.04px; }
 .cloud-darkness-empty { fill: #aaa2bb; font-size: 15.04px; }
 
-.aurora-window-key { height: 8px !important; background: #8c69c8; opacity: .85; }
+.aurora-window-key { height: 8px !important; background: #57bda8; opacity: .85; }
 .aurora-window-track { opacity: .35; }
-.aurora-window-band { fill: #9a75d6; opacity: .9; }
-.aurora-window-marker { fill: #fff; stroke: #9a75d6; stroke-width: 2.5; }
+.aurora-window-band { fill: #75dcb5; opacity: .9; }
+.aurora-window-marker { fill: #fff; stroke: #75dcb5; stroke-width: 2.5; }

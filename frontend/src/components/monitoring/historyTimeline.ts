@@ -2,7 +2,10 @@ export const QUARTER_HOUR = 15 * 60000
 export const quarterHour = (at: string | number) => Math.floor((typeof at === 'string' ? Date.parse(at) : at) / QUARTER_HOUR) * QUARTER_HOUR
 export function historyScale(values: number[]) {
   const valid=values.filter(v=>Number.isFinite(v) && v>=0 && v<=100)
-  return Math.min(100,Math.max(10,Math.ceil(Math.max(0,...valid)/10)*10))
+  const peak = Math.max(1, ...valid)
+  const magnitude = 10 ** Math.floor(Math.log10(peak))
+  const step = [1, 2, 5, 10].find(value => value * magnitude >= peak) ?? 10
+  return Math.min(100, step * magnitude)
 }
 export function historyDays(start: number, end: number) {
   if (!Number.isFinite(start) || !Number.isFinite(end)) return []

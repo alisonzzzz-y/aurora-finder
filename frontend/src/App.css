@@ -98,9 +98,9 @@ h1 { font-size: clamp(39.48px, 4.7vw, 63.92px); line-height: 1.05; letter-spacin
 .coming-soon { margin-top: 8px; }
 footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04px; padding-right: 160px; }
 .assistant-widget { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: grid; justify-items: end; gap: 12px; }
-.agent-button { box-shadow: 0 8px 24px #0006; border: 1px solid #76639b; border-radius: 8px; background: #49366f; color: #f6f2ff; font-weight: 650; padding: 14px 22px; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease; }
-.agent-button:hover { background: #58427f; }
-.agent-button[aria-expanded="true"] { background: #6f5a9e; border-color: #9a82c7; }
+.agent-button { box-shadow: 0 8px 24px #0006; border: 1px solid #537fa8; border-radius: 8px; background: #20415e; color: #f6f2ff; font-weight: 650; padding: 14px 22px; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease; }
+.agent-button:hover { background: #2b5578; }
+.agent-button[aria-expanded="true"] { background: #386d97; border-color: #83b8ee; }
 .agent-button span { margin-left: 8px; }
 .agent-button:focus-visible, .assistant-panel button:focus-visible, .assistant-composer textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .assistant-panel { position: fixed; z-index: 20; right: 24px; bottom: 92px; box-sizing: border-box; display: flex; flex-direction: column; width: min(460px, calc(100vw - 24px)); height: min(78vh, 820px, calc(100vh - 132px)); min-width: min(320px, calc(100vw - 24px)); min-height: min(420px, calc(100vh - 132px)); max-width: min(960px, calc(100vw - 24px)); max-height: min(90vh, 920px, calc(100vh - 24px)); overflow: hidden; padding: 20px; border: 1px solid var(--line-strong); border-radius: 12px; background: #151220; box-shadow: 0 16px 48px #0009; }
@@ -166,8 +166,8 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .home-page-shell .aurora-map-panel { height: clamp(480px, calc(100svh - 150px), 840px); }
 .home-page-shell .aurora-map-loading-placeholder { display: grid; height: clamp(480px, calc(100svh - 150px), 840px); min-width: 0; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #12111b; color: var(--muted); font-size: 15.04px; }
 @media (max-width: 720px) {
-  .home-page-shell .aurora-map-panel { height: clamp(390px, calc(100svh - 235px), 560px); }
-  .home-page-shell .aurora-map-loading-placeholder { height: clamp(390px, calc(100svh - 235px), 560px); border-radius: 9px; }
+  .home-page-shell .aurora-map-panel { height: clamp(320px, 50svh, 440px); }
+  .home-page-shell .aurora-map-loading-placeholder { height: clamp(320px, 50svh, 440px); border-radius: 9px; }
 }
 
 /* Long-form home page sections: content stays in the reading column below the map. */
@@ -202,10 +202,10 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .kp-trend-heading h3 { margin: 0; font-size: 15.04px; font-weight: 620; }
 .kp-trend-heading > span { color: var(--muted); font-size: 15.04px; }
 .kp-trend-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; }
-.kp-latest-reported { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 24px; padding: 14px 0 18px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, #baa3f10d, transparent 75%); }
+.kp-latest-reported { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 24px; padding: 14px 0 18px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, #83b8ee0d, transparent 75%); }
 .kp-latest-reported > span:first-child { grid-column: 1; grid-row: 1; color: var(--muted); font-size: 11px; opacity: .65; }
 .kp-latest-reported .kp-value-with-info { grid-column: 1; grid-row: 2; justify-self: start; gap: 8px; }
-.kp-latest-reported .kp-featured-value { display: inline-flex; align-items: baseline; gap: 10px; color: #cbb5ff; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.kp-latest-reported .kp-featured-value { display: inline-flex; align-items: baseline; gap: 10px; color: #a7d6ff; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .kp-featured-unit { font-size: 22px; font-weight: 600; color: var(--accent); }
 .kp-featured-number { font-size: clamp(48px, 5vw, 72px); letter-spacing: -.045em; }
 .kp-latest-reported small { grid-column: 2; grid-row: 1 / span 2; justify-self: end; text-align: right; color: var(--muted); font-size: 14px; }
@@ -217,8 +217,8 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .kp-chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 8px; color: var(--muted); font-size: 15.04px; }
 .kp-chart-legend > span { display: inline-flex; align-items: center; gap: 7px; }
 .kp-chart-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
-.kp-chart-legend i.observed { background: #d9cff2; }
-.kp-chart-legend i.estimated { width: 7px; height: 7px; border: 1px solid #a49bb3; border-radius: 1px; background: #a49bb3; transform: rotate(45deg); }
+.kp-chart-legend i.observed { background: #e2edf7; }
+.kp-chart-legend i.estimated { width: 7px; height: 7px; border: 1px solid #8bb9c9; border-radius: 1px; background: #8bb9c9; transform: rotate(45deg); }
 .kp-chart-legend i.predicted { border: 1.5px solid var(--accent); background: transparent; }
 .kp-chart-legend i.gap { width: 16px; height: 0; border-top: 1.5px dashed var(--muted); border-radius: 0; }
 .kp-chart-wrap { width: 100%; min-width: 0; }
@@ -228,12 +228,12 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .kp-axis-label, .kp-time-label { fill: var(--muted); font-size: 15.04px; font-variant-numeric: tabular-nums; }
 .kp-threshold-label { fill: #c5b1e9; font-size: 15.04px; }
 .kp-chart-segment { fill: none; stroke-width: 2; stroke-linejoin: round; }
-.kp-chart-segment.observed { stroke: #d9cff2; }
-.kp-chart-segment.estimated { stroke: #a49bb3; stroke-dasharray: 3 4; }
+.kp-chart-segment.observed { stroke: #e2edf7; }
+.kp-chart-segment.estimated { stroke: #8bb9c9; stroke-dasharray: 3 4; }
 .kp-chart-segment.predicted { stroke: var(--accent); stroke-dasharray: 7 5; }
 .kp-chart-mark circle { stroke-width: 1.5; }
-.kp-chart-mark.observed circle { fill: #d9cff2; stroke: #d9cff2; }
-.kp-chart-mark.estimated rect { fill: #a49bb3; stroke: #d5cee0; stroke-width: 1; }
+.kp-chart-mark.observed circle { fill: #e2edf7; stroke: #e2edf7; }
+.kp-chart-mark.estimated rect { fill: #8bb9c9; stroke: #c9e6ef; stroke-width: 1; }
 .kp-chart-mark.predicted circle { fill: #1b1828; stroke: var(--accent); }
 .kp-storm-g1 { --storm-color: #f2ce72; }
 .kp-storm-g2 { --storm-color: #ffa36b; }
@@ -279,7 +279,7 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .storm-outlook-meta, .storm-outlook-note { color: var(--muted); font-size: 15.04px; line-height: 1.6; }
 @media (max-width: 720px) { .storm-day-list { grid-template-columns: 1fr; gap: 15px; } }
 
-.geomagnetic-warning-list { margin-top: 18px; padding: 14px 16px; border-left: 3px solid #c78ae8; background: color-mix(in srgb, #9d6fc4 9%, transparent); }
+.geomagnetic-warning-list { margin-top: 18px; padding: 14px 16px; border-left: 3px solid #edb35d; background: color-mix(in srgb, #edb35d 9%, transparent); }
 .geomagnetic-warning-list h3 { margin: 0; font-size: 15.04px; }
 .geomagnetic-warning-list > p { margin: 8px 0 0; color: #b7b1c6; font-size: 15.04px; }
 .geomagnetic-warning-list article { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 15.04px; }
@@ -355,3 +355,14 @@ small { font-size: 1rem; }
 .map-sidebar .activity-peak-forecast li { grid-template-columns: 90px minmax(0,1fr); }
 
 .guide-inline-explanation { font-size: .85rem; color: var(--muted); line-height: 1.65; margin: .6rem 0 0; }
+
+/* Touch controls and safe-area spacing on phones. */
+@media (max-width: 720px) {
+  .search-field-wrap input, .assistant-composer textarea, select { font-size: 16px; }
+  .language-switch button, .comparison-action, .activity-period-switch button,
+  .map-sidebar-switch button, .assistant-close, .assistant-composer-actions button { min-height: 44px; }
+  .assistant-widget { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+  .agent-button { padding: 12px 16px; max-width: calc(100vw - 24px); }
+  .assistant-panel { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); height: min(640px, calc(100dvh - 100px - env(safe-area-inset-bottom))); min-height: 0; max-height: calc(100dvh - 100px - env(safe-area-inset-bottom)); }
+  .kp-latest-reported small { justify-self: start; text-align: left; }
+}

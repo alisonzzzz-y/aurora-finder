@@ -13,14 +13,14 @@
   --line-strong: #514765;
   --text: #eeebf7;
   --muted: #aaa5ba;
-  --accent: #b9a2f5;
-  --accent-strong: #9b7ae8;
-  --accent-wash: #29213c;
+  --accent: #83b8ee;
+  --accent-strong: #5b9cdb;
+  --accent-wash: #1c3044;
   --warning: #f0c98b;
   --error: #f0a3a7;
   --activity-high: #ff929b;
   --activity-medium: #75dcb5;
-  --activity-low: #c3b0ed;
+  --activity-low: #a3bdd5;
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: var(--page); }
