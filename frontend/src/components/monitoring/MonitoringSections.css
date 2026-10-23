@@ -9,7 +9,7 @@
 .evidence-chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
 .evidence-chart svg line { stroke: var(--line); }
 .evidence-chart svg text { fill: var(--muted); font-size: 12px; }
-.evidence-chart svg path { stroke: var(--evidence-color); fill: none; stroke-width: 2; }
+.evidence-chart svg path { stroke: var(--evidence-color); fill: none; stroke-width: 2.5; }
 .evidence-chart svg circle { fill: var(--evidence-color); }
 .evidence-chart .evidence-cursor line { stroke: var(--evidence-color); stroke-dasharray: 3 4; }
 .evidence-readout { min-height: 44px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
@@ -50,3 +50,12 @@
 .history-timeline label { display:block; margin:.6rem 0; }
 .history-timeline input[type="range"] { display:block; width:100%; accent-color:var(--accent); margin:.8rem 0; }
 .history-time-controls { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+
+@media (max-width: 720px) {
+  .history-controls { flex-direction: column; gap: 12px; }
+  .history-controls select, .history-controls input { font-size: 16px; min-height: 44px; }
+  .history-days button, .history-time-controls button, .camera-stop { min-height: 44px; }
+  .history-timeline input[type="range"] { padding: 0; }
+  .monitoring-plots { gap: 18px; }
+  .camera-viewer.camera-video, .camera-video .aurora-camera-frame { min-height: 0; }
+}

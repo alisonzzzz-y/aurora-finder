@@ -72,7 +72,7 @@ export function StormActivityAlert() {
     } catch { setNotice(zh ? '无法开启浏览器通知。' : 'Could not enable browser notifications.') }
   }
   const time = (value: string) => new Intl.DateTimeFormat(zh ? 'zh-CN' : 'en-IE', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', timeZoneName:'short' }).format(new Date(value))
-  return <section className="storm-activity-alert" aria-label={zh ? '强活动提醒' : 'Strong activity alerts'}>
+  return <section className="storm-activity-alert" data-severity={status === 'ready' && alerts.some(alert => alert.kp >= 7) ? 'severe' : 'standard'} aria-label={zh ? '强活动提醒' : 'Strong activity alerts'}>
     <header><h2>{zh ? '强活动提醒' : 'Strong activity alerts'}<InfoHint>{zh ? 'Kp 达到 5 时提醒。当前时段使用观测或估算值，未来时段使用预报值。全球活动不代表当地可见概率。网站打开期间每两分钟检查一次，关闭网站后不会推送。每个时段及等级本次访问只通知一次。' : 'Alerts start at Kp 5. Current periods use observed or estimated readings; future periods use forecasts. Global activity is not a local viewing probability. Checks run every two minutes while this page is open, with no push after closing it. Each period and level is notified once per visit.'}</InfoHint></h2>
       <button type="button" className="comparison-action" aria-pressed={enabled} onClick={() => { void toggle() }}>{zh ? enabled ? '关闭浏览器提醒' : '开启浏览器提醒' : enabled ? 'Turn off notifications' : 'Enable notifications'}</button></header>
     <div role="status" aria-live="polite">{alerts.length ? alerts.map(alert => <article className={`storm-alert-reading ${alert.kp >= 7 ? 'storm-alert-severe' : ''}`} key={alert.key}>
