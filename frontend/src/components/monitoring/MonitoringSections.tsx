@@ -83,7 +83,6 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
         <CameraViewer name={language === 'zh' ? '丘吉尔，加拿大' : 'Churchill, Canada'} source="Explore.org · Polar Bears International" url="https://polarbearsinternational.org/education/live/northern-lights-cams/" videoId="a0i1Kg6fROg" language={language} />
         <CameraViewer name={language === 'zh' ? '雷克雅未克，冰岛' : 'Reykjavík, Iceland'} source="Aurora Reykjavík" url="https://aurorareykjavik.is/aurora-forecast/" videoId="exshoGpNXZk" language={language} />
         <CameraViewer name={language === 'zh' ? '塔斯曼，新西兰' : 'Tasman, New Zealand'} source="WISP Media" url="https://www.youtube.com/@WISPmedia/streams" videoId="gfJ4wIhnULQ" language={language} />
-        <CameraViewer name={language === 'zh' ? '费尔班克斯，阿拉斯加' : 'Fairbanks, Alaska'} source="Explore.org · University of Alaska Fairbanks" url="https://explore.org/livecams/currently-live/aurora-cam" videoId="O52zDyxg5QI" language={language} />
       </div>
     </section>
     <ObservationHistory key={facts?.outlook.location.id ?? 'default'} facts={facts} />
