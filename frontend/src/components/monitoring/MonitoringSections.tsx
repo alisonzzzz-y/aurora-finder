@@ -112,7 +112,14 @@ function ObservationHistory({ facts }: { facts: ObservationFacts | null }) {
   const start = snapshots.length ? quarterHour(snapshots[0].capturedAt) : 0
   const end = snapshots.length ? quarterHour(snapshots[snapshots.length-1].capturedAt) : 0
   const cursor = selectedAt ? Math.max(start,Math.min(end,quarterHour(selectedAt))) : end
-  const selected = snapshots.findLast(p=>quarterHour(p.capturedAt)===cursor)
+  const selected = data?.status === 'AVAILABLE' ? snapshots.findLast(p=>quarterHour(p.capturedAt)===cursor) : undefined
+  const noData = language === 'zh' ? '没有数据' : 'No data'
+  const modelAvailable = selected?.auroraStatus === 'CURRENT' && selected.modelValue != null
+  const cloudAvailable = selected?.cloudStatus === 'CURRENT' && selected.cloudPercent != null
+  const selectionStatus = !data ? failed ? c.unavailable : c.loading
+    : data.status !== 'AVAILABLE' ? data.status === 'DISABLED' ? c.disabled : c.unavailable
+    : !selected ? snapshots.length ? language === 'zh' ? '这个 15 分钟时段没有保存记录。' : 'No saved record for this 15-minute interval.' : c.empty
+    : null
   const selectTime = (value:number) => setSelectedAt(new Date(value).toISOString())
   const format = (at: string) => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(new Date(at)) + ' UTC'
   return <section className="home-section-band home-section-band-even monitoring-section">
@@ -124,13 +131,20 @@ function ObservationHistory({ facts }: { facts: ObservationFacts | null }) {
         <div className="history-time-controls"><button className="comparison-action" type="button" disabled={cursor<=start} onClick={()=>selectTime(cursor-QUARTER_HOUR)}>← 15 min</button><input type="time" aria-label={language==='zh'?'时间（UTC）':'Time (UTC)'} step={900} value={new Date(cursor).toISOString().slice(11,16)} onChange={e=>{if(e.target.value){const [h,m]=e.target.value.split(':').map(Number);selectTime(Math.floor(cursor/86400000)*86400000+h*3600000+Math.floor(m/15)*QUARTER_HOUR)}}} /><button className="comparison-action" type="button" disabled={cursor>=end} onClick={()=>selectTime(cursor+QUARTER_HOUR)}>15 min →</button></div>
       </div>}
     </div>
-    {!data ? <p role="status">{failed ? c.unavailable : c.loading}</p> : data.status !== 'AVAILABLE' ? <p>{data.status === 'DISABLED' ? c.disabled : c.unavailable}</p> : !selected ? <p role="status">{snapshots.length ? language==='zh'?'这个 15 分钟时段没有保存记录。':'No saved record for this 15-minute interval.' : c.empty}</p> : <>
-      <p className="monitoring-source">{language==='zh'?'实际采样：':'Captured: '}{format(selected.capturedAt)}</p><div className="monitoring-plots history-plots">
-        <article><h3>{c.model}<InfoHint>{language==='zh'?'纵轴根据已有读数自动缩放，完整模型范围仍为 0–100。':'The vertical axis adapts to recorded values. The full model range remains 0–100.'}</InfoHint></h3><strong className="monitoring-value">{selected.auroraStatus === 'CURRENT' ? selected.modelValue ?? '—' : selected.auroraStatus === 'EXPIRED' ? c.stale : c.unavailable}/100</strong><EvidenceChart points={snapshots.filter(p => p.modelValue != null && p.auroraStatus === 'CURRENT').map(p => ({ at: p.capturedAt, value: p.modelValue! }))} label={c.model} unit="/100" locale={locale} bounds={[0, historyScale(snapshots.filter(p=>p.auroraStatus==='CURRENT').map(p=>p.modelValue ?? 0))]} maxGapMinutes={30} color="#83b8ee" /></article>
-        <article><h3>{c.cloud}</h3><strong className="monitoring-value">{selected.cloudStatus === 'CURRENT' ? selected.cloudPercent ?? '—' : selected.cloudStatus === 'EXPIRED' ? c.stale : c.unavailable}%</strong><EvidenceChart points={snapshots.filter(p => p.cloudPercent != null && p.cloudStatus === 'CURRENT').map(p => ({ at: p.capturedAt, value: p.cloudPercent! }))} label={c.cloud} unit="%" locale={locale} bounds={[0, 100]} maxGapMinutes={30} color="#eef3fa" /></article>
+    <div className="history-results">
+      <p className="monitoring-source history-selection-status" role="status">{selectionStatus ?? `${language === 'zh' ? '实际采样：' : 'Captured: '}${format(selected!.capturedAt)}`}</p>
+      <div className="monitoring-plots history-plots">
+        <article><h3>{c.model}<InfoHint>{language === 'zh' ? '纵轴根据已有读数自动缩放，完整模型范围仍为 0–100。' : 'The vertical axis adapts to recorded values. The full model range remains 0–100.'}</InfoHint></h3>
+          <strong className={`monitoring-value${modelAvailable ? '' : ' history-value-unavailable'}`}>{modelAvailable ? `${selected!.modelValue}/100` : selected?.auroraStatus === 'EXPIRED' ? c.stale : '—'}</strong>
+          <EvidenceChart points={modelAvailable ? snapshots.filter(p => p.modelValue != null && p.auroraStatus === 'CURRENT').map(p => ({ at: p.capturedAt, value: p.modelValue! })) : []} label={c.model} unit="/100" locale={locale} bounds={[0, historyScale(snapshots.filter(p => p.auroraStatus === 'CURRENT').map(p => p.modelValue ?? 0))]} maxGapMinutes={30} color="#83b8ee" />
+        </article>
+        <article><h3>{c.cloud}</h3>
+          <strong className={`monitoring-value${cloudAvailable ? '' : ' history-value-unavailable'}`}>{cloudAvailable ? `${selected!.cloudPercent}%` : selected?.cloudStatus === 'EXPIRED' ? c.stale : '—'}</strong>
+          <EvidenceChart points={cloudAvailable ? snapshots.filter(p => p.cloudPercent != null && p.cloudStatus === 'CURRENT').map(p => ({ at: p.capturedAt, value: p.cloudPercent! })) : []} label={c.cloud} unit="%" locale={locale} bounds={[0, 100]} maxGapMinutes={30} color="#eef3fa" />
+        </article>
       </div>
-      <p>{c.sky}: {selected.skyLevel === 'HIGH' ? c.high : selected.skyLevel === 'MEDIUM' ? c.medium : selected.skyLevel === 'LOW' ? c.low : c.unknown}</p>
+      <p>{c.sky}: {selected ? selected.skyLevel === 'HIGH' ? c.high : selected.skyLevel === 'MEDIUM' ? c.medium : selected.skyLevel === 'LOW' ? c.low : c.unknown : noData}</p>
       <p className="monitoring-source">{c.source}: <a href="https://www.spaceweather.gov/products/aurora-30-minute-forecast" target="_blank" rel="noreferrer">NOAA ↗</a> · <a href="https://api.met.no/weatherapi/locationforecast/2.0/documentation" target="_blank" rel="noreferrer">MET Norway ↗</a></p>
-    </>}
+    </div>
   </section>
 }

@@ -5,6 +5,7 @@ import { transientRetryDelay } from '../../api/requestError'
 import type { KpIndexData } from '../../types/kpIndex'
 import { selectKpPeriods } from './kpPeriods'
 import { KpTrendChart } from './KpTrendChart'
+import { TimeZonePicker } from './TimeZonePicker'
 import { formatKpTime } from './kpChartData'
 import { localizeError, useI18n } from '../../i18n'
 import './LatestAuroraForecast.css'
@@ -15,7 +16,6 @@ export function LatestAuroraForecast() {
   const [error, setError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const [timeZone, setTimeZone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone)
-  const timeZones = [...new Set([timeZone, 'UTC', ...Intl.supportedValuesOf('timeZone')])]
   const locale = language === 'zh' ? 'zh-CN' : 'en'
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export function LatestAuroraForecast() {
 
         <h2 id="latest-forecast-title">{t('globalKpActivity')}<InfoHint><p><a href="https://www.spaceweather.gov/products/planetary-k-index" target="_blank" rel="noreferrer">{t('noaaSource')} ↗</a></p>{data && <p>{t('dataRetrieved')}: {formatKpTime(data.retrievedAt, locale, timeZone)}</p>}</InfoHint></h2>
       </div>
-      <label className="kp-timezone-picker"><span>{t('kpTimeZone')}</span><select value={timeZone} onChange={event => setTimeZone(event.target.value)}>{timeZones.map(zone => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}</select></label>
+      <TimeZonePicker value={timeZone} onChange={setTimeZone} language={language} />
     </div>
     {loading && <p className="latest-forecast-message" role="status">{t('loading')}</p>}
     {!loading && error !== null && <p className="latest-forecast-message error">{localizeError(error, t)}</p>}

@@ -41,10 +41,11 @@ export function EvidenceChart({ points, unit, label, locale, maxGapMinutes = 5, 
       {[min, (min + max) / 2, max].map(v => <g key={v}><line x1="48" x2={width - 14} y1={y(v)} y2={y(v)} /><text x="42" y={y(v) + 4} textAnchor="end">{Number(v.toFixed(1))}</text></g>)}
       {data.slice(1).map((p, i) => Date.parse(p.at) - Date.parse(data[i].at) > maxGapMinutes * 60000 ? <rect key={p.at} className="evidence-gap" x={x(data[i].at)} y="18" width={x(p.at)-x(data[i].at)} height="150"><title>{locale.startsWith('zh') ? '此时段缺少连续记录' : 'No continuous records in this interval'}</title></rect> : null)}
       <path d={path} />
+      {data.length === 0 && <text className="evidence-empty" x={(48 + width - 14) / 2} y="78" textAnchor="middle">{locale.startsWith('zh') ? '没有数据' : 'No data'}</text>}
       {data.map(p => <circle key={p.at} cx={x(p.at)} cy={y(p.value)} r="2.5" />)}
       {data.length > 0 && (width < 420 ? [0, 1] : [0, 0.5, 1]).map((ratio, i) => <text key={i} x={48 + ratio * (width - 62)} y="193" textAnchor={i === 0 ? 'start' : ratio === 1 ? 'end' : 'middle'}>{new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(new Date(start + ratio * (end - start)))}</text>)}
       {point && <g className="evidence-cursor"><line x1={x(point.at)} x2={x(point.at)} y1="18" y2="168" /><circle cx={x(point.at)} cy={y(point.value)} r="5" /></g>}
     </svg>
-    <div className="evidence-readout" role="status">{point ? `${format(point.at)} UTC · ${point.value} ${unit}${point.source ? ` · ${point.source}` : ''}` : data.length === 0 ? (locale.startsWith('zh') ? '暂无有效记录' : 'No valid records') : ''}</div>
+    <div className="evidence-readout" role="status">{point ? `${format(point.at)} UTC · ${point.value} ${unit}${point.source ? ` · ${point.source}` : ''}` : ''}</div>
   </div>
 }
