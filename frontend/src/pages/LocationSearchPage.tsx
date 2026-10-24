@@ -74,7 +74,6 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   }
 
   return <>
-    <StormActivityAlert />
     <section id="aurora-dashboard" tabIndex={-1} className="home-dashboard-grid" aria-label={t('mapAndSearch')}>
       <div className="map-column">
         <Suspense fallback={<div className="aurora-map-loading-placeholder" role="status">{t('loading')}</div>}>
@@ -89,6 +88,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           <span>{t('shortRange')}</span>
         </div>
         <LocationSearch busy={busy} onSelect={selectLocation} />
+        <StormActivityAlert />
         <div className="map-sidebar-content">
           {(hasLocationRequest || comparisonPlaces.length > 0) && <div className="map-sidebar-switch" role="group" aria-label={t('mapSidebarView')}>
             <button type="button" aria-pressed={sidebarView === 'activity'} onClick={() => setSidebarView('activity')}>{t('activityAreasTab')}</button>
