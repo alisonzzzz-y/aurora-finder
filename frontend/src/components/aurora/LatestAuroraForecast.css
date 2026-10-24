@@ -20,7 +20,7 @@
   .latest-forecast-content { grid-template-columns: 1fr; gap: 14px; }
   .latest-forecast-meta { justify-items: start; text-align: left; }
 }
-.kp-timezone-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; }
+.kp-timezone-picker { position: relative; min-width: 0; max-width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; }
 .kp-timezone-picker select { min-width: 0; max-width: 240px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; }
 .kp-timezone-picker select:focus-visible, .kp-time-navigation button:focus-visible, .kp-time-slider input:focus-visible, .kp-interactive-chart svg:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .kp-interactive-chart { position: relative; }
@@ -38,3 +38,20 @@
 .kp-time-slider { flex: 1; min-width: 0; display: flex; }
 .kp-time-slider input { width: 100%; margin: 0; accent-color: var(--accent); cursor: ew-resize; }
 @media (max-width: 720px) { .latest-forecast-heading { flex-direction: column; } .kp-time-reset { font-size: 12px !important; } .kp-time-navigation { gap: 6px; } }
+
+.kp-timezone-picker > label { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.timezone-search-toggle { border: 0; background: transparent; color: var(--accent); font: inherit; padding: 8px 0; cursor: pointer; text-align: left; }
+.timezone-search-toggle:focus-visible, .timezone-search-panel input:focus-visible, .timezone-search-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.timezone-search-panel { position: absolute; z-index: 10; top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 56px)); padding: 16px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 12px 32px #0008; }
+.timezone-search-panel label { display: block; margin-bottom: 8px; }
+.timezone-search-panel input { width: 100%; min-height: 44px; padding: 8px; color: var(--text); background: var(--page); border: 1px solid var(--line-strong); border-radius: 5px; font: inherit; font-size: 16px; }
+.timezone-search-panel ul { list-style: none; padding: 0; margin: 8px 0; max-height: 240px; overflow-y: auto; }
+.timezone-search-panel li button { display: block; width: 100%; min-height: 44px; text-align: left; overflow-wrap: anywhere; padding: 8px; background: transparent; border: 0; color: var(--text); cursor: pointer; font: inherit; }
+.timezone-search-panel li button:hover { background: var(--accent-wash); }
+.timezone-search-panel p { margin: 8px 0; font-size: 13px; }
+@media (max-width: 720px) {
+  .kp-timezone-picker { width: 100%; }
+  .kp-timezone-picker select { min-height: 44px; font-size: 16px; max-width: min(280px, calc(100vw - 100px)); }
+  .timezone-search-toggle { min-height: 44px; }
+  .timezone-search-panel { left: 0; right: auto; }
+}

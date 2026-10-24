@@ -59,3 +59,9 @@
   .monitoring-plots { gap: 18px; }
   .camera-viewer.camera-video, .camera-video .aurora-camera-frame { min-height: 0; }
 }
+
+.history-selection-status { height: 3em; line-height: 1.5; margin: 0; display: flex; align-items: center; }
+.history-plots .monitoring-value { height: 40px; line-height: 40px; margin: 0 0 16px; }
+.history-plots .history-value-unavailable { font-size: 16px; color: var(--muted) !important; }
+.evidence-chart svg .evidence-empty { font-size: 16px; fill: var(--text); }
+.history-plots .evidence-readout { height: 44px; }
