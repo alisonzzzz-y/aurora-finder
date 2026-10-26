@@ -22,6 +22,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [failedRequest, setFailedRequest] = useState<{ question: string; history: AssistantMessage[]; location?: Location } | null>(null)
+  const conversationLocation = useRef<{ mapLocationId?: number; selectedId: number } | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; width: number; height: number } | null>(null)
@@ -123,7 +124,14 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     setFailedRequest(null)
     setBusy(true)
     try {
-      const response = await askAssistant(question, language, history, selectedLocation?.id ?? locationId)
+      const awaitingPlace = Boolean(history.at(-1)?.locationCandidates?.length)
+      const remembered = conversationLocation.current
+      const selectedId = selectedLocation?.id ?? (awaitingPlace ? undefined
+        : remembered?.mapLocationId === locationId ? remembered?.selectedId : locationId)
+      const response = await askAssistant(question, language, history, selectedId)
+      if (response.selectedLocationId != null) {
+        conversationLocation.current = { mapLocationId: locationId, selectedId: response.selectedLocationId }
+      }
       setMessages(current => [...current, {
         role: 'assistant', content: response.answer,
         ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),

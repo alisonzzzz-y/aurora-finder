@@ -12,6 +12,7 @@ type AssistantChatResponse = {
   answer: string
   model: string
   locationCandidates: Location[]
+  selectedLocationId?: number | null
   runId?: string
 }
 

@@ -105,7 +105,7 @@ class ObservationWorkflowIntegrationTest {
         assertEquals(30, facts.path("auroraActivity").path("data").path("modelValue").asInt());
         assertEquals(2, map.path("points").size());
 
-        assertEquals(facts, askAssistantAndCaptureFacts(selectedId));
+        assertAssistantFactsMatchWindow(facts, askAssistantAndCaptureFacts(selectedId));
     }
 
     @Test
@@ -127,7 +127,7 @@ class ObservationWorkflowIntegrationTest {
         JsonNode map = readGet("/api/v1/aurora-map");
         assertEquals("EXPIRED", map.path("status").asText());
         assertEquals(0, map.path("points").size());
-        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+        assertAssistantFactsMatchWindow(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
     }
 
     @Test
@@ -145,7 +145,7 @@ class ObservationWorkflowIntegrationTest {
         assertEquals("CURRENT", facts.path("solarDarkness").path("status").asText());
         assertFalse(facts.toString().contains("private NOAA source detail"));
 
-        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+        assertAssistantFactsMatchWindow(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
     }
 
     @Test
@@ -160,7 +160,7 @@ class ObservationWorkflowIntegrationTest {
         assertEquals("TIMEOUT", facts.path("cloudForecast").path("failureCode").asText());
         assertFalse(facts.path("cloudForecast").hasNonNull("data"));
         assertFalse(facts.toString().contains("private source detail"));
-        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+        assertAssistantFactsMatchWindow(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
     }
 
     @Test
@@ -177,7 +177,7 @@ class ObservationWorkflowIntegrationTest {
         assertEquals(1, cloudFact.path("data").path("cloudForecast").size());
         assertFalse(cloudFact.path("data").path("cloudForecast").get(0).hasNonNull("cloudCoverPercent"));
         assertEquals("CANNOT_CHECK", facts.path("coverage").path("status").asText());
-        assertEquals(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
+        assertAssistantFactsMatchWindow(facts, askAssistantAndCaptureFacts(DUBLIN.id()));
     }
 
     @Test
@@ -198,6 +198,22 @@ class ObservationWorkflowIntegrationTest {
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.not(
                         org.hamcrest.Matchers.containsString("secret-value"))));
         verify(openAi).respond(anyString(), any(), any());
+    }
+
+    private void assertAssistantFactsMatchWindow(JsonNode page, JsonNode assistant) {
+        assertEquals(page.path("outlook"), assistant.path("outlook"));
+        assertEquals(page.path("auroraActivity"), assistant.path("auroraActivity"));
+        assertEquals(page.path("solarDarkness"), assistant.path("solarDarkness"));
+        assertEquals(page.path("sourceStatus"), assistant.path("sourceStatus"));
+        assertEquals(page.path("cloudForecast").path("status"), assistant.path("cloudForecast").path("status"));
+        JsonNode scope = assistant.path("assistantCloudWindow");
+        assertEquals("2026-09-28", scope.path("localDate").asText());
+        for (JsonNode point : assistant.path("cloudForecast").path("data").path("cloudForecast")) {
+            Instant at = Instant.parse(point.path("validAt").asText());
+            assertFalse(at.isBefore(Instant.parse(scope.path("startUtc").asText())));
+            assertTrue(at.isBefore(Instant.parse(scope.path("endUtc").asText())));
+            assertTrue(java.util.stream.StreamSupport.stream(page.path("cloudForecast").path("data").path("cloudForecast").spliterator(), false).anyMatch(point::equals));
+        }
     }
 
     private JsonNode askAssistantAndCaptureFacts(long selectedId) throws Exception {
