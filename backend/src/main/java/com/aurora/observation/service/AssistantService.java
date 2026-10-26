@@ -6,7 +6,6 @@ import com.aurora.observation.dto.AssistantMessage;
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.dto.NightOutlook;
 import com.aurora.observation.dto.ObservationFactsResponse;
-import com.aurora.observation.dto.WeatherCloudPoint;
 import com.aurora.observation.provider.OpenAiAssistantProvider;
 import com.aurora.observation.record.NoopRunRecordStore;
 import com.aurora.observation.record.RunRecordStore;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +37,6 @@ public class AssistantService {
             "(?m)(?<!\\d)((?:[01]?\\d|2[0-3]))(?::([0-5]\\d)|[时点])[^\\n%％]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*[%％]");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
-    private static final Pattern CLOUD_CONTEXT = Pattern.compile("(?i)cloud|云量|云层|云覆盖");
     private static final String INSTRUCTIONS = """
             You are the read-only assistant inside Aurora Finder. Answer in the user's requested language.
             Use the provided tools for current aurora, geomagnetic, cloud, darkness, location, and source facts.
@@ -67,8 +64,18 @@ public class AssistantService {
             Horizon clouds, terrain, brightness, emission height and light pollution have not been checked.
             If reporting its HIGH/MEDIUM/LOW level, give evaluatedAtUtc and state the rule is uncalibrated.
             Never turn a rating or model signal into a viewing percentage or extend it to a whole night.
-            Cloud forecasts now cover the remaining current hours and three local nights; select the user's
-            requested local date before summarising cloud values. Missing future aurora data stays missing.
+            The tool's assistantCloudWindow is the only source for hourly cloud answers. It contains a single
+            place, requested local date, exact start/end instants and localSamples with dates and UTC offsets.
+            Tonight means the current calendar date at that place, even after midnight. The grouping window is
+            local noon to next noon, not a guarantee of darkness. The following morning belongs to that night.
+            Never use an earlier morning, another night or another place to fill a missing requested window.
+            For an explicit date not already selected, call get_night_cloud_forecast after get_local_night_facts.
+            DATE_SELECTION_REQUIRED means select each requested date with that tool, or clarify an ambiguous date.
+            OUTSIDE_FORECAST_WINDOW, UNAVAILABLE or NO_DATA means no cloud samples for that request. Say so.
+            When a user chooses a place after a clarification, answer their original question and keep its time
+            scope. A follow-up such as tomorrow night changes the date, while keeping the resolved place.
+            Missing future aurora data stays missing. Keep answers short, with at most three exact dated samples.
+            Prefer plain text to Markdown tables. Do not repeat general warnings or ask for an already resolved place.
             Explain uncertainty plainly. Distinguish global geomagnetic activity from local viewing conditions.
             Search for a place before using local tools unless the application supplied a selected location ID.
             Use only an application-selected location ID, a unique candidate returned by search_places, or a
@@ -113,7 +120,7 @@ public class AssistantService {
         try {
             AssistantChatResponse answer = answer(request, runId);
             records.finish(runId, "COMPLETED");
-            return new AssistantChatResponse(answer.answer(), answer.model(), answer.locationCandidates(), runId);
+            return new AssistantChatResponse(answer.answer(), answer.model(), answer.locationCandidates(), runId, answer.selectedLocationId());
         } catch (RuntimeException failure) {
             records.finish(runId, "FAILED");
             throw failure;
@@ -133,6 +140,7 @@ public class AssistantService {
         }
         ToolContext toolContext = new ToolContext();
         toolContext.runId = runId;
+        toolContext.requestTime = AssistantCloudEvidence.requestTime(request.message(), history);
         if (request.locationId() != null && request.locationId() > 0) {
             toolContext.permittedLocationIds.add(request.locationId());
         } else {
@@ -187,7 +195,11 @@ public class AssistantService {
                 } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
                     answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
                 }
-                return new AssistantChatResponse(answer, openAi.model(), choices);
+                Long selectedLocationId = choices.isEmpty() && toolContext.localFacts.size() == 1
+                        ? toolContext.localFacts.keySet().iterator().next()
+                        : choices.isEmpty() && toolContext.permittedLocationIds.size() == 1
+                            ? toolContext.permittedLocationIds.iterator().next() : null;
+                return new AssistantChatResponse(answer, openAi.model(), choices, null, selectedLocationId);
             }
         }
         throw new AssistantUnavailableException("The AI assistant used too many tool steps.");
@@ -214,16 +226,26 @@ public class AssistantService {
     }
 
     private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
-        if (!context.cloudFactsRequested || !CLOUD_CONTEXT.matcher(answer).find()) return false;
+        if (!context.cloudFactsRequested) return false;
         Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
         while (matcher.find()) {
             String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
-            Set<BigDecimal> sourceValues = context.cloudPercentagesByLocalHour.get(hour);
-            if (sourceValues == null || sourceValues.isEmpty()) return true;
-
             BigDecimal stated = new BigDecimal(matcher.group(3));
-            boolean matchesSource = sourceValues.stream().anyMatch(source ->
-                    source.subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0);
+            // Multiple places or nights need explicit attribution. Use the structured source summary instead
+            // of accepting a value merely because that hour occurs somewhere in the combined evidence.
+            if (context.cloudWindows.size() != 1) return true;
+            var window = context.cloudWindows.values().iterator().next();
+            ZoneId zone = ZoneId.of(window.location().timezone());
+            var dateMatcher = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})").matcher(answer.substring(0, matcher.start()));
+            String date = null;
+            while (dateMatcher.find()) date = dateMatcher.group(1);
+            final String explicitDate = date;
+            boolean matchesSource = window.points().stream().anyMatch(point -> {
+                var local = point.validAt().atZone(zone);
+                return local.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)).equals(hour)
+                        && (explicitDate == null || explicitDate.equals(local.toLocalDate().toString()))
+                        && BigDecimal.valueOf(point.cloudCoverPercent()).subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0;
+            });
             if (!matchesSource) return true;
         }
         return false;
@@ -242,25 +264,28 @@ public class AssistantService {
     }
 
     private String sourceCloudExamples(ToolContext context, boolean chinese) {
-        ObservationFactsResponse facts = context.latestCloudFacts;
-        if (facts == null || facts.cloudForecast().status() != com.aurora.observation.dto.FactFetchStatus.CURRENT) return "";
-        Location location = facts.outlook().location();
-        ZoneId zone = ZoneId.of(location.timezone());
-        var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
-        var points = facts.cloudForecast().data().cloudForecast().stream()
-                .filter(point -> point != null && point.validAt() != null && point.cloudCoverPercent() != null)
-                .sorted(java.util.Comparator.comparing(WeatherCloudPoint::validAt)).limit(2).toList();
-        if (points.isEmpty()) return "";
-        StringBuilder summary = new StringBuilder(chinese
-                ? "\n\n以下为天气来源的样本读数（当地时间，不代表整晚）：\n"
-                : "\n\nSample readings from the weather source, in local time. They do not describe the whole night:\n");
-        summary.append(location.name()).append(", ").append(location.country()).append("\n");
-        for (WeatherCloudPoint point : points) {
-            summary.append("- ").append(formatter.format(point.validAt().atZone(zone))).append(": ")
-                    .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
+        StringBuilder summary = new StringBuilder();
+        for (var window : context.cloudWindows.values()) {
+            var place = window.location();
+            summary.append("\n\n").append(place.name()).append(", ").append(place.country());
+            if (window.localDate() != null) summary.append(" · ").append(window.localDate());
+            summary.append(" · ").append(place.timezone()).append("\n");
+            if (window.points().isEmpty()) {
+                summary.append(chinese ? "所请求时段没有可用的云量预报。" : "No cloud forecast is available for the requested window.");
+                continue;
+            }
+            summary.append(chinese ? "所请求时段的云量样本（当地时间）：\n" : "Sample readings for the requested window, in local time:\n");
+            var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
+            // Spread samples across the available window instead of showing only its first two hours.
+            var points = window.points();
+            for (int index : java.util.stream.IntStream.of(0, points.size() / 2, points.size() - 1).distinct().toArray()) {
+                var point = points.get(index);
+                summary.append("- ").append(formatter.format(point.validAt().atZone(ZoneId.of(place.timezone())))).append(": ")
+                        .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
+            }
+            summary.append(chinese ? "数据来源：" : "Source: ").append(window.source());
+            if (window.sourceUrl() != null && !window.sourceUrl().equals(window.source())) summary.append("\n").append(window.sourceUrl());
         }
-        summary.append(chinese ? "数据来源：" : "Source: ").append(facts.cloudForecast().source());
-        if (facts.cloudForecast().sourceUrl() != null && !facts.cloudForecast().sourceUrl().equals(facts.cloudForecast().source())) summary.append("\n").append(facts.cloudForecast().sourceUrl());
         return summary.toString();
     }
 
@@ -441,14 +466,21 @@ public class AssistantService {
                 ObservationFactsResponse facts = tools.getLocalNightFacts(locationId);
                 records.recordFacts(context.runId, facts);
                 context.cloudFactsRequested = true;
-                recordCloudForecast(facts, context);
+                if (facts != null) context.localFacts.put(locationId, facts);
                 List<LocalDate> availableDates = facts == null || facts.outlook() == null
                         || facts.outlook().nights() == null
                         ? List.of()
                         : facts.outlook().nights().stream().map(NightOutlook::localDate)
                                 .filter(java.util.Objects::nonNull).toList();
                 context.supportedNightDates.put(locationId, availableDates);
-                yield facts;
+                yield scopedFacts(facts, context, null);
+            }
+            case "get_night_cloud_forecast" -> {
+                long locationId = requiredPositiveLong(arguments, "location_id");
+                requirePermittedLocation(locationId, context);
+                ObservationFactsResponse facts = context.localFacts.get(locationId);
+                if (facts == null) throw new LocalFactsRequiredException();
+                yield scopedFacts(facts, context, LocalDate.parse(requiredText(arguments, "local_date")));
             }
             case "get_night_outlook" -> {
                 long locationId = requiredPositiveLong(arguments, "location_id");
@@ -480,23 +512,24 @@ public class AssistantService {
         }
     }
 
-    private void recordCloudForecast(ObservationFactsResponse facts, ToolContext context) {
-        if (facts == null || facts.outlook() == null || facts.outlook().location() == null
-                || facts.cloudForecast() == null || facts.cloudForecast().data() == null
-                || facts.cloudForecast().data().cloudForecast() == null) return;
-        ZoneId zone;
-        try {
-            zone = ZoneId.of(facts.outlook().location().timezone());
-        } catch (RuntimeException invalidZone) {
-            return;
+    private Object scopedFacts(ObservationFactsResponse facts, ToolContext context, LocalDate date) {
+        if (facts == null || facts.outlook() == null || facts.outlook().location() == null) return facts;
+        var window = AssistantCloudEvidence.select(facts, context.requestTime, date);
+        // Replace a broad first response for this place when a precise date is selected.
+        context.cloudWindows.entrySet().removeIf(entry -> entry.getValue().location().id() == window.location().id()
+                && entry.getValue().localDate() == null);
+        context.cloudWindows.put(window.location().id() + ":" + window.localDate(), window);
+        ObjectNode result = objectMapper.valueToTree(facts);
+        ObjectNode selected = objectMapper.valueToTree(window);
+        selected.remove("points");
+        selected.set("localSamples", objectMapper.valueToTree(AssistantCloudEvidence.localSamples(window)));
+        selected.put("windowMeaning", "Local noon to next noon for a requested night, or the next three hours for current conditions. Only future source samples are included; gaps are unknown.");
+        result.set("assistantCloudWindow", selected);
+        // The page still receives all three nights. The assistant only sees the selected weather evidence.
+        if (result.path("cloudForecast").path("data") instanceof ObjectNode cloudData) {
+            cloudData.set("cloudForecast", objectMapper.valueToTree(window.points()));
         }
-        context.latestCloudFacts = facts;
-        for (WeatherCloudPoint point : facts.cloudForecast().data().cloudForecast()) {
-            if (point == null || point.validAt() == null || point.cloudCoverPercent() == null) continue;
-            String localHour = point.validAt().atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT));
-            BigDecimal value = BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros();
-            context.cloudPercentagesByLocalHour.computeIfAbsent(localHour, ignored -> new TreeSet<>()).add(value);
-        }
+        return result;
     }
 
     private String extractText(JsonNode output) {
@@ -546,9 +579,10 @@ public class AssistantService {
         private final Set<Long> permittedLocationIds = new HashSet<>();
         private List<Location> latestCandidates = List.of();
         private final Map<Long, List<LocalDate>> supportedNightDates = new HashMap<>();
-        private final Map<String, Set<BigDecimal>> cloudPercentagesByLocalHour = new HashMap<>();
+        private String requestTime;
+        private final Map<Long, ObservationFactsResponse> localFacts = new HashMap<>();
+        private final Map<String, AssistantCloudEvidence.Window> cloudWindows = new java.util.LinkedHashMap<>();
         private boolean cloudFactsRequested;
-        private ObservationFactsResponse latestCloudFacts;
     }
 
     private static final class LocationSelectionRequiredException extends RuntimeException {
@@ -571,6 +605,8 @@ public class AssistantService {
         ObjectNode nightProperties = objectMapper.createObjectNode();
         nightProperties.set("location_id", property("integer", "Selected provider location ID"));
         nightProperties.set("local_date", property("string", "Local calendar date in YYYY-MM-DD format"));
+        definitions.add(tool("get_night_cloud_forecast", "Select cloud samples for one exact local night after get_local_night_facts. Returns dated local samples only within that window; unavailable windows contain no substitute values.",
+                nightProperties, List.of("location_id", "local_date")));
         definitions.add(tool("get_night_outlook", "Get one local night outlook using a permitted location ID and an exact localDate returned by get_local_night_facts.",
                 nightProperties, List.of("location_id", "local_date")));
         definitions.add(tool("get_recent_geomagnetic_history", "Read available completed observed/estimated global Kp intervals in the past 72 hours and the current reference time. Use for past-event questions before claiming history is unavailable. Not proof of local sightings.",
