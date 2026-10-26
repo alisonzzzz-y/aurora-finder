@@ -172,3 +172,8 @@ python3 scripts/evaluate_assistant.py --case night-followups
 ```bash
 python3 scripts/evaluate_assistant.py --live --case night-followups --timeout 60 --base-url https://aurora-observation-agent.onrender.com --output /tmp/aurora-night-followups.json
 ```
+
+
+补充验收：`b59ef78` 上线后增加两轮真实模型查询。“October 28”正确覆盖上一轮的 tonight，20:00 的0.8%与22:00 的7.0%均与来源一致；“2030年10月26日”明确返回范围外，没有将年份替换为当前年份。本次新版累计8轮真实请求，13个带日期的样本核对一致。
+
+浏览器另测 Enter 发送、Shift+Enter 换行、503失败后重试：重试保持相同地点和历史，只保留一个用户问题气泡。发现竖向滚动条使窄屏对话框左侧溢出3px，已将宽度与拖动限制改为实际可用宽度；390px视口、375px可用区域下，打开、拖动、缩放后均保持在界内，右上角关闭正常。前端 lint、38项测试与构建通过。
