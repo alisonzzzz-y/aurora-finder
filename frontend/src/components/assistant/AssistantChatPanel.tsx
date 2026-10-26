@@ -39,7 +39,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       if (!positionRef.current || !panelRef.current) return
       const bounds = panelRef.current.getBoundingClientRect()
       setPosition(current => current ? {
-        x: Math.max(8, Math.min(current.x, window.innerWidth - bounds.width - 8)),
+        x: Math.max(8, Math.min(current.x, document.documentElement.clientWidth - bounds.width - 8)),
         y: Math.max(8, Math.min(current.y, window.innerHeight - bounds.height - 8)),
       } : null)
     }
@@ -61,7 +61,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     const bounds = panelRef.current?.getBoundingClientRect()
     if (!drag || drag.pointerId !== event.pointerId || !bounds) return
     setPosition({
-      x: Math.max(8, Math.min(event.clientX - drag.offsetX, window.innerWidth - bounds.width - 8)),
+      x: Math.max(8, Math.min(event.clientX - drag.offsetX, document.documentElement.clientWidth - bounds.width - 8)),
       y: Math.max(8, Math.min(event.clientY - drag.offsetY, window.innerHeight - bounds.height - 8)),
     })
   }
@@ -87,7 +87,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   function resizeWindow(event: ReactPointerEvent<HTMLButtonElement>) {
     const start = resizeRef.current
     if (!start || start.pointerId !== event.pointerId) return
-    const maxWidth = Math.min(960, window.innerWidth - 24)
+    const maxWidth = Math.min(960, document.documentElement.clientWidth - 24)
     const maxHeight = Math.min(920, window.innerHeight - 24)
     const width = Math.max(Math.min(340, maxWidth), Math.min(maxWidth, start.width + start.startX - event.clientX))
     const height = Math.max(Math.min(320, maxHeight), Math.min(maxHeight, start.height + start.startY - event.clientY))
