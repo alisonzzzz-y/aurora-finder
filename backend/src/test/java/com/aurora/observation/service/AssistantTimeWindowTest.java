@@ -95,6 +95,19 @@ class AssistantTimeWindowTest {
         assertEquals(3,count.get());
     }
 
+    @Test void chineseExplicitYearMustNotBecomeTheCurrentYear() {
+        var window = AssistantCloudEvidence.select(facts("Europe/Dublin",NOW,false),"2030年10月26日",null);
+        assertEquals(LocalDate.of(2030,10,26),window.localDate());
+        assertEquals("OUTSIDE_FORECAST_WINDOW",window.status());
+        assertTrue(window.points().isEmpty());
+    }
+
+    @Test void englishCalendarFollowupOverridesEarlierTonight() {
+        String request = AssistantCloudEvidence.requestTime("What about October 27?",List.of(new AssistantMessage("user","tonight")));
+        assertEquals(LocalDate.of(2026,10,27),AssistantCloudEvidence.select(facts("Europe/Dublin",NOW,false),request,null).localDate());
+        assertEquals(LocalDate.of(2030,1,1),AssistantCloudEvidence.requestedDate("Jan 1, 2030",LocalDate.of(2026,10,26)));
+    }
+
     @Test void fallbackForTonightNeverIncludesEarlierMorningOrTomorrowEvening() {
         var answer = chat("Cloud cover tonight?", List.of(), "At 20:00 cloud cover is 82%.", facts("Europe/Dublin",NOW,false)).answer();
         assertTrue(answer.contains("2026-10-26 20:00 Z: 21.5%"), answer);

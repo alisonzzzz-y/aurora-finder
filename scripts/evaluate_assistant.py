@@ -65,6 +65,15 @@ CASES = {
 }
 
 
+DEFAULT_CASES = tuple(CASES)
+CASES["night-followups"] = {
+    "query": "Dublin", "country": "Ireland", "language": "zh", "select_first": True,
+    "message": "都柏林今晚云量怎么样？请给出带当地日期和时间的两个云量样本。",
+    "followups": ["明晚呢？同样给出两个带当地日期的云量样本。", "现在呢？给出接下来三小时的可用云量样本。", "2030-01-01 晚上呢？"],
+    "criteria": ["地点保持不变，明晚覆盖今晚；现在清除夜晚范围；不把当前预报用于范围外日期。", "逐条对照基线的当地日期、UTC 偏移、小时和云量；HTTP 200 不代表内容通过。"],
+}
+
+
 class Api:
     MAX_GET_ATTEMPTS = 3
     RETRYABLE_STATUS_CODES = {502, 503, 504}
@@ -157,6 +166,22 @@ def evaluate(api, case_id, case):
              "locationCandidates": candidates},
         ]}
         result["turns"].append({"request": follow_up, "response": api.chat(follow_up)})
+    for question in case.get("followups", []):
+        previous = result["turns"][-1]
+        if previous["response"].get("status") != 200:
+            break
+        body = previous["response"].get("body", {})
+        if body.get("selectedLocationId") != place["id"]:
+            result["follow_up_error"] = "Resolved location is missing or changed; verify the deployed backend version."
+            break
+        prior = previous["request"]
+        follow_up = {"message": question, "language": case["language"], "locationId": body["selectedLocationId"],
+                     "history": (prior.get("history", []) + [
+                         {"role": "user", "content": prior["message"]},
+                         {"role": "assistant", "content": body.get("answer", "")[:8000],
+                          "locationCandidates": body.get("locationCandidates", [])},
+                     ])[-10:]}
+        result["turns"].append({"request": follow_up, "response": api.chat(follow_up)})
     return result
 
 
@@ -175,10 +200,13 @@ def main():
         parser.error("The base URL must not contain credentials, query parameters, or a fragment.")
     if not 0 < args.timeout <= 60:
         parser.error("Timeout must be greater than zero and at most 60 seconds.")
-    selected = list(dict.fromkeys(args.case or CASES))
+    selected = list(dict.fromkeys(args.case or DEFAULT_CASES))
     if not args.live:
         print(json.dumps({"mode": "dry-run", "cases": {key: CASES[key] for key in selected}}, ensure_ascii=False, indent=2))
         return 0
+    budget = sum(2 if key == "same-name" else 1 + len(CASES[key].get("followups", [])) for key in selected)
+    if budget > 6:
+        parser.error("Choose cases requiring at most six assistant requests per run.")
     api = Api(args.base_url, args.timeout)
     report = {"started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
               "base_url": args.base_url, "scope": "Synthetic prompts, live model, manual review required", "cases": []}
