@@ -96,6 +96,25 @@ class EvaluationRunnerTest(unittest.TestCase):
         self.assertEqual(candidates, follow_up["history"][1]["locationCandidates"])
         self.assertEqual("PENDING", result["review"])
 
+    def test_night_followups_keep_resolved_place_and_history(self):
+        api = Api("http://localhost:8080",1)
+        place = {"id":2964574,"name":"Dublin","country":"Ireland"}
+        answer = {"status":200,"body":{"answer":"Source samples.","selectedLocationId":2964574}}
+        with patch.object(api,"request",side_effect=[{"status":200,"body":[place]},
+                {"status":200,"body":{}},answer,answer,answer,answer]):
+            result=evaluate(api,"night-followups",CASES["night-followups"])
+        self.assertEqual(4,api.chat_requests)
+        self.assertEqual([0,2,4,6],[len(t["request"]["history"]) for t in result["turns"]])
+        self.assertTrue(all(t["request"]["locationId"]==2964574 for t in result["turns"]))
+
+    def test_night_followups_stop_on_old_backend_response(self):
+        api = Api("http://localhost:8080",1)
+        with patch.object(api,"request",side_effect=[{"status":200,"body":[{"id":1,"country":"Ireland"}]},
+                {"status":200,"body":{}},{"status":200,"body":{"answer":"Old response."}}]):
+            result=evaluate(api,"night-followups",CASES["night-followups"])
+        self.assertEqual(1,api.chat_requests)
+        self.assertIn("follow_up_error",result)
+
 
 if __name__ == "__main__":
     unittest.main()

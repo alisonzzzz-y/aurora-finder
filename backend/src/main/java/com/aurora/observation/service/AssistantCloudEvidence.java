@@ -9,7 +9,8 @@ import java.util.regex.Pattern;
 /** Restricts assistant weather evidence to one place and one requested local window. */
 final class AssistantCloudEvidence {
     private static final Pattern ISO_DATE = Pattern.compile("(?<!\\d)(\\d{4}-\\d{2}-\\d{2})(?!\\d)");
-    private static final Pattern MONTH_DAY = Pattern.compile("(?<!\\d)(\\d{1,2})月(\\d{1,2})[日号]?");
+    private static final Pattern MONTH_DAY = Pattern.compile("(?<!\\d)(?:(\\d{4})年)?(\\d{1,2})月(\\d{1,2})[日号]?");
+    private static final Pattern ENGLISH_DATE = Pattern.compile("(?i)\\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b");
     private static final Pattern CURRENT = Pattern.compile("(?i)\\b(?:now|currently)\\b|现在|目前|当前");
     private static final Pattern RELATIVE = Pattern.compile(
             "(?i)tonight|tomorrow|yesterday|last night|day after tomorrow|now|currently|right now|今[天晚夜]|明[天晚夜]|后[天晚夜]|昨[天晚夜]|前晚|现在|目前|当前");
@@ -26,7 +27,7 @@ final class AssistantCloudEvidence {
     }
 
     private static boolean hasTime(String value) {
-        return value != null && (ISO_DATE.matcher(value).find() || MONTH_DAY.matcher(value).find() || RELATIVE.matcher(value).find());
+        return value != null && (ISO_DATE.matcher(value).find() || MONTH_DAY.matcher(value).find() || ENGLISH_DATE.matcher(value).find() || RELATIVE.matcher(value).find());
     }
 
     static LocalDate requestedDate(String text, LocalDate today) {
@@ -42,7 +43,17 @@ final class AssistantCloudEvidence {
         var monthDays = MONTH_DAY.matcher(text);
         while (monthDays.find()) {
             LocalDate candidate;
-            try { candidate = LocalDate.of(today.getYear(), Integer.parseInt(monthDays.group(1)), Integer.parseInt(monthDays.group(2))); }
+            try { candidate = LocalDate.of(monthDays.group(1) == null ? today.getYear() : Integer.parseInt(monthDays.group(1)), Integer.parseInt(monthDays.group(2)), Integer.parseInt(monthDays.group(3))); }
+            catch (DateTimeException invalid) { return null; }
+            if (explicit != null && !explicit.equals(candidate)) return null;
+            explicit = candidate;
+        }
+        var englishDates = ENGLISH_DATE.matcher(text);
+        while (englishDates.find()) {
+            String name = englishDates.group(1).substring(0,3).toUpperCase(Locale.ROOT);
+            int month = Arrays.stream(Month.values()).filter(m -> m.name().startsWith(name)).findFirst().orElseThrow().getValue();
+            LocalDate candidate;
+            try { candidate = LocalDate.of(englishDates.group(3) == null ? today.getYear() : Integer.parseInt(englishDates.group(3)), month, Integer.parseInt(englishDates.group(2))); }
             catch (DateTimeException invalid) { return null; }
             if (explicit != null && !explicit.equals(candidate)) return null;
             explicit = candidate;
