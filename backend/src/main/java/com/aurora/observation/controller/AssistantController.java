@@ -26,7 +26,9 @@ public class AssistantController {
     public AssistantChatResponse chat(@Valid @RequestBody AssistantChatRequest request,
                                       HttpServletRequest servletRequest) {
         limiter.check(clientKey(servletRequest));
-        return assistant.chat(request);
+        try (var permit = limiter.acquire()) {
+            return assistant.chat(request);
+        }
     }
 
     private String clientKey(HttpServletRequest request) {

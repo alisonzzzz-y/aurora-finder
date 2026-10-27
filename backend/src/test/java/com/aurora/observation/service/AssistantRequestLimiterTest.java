@@ -40,6 +40,33 @@ class AssistantRequestLimiterTest {
         assertEquals(1, limiter.trackedClientCount());
     }
 
+    @Test
+    void globalBudgetAppliesAcrossClientsAndResetsAfterWindow() {
+        AdjustableClock clock = new AdjustableClock();
+        var limiter = new AssistantRequestLimiter(8, Duration.ofMinutes(10), clock, 2, 1);
+        limiter.check("a"); limiter.acquire().close();
+        limiter.check("b"); limiter.acquire().close();
+        limiter.check("c");
+        assertThrows(AssistantRateLimitException.class, limiter::acquire);
+        clock.advance(Duration.ofMinutes(10));
+        assertDoesNotThrow(() -> limiter.acquire().close());
+    }
+
+    @Test
+    void concurrencyPermitReleasesOnceAndAfterFailure() {
+        var limiter = new AssistantRequestLimiter(8, Duration.ofMinutes(10), new AdjustableClock(), 24, 1);
+        var first = limiter.acquire();
+        assertThrows(AssistantRateLimitException.class, limiter::acquire);
+        first.close(); first.close();
+        var second = limiter.acquire();
+        assertThrows(AssistantRateLimitException.class, limiter::acquire);
+        second.close();
+        assertThrows(IllegalStateException.class, () -> {
+            try (var ignored = limiter.acquire()) { throw new IllegalStateException("provider failure"); }
+        });
+        assertDoesNotThrow(() -> limiter.acquire().close());
+    }
+
     private static final class AdjustableClock extends Clock {
         private Instant instant = Instant.EPOCH;
 

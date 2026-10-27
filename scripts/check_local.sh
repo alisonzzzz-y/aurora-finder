@@ -5,6 +5,7 @@ cd "$project_root/frontend"
 npm run lint
 npm test
 npm run build
+if [[ "${BROWSER_TESTS:-0}" == "1" ]]; then npm run test:e2e; fi
 cd "$project_root/backend"
 ./mvnw --batch-mode clean verify
 cd "$project_root"

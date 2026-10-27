@@ -43,7 +43,7 @@ To enable AI chat, set `OPENAI_API_KEY` on the backend. You can optionally set `
 
 The frontend uses React and TypeScript, and the backend uses Java 21 and Spring Boot. Optional MySQL storage keeps short-lived run records through Flyway migrations. GitHub Actions runs backend, frontend, and script checks. Run `bash scripts/check_local.sh` from the repository root after installing dependencies.
 
-See the [engineering review](docs/engineering-review.md) for test coverage, current limitations, and remaining work, and the [database setup](docs/database-setup.md) for storage configuration.
+See the [current delivery status](docs/completion-status-2026-10-26.md) and [operations guide](docs/operations.md) for test coverage, current limitations, and remaining work, and the [database setup](docs/database-setup.md) for storage configuration.
 
 ### Data and credits
 
@@ -90,7 +90,7 @@ npm run dev
 
 前端使用 React 和 TypeScript，后端使用 Java 21 和 Spring Boot。可选的 MySQL 存储通过 Flyway 迁移保存短期运行记录。GitHub Actions 执行后端、前端和脚本检查。安装依赖后，在仓库根目录运行 `bash scripts/check_local.sh`。
 
-测试覆盖、当前限制和待完成工作见[工程检查](docs/engineering-review.md)，存储配置见[数据库接入](docs/database-setup.md)。
+测试覆盖、当前限制和待完成工作见[当前交付状态](docs/completion-status-2026-10-26.md)与[运行说明](docs/operations.md)，存储配置见[数据库接入](docs/database-setup.md)。
 
 ### 数据与署名
 

@@ -29,6 +29,38 @@ class JdbcRunRecordStoreTest {
     private final List<String> mysqlSchemas = new java.util.ArrayList<>();
 
     @Test
+    void startupProbeReadsPreviousDeploymentAndCleansOnlyExpiredEvidence() {
+        String url = "jdbc:h2:file:" + directory.resolve("probe") + ";DB_CLOSE_ON_EXIT=FALSE";
+        JdbcTemplate jdbc = jdbc(url);
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
+        var first = store(jdbc, NOW);
+        String normal = first.begin("PAGE_FACTS", 2964574L);
+        first.recordFacts(normal, facts()); first.finish(normal, "COMPLETED");
+        var original = first.verifyPersistence();
+        assertNull(original.previousRunId());
+        var restarted = store(jdbc(url), NOW.plusSeconds(60));
+        var next = restarted.verifyPersistence();
+        assertEquals(original.newRunId(), next.previousRunId());
+        assertEquals(1, restarted.find(original.newRunId()).orElseThrow().toolCalls().size());
+        assertEquals(3, restarted.find(normal).orElseThrow().sources().size());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM evaluation_run WHERE kind = 'RETENTION_CHECK'", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM assistant_tool_call WHERE tool_name = 'retention_probe'", Integer.class));
+    }
+
+    @Test
+    void recordReadbackWorksWithSingleConnectionPool() {
+        JdbcTemplate jdbc = jdbc("jdbc:h2:mem:singlepool;DB_CLOSE_DELAY=-1");
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(migrations()).load().migrate();
+        try (var pool = new com.zaxxer.hikari.HikariDataSource()) {
+            pool.setDataSource(jdbc.getDataSource()); pool.setMaximumPoolSize(1); pool.setConnectionTimeout(500);
+            var records = store(new JdbcTemplate(pool), NOW);
+            String id = records.begin("PAGE_FACTS", 2964574L);
+            records.recordFacts(id, facts()); records.finish(id, "COMPLETED");
+            assertEquals(3, records.find(id).orElseThrow().sources().size());
+        }
+    }
+
+    @Test
     void publicHistorySurvivesRestartDeduplicatesAndExpires() {
         String url = "jdbc:h2:file:" + directory.resolve("history") + ";DB_CLOSE_ON_EXIT=FALSE";
         JdbcTemplate jdbc=jdbc(url);
@@ -82,7 +114,7 @@ class JdbcRunRecordStoreTest {
     }
 
     @Test
-    void productionConfigurationSelectsCompatibleMigrations() {
+    void productionConfigurationSelectsCompatibleMigrations() throws Exception {
         DriverManagerDataSource dataSource = (DriverManagerDataSource) jdbc(
                 "jdbc:h2:mem:configuredrecords;DB_CLOSE_DELAY=-1").getDataSource();
         RunRecordStore records = new RunRecordConfiguration().jdbcRunRecordStore(
@@ -91,6 +123,7 @@ class JdbcRunRecordStoreTest {
         String id = records.begin("PAGE_FACTS", 2964574L);
         records.finish(id, "COMPLETED");
         assertEquals(NOW, records.find(id).orElseThrow().createdAtUtc());
+        ((JdbcRunRecordStore) records).close();
     }
 
     @Test
