@@ -1,5 +1,7 @@
 > 历史验收记录，包含不同日期和版本的结果。当前状态及未完成项见 [工程检查](engineering-review.md)。
 
+> 当前实现与待办以 [2026-10-26 分期交付核对](completion-status-2026-10-26.md) 为准。本文保留原日期的设计与验收过程。
+
 # Phase 10 Verification Record
 
 Updated: 2026-09-30

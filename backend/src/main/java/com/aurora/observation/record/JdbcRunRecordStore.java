@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /** Stores source evidence without prompts, answer text, raw search strings, or precise coordinates. */
-public class JdbcRunRecordStore implements RunRecordStore {
+public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
     public static final String RULE_VERSION = "abstain-unvalidated-v1";
 
     private final JdbcTemplate jdbc;
@@ -38,6 +38,36 @@ public class JdbcRunRecordStore implements RunRecordStore {
         this.mapper = mapper;
         this.clock = clock;
         this.retentionDays = retentionDays;
+    }
+
+    public record PersistenceCheck(String previousRunId, String newRunId) {}
+
+    /** Startup check uses synthetic records only. IDs allow readback across deployments to be verified in logs. */
+    public PersistenceCheck verifyPersistence() {
+        var previous = jdbc.query("SELECT run_id FROM evaluation_run WHERE kind = 'PERSISTENCE_CHECK' AND result_status = 'COMPLETED' ORDER BY created_at_utc DESC LIMIT 1",
+                (rs, row) -> rs.getString(1));
+        String previousId = previous.isEmpty() ? null : previous.getFirst();
+        if (previousId != null && find(previousId).orElseThrow().toolCalls().size() != 1) {
+            throw new IllegalStateException("Persistent probe evidence is incomplete");
+        }
+        String id = begin("PERSISTENCE_CHECK", null);
+        recordTool(id, 1, "persistence_probe", "OK", "{}");
+        finish(id, "COMPLETED");
+        if (!"COMPLETED".equals(find(id).orElseThrow().resultStatus())) throw new IllegalStateException("Probe readback failed");
+        String expired = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?)",
+                expired, "RETENTION_CHECK", timestamp(clock.instant().minus(retentionDays, ChronoUnit.DAYS).minusSeconds(60)),
+                "COMPLETED", RULE_VERSION, "NOT_VALIDATED");
+        recordTool(expired, 1, "retention_probe", "OK", "{}");
+        purgeExpired();
+        if (find(expired).isPresent() || jdbc.queryForObject("SELECT COUNT(*) FROM assistant_tool_call WHERE run_id = ?", Integer.class, expired) != 0 || find(id).isEmpty()) {
+            throw new IllegalStateException("Probe retention check failed");
+        }
+        return new PersistenceCheck(previousId, id);
+    }
+
+    @Override public void close() throws Exception {
+        if (jdbc.getDataSource() instanceof AutoCloseable closeable) closeable.close();
     }
 
     @Override public boolean historyAvailable() { return true; }
@@ -139,8 +169,11 @@ public class JdbcRunRecordStore implements RunRecordStore {
                     instant(row, "completed_at_utc"), row.getString("result_status"),
                     row.getObject("location_ref") == null ? null : row.getLong("location_ref"),
                     row.getString("rule_version"), row.getString("rule_status"),
-                    row.getString("coverage_status"), nights(runId), sources(runId), toolCalls(runId)), runId);
-            return runs.stream().findFirst();
+                    row.getString("coverage_status"), List.of(), List.of(), List.of()), runId);
+            // Release the parent-query connection before reading children from the bounded pool.
+            return runs.stream().findFirst().map(run -> new RunRecord(runId, run.kind(), run.createdAtUtc(),
+                    run.completedAtUtc(), run.resultStatus(), run.locationId(), run.ruleVersion(), run.ruleStatus(),
+                    run.coverageStatus(), nights(runId), sources(runId), toolCalls(runId)));
         } catch (DataAccessException error) {
             throw new RunRecordUnavailableException(error);
         }

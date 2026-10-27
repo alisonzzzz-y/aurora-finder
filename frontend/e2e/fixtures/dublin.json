@@ -1,0 +1,610 @@
+{
+  "generatedAtUtc": "2026-10-26T11:38:47.281765444Z",
+  "outlook": {
+    "location": {
+      "id": 2964574,
+      "name": "Dublin",
+      "region": "Leinster",
+      "subregion": "Dublin City",
+      "country": "Ireland",
+      "latitude": 53.33306,
+      "longitude": -6.24889,
+      "timezone": "Europe/Dublin"
+    },
+    "generatedAtUtc": "2026-10-26T11:38:41.684635061Z",
+    "ruleStatus": "NOT_VALIDATED",
+    "nights": [
+      {
+        "localDate": "2026-10-26",
+        "utcOffsetAtStart": "+00:00",
+        "evaluationWindowStartUtc": "2026-10-26T12:00:00Z",
+        "evaluationWindowEndUtc": "2026-10-27T12:00:00Z",
+        "level": "INSUFFICIENT_DATA",
+        "reasonCode": "RULES_NOT_VALIDATED",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T17:41:05.625Z",
+                  "endUtc": "2026-10-27T06:37:39.375Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T18:21:43.125Z",
+                  "endUtc": "2026-10-27T05:57:01.875Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T19:02:01.875Z",
+                  "endUtc": "2026-10-27T05:16:43.125Z"
+                }
+              ]
+            }
+          ]
+        },
+        "reason": "Aurora, cloud, and freshness rules are pending validation."
+      },
+      {
+        "localDate": "2026-10-27",
+        "utcOffsetAtStart": "+00:00",
+        "evaluationWindowStartUtc": "2026-10-27T12:00:00Z",
+        "evaluationWindowEndUtc": "2026-10-28T12:00:00Z",
+        "level": "INSUFFICIENT_DATA",
+        "reasonCode": "RULES_NOT_VALIDATED",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T17:39:13.125Z",
+                  "endUtc": "2026-10-28T06:39:31.875Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T18:19:50.625Z",
+                  "endUtc": "2026-10-28T05:58:35.625Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T19:00:09.375Z",
+                  "endUtc": "2026-10-28T05:18:16.875Z"
+                }
+              ]
+            }
+          ]
+        },
+        "reason": "Aurora, cloud, and freshness rules are pending validation."
+      },
+      {
+        "localDate": "2026-10-28",
+        "utcOffsetAtStart": "+00:00",
+        "evaluationWindowStartUtc": "2026-10-28T12:00:00Z",
+        "evaluationWindowEndUtc": "2026-10-29T12:00:00Z",
+        "level": "INSUFFICIENT_DATA",
+        "reasonCode": "RULES_NOT_VALIDATED",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T17:37:01.875Z",
+                  "endUtc": "2026-10-29T06:41:24.375Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T18:17:58.125Z",
+                  "endUtc": "2026-10-29T06:00:28.125Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T18:58:16.875Z",
+                  "endUtc": "2026-10-29T05:20:09.375Z"
+                }
+              ]
+            }
+          ]
+        },
+        "reason": "Aurora, cloud, and freshness rules are pending validation."
+      }
+    ]
+  },
+  "auroraActivity": {
+    "status": "CURRENT",
+    "timeScope": "SHORT_RANGE",
+    "retrievedAtUtc": "2026-10-26T11:38:44.280140818Z",
+    "sourceObservedAtUtc": "2026-10-26T11:28:00Z",
+    "sourceForecastAtUtc": "2026-10-26T12:51:00Z",
+    "scopeStartUtc": "2026-10-26T11:28:00Z",
+    "scopeEndUtc": "2026-10-26T12:51:00Z",
+    "source": "https://www.swpc.noaa.gov/products/aurora-30-minute-forecast",
+    "sourceUrl": "https://www.spaceweather.gov/products/aurora-30-minute-forecast",
+    "data": {
+      "status": "CURRENT",
+      "level": "LOW",
+      "modelValue": 0,
+      "gridLongitude": -6.0,
+      "gridLatitude": 53.0,
+      "observationTime": "2026-10-26T11:28:00Z",
+      "forecastTime": "2026-10-26T12:51:00Z",
+      "retrievedAt": "2026-10-26T11:38:44.280140818Z",
+      "source": "https://www.swpc.noaa.gov/products/aurora-30-minute-forecast",
+      "ruleVersion": "ovation-local-v1"
+    }
+  },
+  "cloudForecast": {
+    "status": "CURRENT",
+    "timeScope": "THREE_LOCAL_NIGHTS",
+    "retrievedAtUtc": "2026-10-26T11:38:44.784592710Z",
+    "scopeStartUtc": "2026-10-26T11:00:00Z",
+    "scopeEndUtc": "2026-10-29T06:00:00Z",
+    "source": "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+    "sourceUrl": "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+    "data": {
+      "retrievedAt": "2026-10-26T11:38:44.784592710Z",
+      "expiresAt": "2026-10-26T11:39:16Z",
+      "source": "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+      "requestedLatitude": 53.333,
+      "requestedLongitude": -6.2488,
+      "cloudForecast": [
+        {
+          "validAt": "2026-10-26T11:00:00Z",
+          "cloudCoverPercent": 99.2
+        },
+        {
+          "validAt": "2026-10-26T12:00:00Z",
+          "cloudCoverPercent": 96.9
+        },
+        {
+          "validAt": "2026-10-26T13:00:00Z",
+          "cloudCoverPercent": 98.4
+        },
+        {
+          "validAt": "2026-10-26T14:00:00Z",
+          "cloudCoverPercent": 97.7
+        },
+        {
+          "validAt": "2026-10-26T15:00:00Z",
+          "cloudCoverPercent": 99.2
+        },
+        {
+          "validAt": "2026-10-26T16:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T17:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T18:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T19:00:00Z",
+          "cloudCoverPercent": 99.2
+        },
+        {
+          "validAt": "2026-10-26T20:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T21:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T22:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-26T23:00:00Z",
+          "cloudCoverPercent": 97.7
+        },
+        {
+          "validAt": "2026-10-27T00:00:00Z",
+          "cloudCoverPercent": 98.4
+        },
+        {
+          "validAt": "2026-10-27T01:00:00Z",
+          "cloudCoverPercent": 26.6
+        },
+        {
+          "validAt": "2026-10-27T02:00:00Z",
+          "cloudCoverPercent": 38.3
+        },
+        {
+          "validAt": "2026-10-27T03:00:00Z",
+          "cloudCoverPercent": 16.4
+        },
+        {
+          "validAt": "2026-10-27T04:00:00Z",
+          "cloudCoverPercent": 17.2
+        },
+        {
+          "validAt": "2026-10-27T05:00:00Z",
+          "cloudCoverPercent": 13.3
+        },
+        {
+          "validAt": "2026-10-27T06:00:00Z",
+          "cloudCoverPercent": 22.7
+        },
+        {
+          "validAt": "2026-10-27T07:00:00Z",
+          "cloudCoverPercent": 40.6
+        },
+        {
+          "validAt": "2026-10-27T08:00:00Z",
+          "cloudCoverPercent": 64.1
+        },
+        {
+          "validAt": "2026-10-27T09:00:00Z",
+          "cloudCoverPercent": 56.2
+        },
+        {
+          "validAt": "2026-10-27T10:00:00Z",
+          "cloudCoverPercent": 39.1
+        },
+        {
+          "validAt": "2026-10-27T11:00:00Z",
+          "cloudCoverPercent": 39.8
+        },
+        {
+          "validAt": "2026-10-27T12:00:00Z",
+          "cloudCoverPercent": 26.6
+        },
+        {
+          "validAt": "2026-10-27T13:00:00Z",
+          "cloudCoverPercent": 34.4
+        },
+        {
+          "validAt": "2026-10-27T14:00:00Z",
+          "cloudCoverPercent": 14.8
+        },
+        {
+          "validAt": "2026-10-27T15:00:00Z",
+          "cloudCoverPercent": 17.2
+        },
+        {
+          "validAt": "2026-10-27T16:00:00Z",
+          "cloudCoverPercent": 23.4
+        },
+        {
+          "validAt": "2026-10-27T17:00:00Z",
+          "cloudCoverPercent": 47.7
+        },
+        {
+          "validAt": "2026-10-27T18:00:00Z",
+          "cloudCoverPercent": 63.3
+        },
+        {
+          "validAt": "2026-10-27T19:00:00Z",
+          "cloudCoverPercent": 71.1
+        },
+        {
+          "validAt": "2026-10-27T20:00:00Z",
+          "cloudCoverPercent": 65.6
+        },
+        {
+          "validAt": "2026-10-27T21:00:00Z",
+          "cloudCoverPercent": 28.9
+        },
+        {
+          "validAt": "2026-10-27T22:00:00Z",
+          "cloudCoverPercent": 64.1
+        },
+        {
+          "validAt": "2026-10-27T23:00:00Z",
+          "cloudCoverPercent": 85.9
+        },
+        {
+          "validAt": "2026-10-28T00:00:00Z",
+          "cloudCoverPercent": 97.7
+        },
+        {
+          "validAt": "2026-10-28T01:00:00Z",
+          "cloudCoverPercent": 92.2
+        },
+        {
+          "validAt": "2026-10-28T02:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-28T03:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-28T04:00:00Z",
+          "cloudCoverPercent": 99.2
+        },
+        {
+          "validAt": "2026-10-28T05:00:00Z",
+          "cloudCoverPercent": 100.0
+        },
+        {
+          "validAt": "2026-10-28T06:00:00Z",
+          "cloudCoverPercent": 96.9
+        },
+        {
+          "validAt": "2026-10-28T07:00:00Z",
+          "cloudCoverPercent": 85.2
+        },
+        {
+          "validAt": "2026-10-28T08:00:00Z",
+          "cloudCoverPercent": 57.8
+        },
+        {
+          "validAt": "2026-10-28T09:00:00Z",
+          "cloudCoverPercent": 59.4
+        },
+        {
+          "validAt": "2026-10-28T10:00:00Z",
+          "cloudCoverPercent": 46.9
+        },
+        {
+          "validAt": "2026-10-28T11:00:00Z",
+          "cloudCoverPercent": 53.1
+        },
+        {
+          "validAt": "2026-10-28T12:00:00Z",
+          "cloudCoverPercent": 55.5
+        },
+        {
+          "validAt": "2026-10-28T13:00:00Z",
+          "cloudCoverPercent": 72.7
+        },
+        {
+          "validAt": "2026-10-28T14:00:00Z",
+          "cloudCoverPercent": 97.7
+        },
+        {
+          "validAt": "2026-10-28T15:00:00Z",
+          "cloudCoverPercent": 96.1
+        },
+        {
+          "validAt": "2026-10-28T16:00:00Z",
+          "cloudCoverPercent": 52.3
+        },
+        {
+          "validAt": "2026-10-28T17:00:00Z",
+          "cloudCoverPercent": 28.1
+        },
+        {
+          "validAt": "2026-10-28T18:00:00Z",
+          "cloudCoverPercent": 3.9
+        },
+        {
+          "validAt": "2026-10-28T19:00:00Z",
+          "cloudCoverPercent": 1.6
+        },
+        {
+          "validAt": "2026-10-28T20:00:00Z",
+          "cloudCoverPercent": 0.8
+        },
+        {
+          "validAt": "2026-10-28T21:00:00Z",
+          "cloudCoverPercent": 3.1
+        },
+        {
+          "validAt": "2026-10-28T22:00:00Z",
+          "cloudCoverPercent": 7.0
+        },
+        {
+          "validAt": "2026-10-28T23:00:00Z",
+          "cloudCoverPercent": 30.5
+        },
+        {
+          "validAt": "2026-10-29T00:00:00Z",
+          "cloudCoverPercent": 68.7
+        },
+        {
+          "validAt": "2026-10-29T06:00:00Z",
+          "cloudCoverPercent": 81.2
+        }
+      ]
+    }
+  },
+  "solarDarkness": {
+    "status": "CURRENT",
+    "timeScope": "THREE_LOCAL_NIGHTS",
+    "retrievedAtUtc": "2026-10-26T11:38:41.684635061Z",
+    "scopeStartUtc": "2026-10-26T12:00:00Z",
+    "scopeEndUtc": "2026-10-29T12:00:00Z",
+    "source": "Solar Position Algorithm (SPA), solarpositioning 2.0.13",
+    "sourceUrl": "https://github.com/KlausBrunner/solarpositioning",
+    "data": [
+      {
+        "localDate": "2026-10-26",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T17:41:05.625Z",
+                  "endUtc": "2026-10-27T06:37:39.375Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T18:21:43.125Z",
+                  "endUtc": "2026-10-27T05:57:01.875Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-26T19:02:01.875Z",
+                  "endUtc": "2026-10-27T05:16:43.125Z"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "localDate": "2026-10-27",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T17:39:13.125Z",
+                  "endUtc": "2026-10-28T06:39:31.875Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T18:19:50.625Z",
+                  "endUtc": "2026-10-28T05:58:35.625Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-27T19:00:09.375Z",
+                  "endUtc": "2026-10-28T05:18:16.875Z"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "localDate": "2026-10-28",
+        "solarDarkness": {
+          "thresholds": [
+            {
+              "threshold": "CIVIL_TWILIGHT",
+              "solarElevationDegrees": -6.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T17:37:01.875Z",
+                  "endUtc": "2026-10-29T06:41:24.375Z"
+                }
+              ]
+            },
+            {
+              "threshold": "NAUTICAL_TWILIGHT",
+              "solarElevationDegrees": -12.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T18:17:58.125Z",
+                  "endUtc": "2026-10-29T06:00:28.125Z"
+                }
+              ]
+            },
+            {
+              "threshold": "ASTRONOMICAL_TWILIGHT",
+              "solarElevationDegrees": -18.0,
+              "status": "INTERVALS_FOUND",
+              "intervals": [
+                {
+                  "startUtc": "2026-10-28T18:58:16.875Z",
+                  "endUtc": "2026-10-29T05:20:09.375Z"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "coverage": {
+    "status": "OVERLAPS",
+    "firstScope": "SHORT_RANGE",
+    "secondScope": "THREE_LOCAL_NIGHTS",
+    "shortRangeStartUtc": "2026-10-26T11:28:00Z",
+    "shortRangeEndUtc": "2026-10-26T12:51:00Z",
+    "cloudPointsWithValuesInsideShortRange": 1
+  },
+  "sourceStatus": "CURRENT",
+  "viewingConditions": {
+    "level": "LOW",
+    "evaluatedAtUtc": "2026-10-26T12:00:00Z",
+    "validUntilUtc": "2026-10-26T11:39:16Z",
+    "modelSignal": 0,
+    "cloudPercent": 96.9,
+    "dark": false,
+    "reasons": [
+      "NOT_DARK",
+      "CLOUDY"
+    ],
+    "ruleVersion": "sky-conditions-v2",
+    "probabilityCalibrated": false,
+    "horizonAurora": {
+      "status": "NO_CANDIDATE",
+      "direction": "NORTH",
+      "forecastTime": "2026-10-26T12:51:00Z",
+      "ruleVersion": "poleward-candidate-v1"
+    }
+  }
+}

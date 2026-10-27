@@ -118,8 +118,8 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
         <header className="location-details-heading"><h2 id="location-details-title">{mapLocation ? language === 'zh' ? `${mapLocation.name}${c.title}` : `${c.title}${mapLocation.name}` : t('localOutlook')}</h2><button className="comparison-action" type="button" onClick={() => moveTo('aurora-dashboard')}>{c.back}</button></header>
         {busy && <p role="status">{t('loading')}</p>}
         {error && <p role="alert" className="error">{localizeError(new Error(error), t)}</p>}
-        {visibleFacts && <LocalOutlookDashboard key={visibleFacts.outlook.location.id} facts={visibleFacts} />}
-        {visibleFacts && <NearbyComparison key={visibleFacts.outlook.location.id} origin={visibleFacts.outlook.location} onSelect={location => { selectLocation(location); moveTo('aurora-dashboard') }} />}
+        {visibleFacts && <LocalOutlookDashboard key={`outlook-${visibleFacts.outlook.location.id}`} facts={visibleFacts} />}
+        {visibleFacts && <NearbyComparison key={`nearby-${visibleFacts.outlook.location.id}`} origin={visibleFacts.outlook.location} onSelect={location => { selectLocation(location); moveTo('aurora-dashboard') }} />}
         <div id="location-comparison" tabIndex={-1} className="location-details-comparison">
           <LocationSearch busy={false} title={c.compare} buttonLabel={t('compareButton')} onSelect={addComparisonPlace} />
           <PlaceComparison places={comparisonPlaces} limit={comparisonLimit} onSelect={location => {

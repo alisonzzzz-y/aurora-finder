@@ -45,3 +45,9 @@ ORDER BY created_at_utc DESC LIMIT 10;
 ```
 
 测试自动创建随机的专用数据库，并在结束后删除这些测试库。测试账号需要创建和删除数据库的权限，仅用于隔离测试环境。未设置 TEST_MYSQL_URL 时使用 H2，不能声称已验证 MySQL。
+
+## 启动检查与连接池
+
+2026-10-26 起，启用持久化时，服务先使用最多 3 个连接的池完成迁移，再写入合成检查记录。日志中的 `previousRunId` 应对应上一实例的 `newRunId`；`readback=true` 和 `retention=true` 表示当次读回与合成过期清理检查通过。首次检查没有上一条 ID，不能单独作为重启读回证据。
+
+`APP_RUN_RECORD_RETENTION_DAYS` 已绑定运行记录保留期。公开历史快照仍独立保留 7 天。隔离备份恢复流程和回滚边界见 [运行说明](operations.md)。

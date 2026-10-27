@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import tools.jackson.databind.ObjectMapper;
@@ -26,9 +27,27 @@ public class RunRecordConfiguration {
         if (url.isBlank() || retentionDays < 1) {
             throw new IllegalStateException("Run records require a JDBC URL and a positive retention period.");
         }
-        DriverManagerDataSource source = new RetryingDriverDataSource(url, username, password);
-        Flyway.configure().dataSource(source).locations(url.startsWith("jdbc:mysql:") ? "classpath:db/mysql" : "classpath:db/migration").load().migrate();
-        return new JdbcRunRecordStore(new JdbcTemplate(source), mapper, clock, retentionDays);
+        var source = new HikariDataSource();
+        source.setPoolName("run-records");
+        source.setDataSource(new RetryingDriverDataSource(url, username, password));
+        source.setMaximumPoolSize(3);
+        source.setMinimumIdle(0);
+        source.setConnectionTimeout(5000);
+        source.setValidationTimeout(2000);
+        source.setIdleTimeout(60000);
+        source.setMaxLifetime(600000);
+        try {
+            Flyway.configure().dataSource(source).locations(url.startsWith("jdbc:mysql:") ? "classpath:db/mysql" : "classpath:db/migration").load().migrate();
+            var store = new JdbcRunRecordStore(new JdbcTemplate(source), mapper, clock, retentionDays);
+            var check = store.verifyPersistence();
+            LoggerFactory.getLogger(RunRecordConfiguration.class).info(
+                    "Run-record persistence check: previousRunId={}, newRunId={}, readback=true, retention=true",
+                    check.previousRunId(), check.newRunId());
+            return store;
+        } catch (RuntimeException failure) {
+            source.close();
+            throw failure;
+        }
     }
 
     @Bean

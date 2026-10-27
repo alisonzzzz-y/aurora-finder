@@ -19,3 +19,8 @@ __pycache__/
 *.pyc
 /aurora-assistant-evaluation*.json
 /aurora-smoke*.json
+
+# Generated browser artifacts
+.playwright-cli/
+frontend/playwright-report/
+frontend/test-results/
