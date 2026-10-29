@@ -104,3 +104,6 @@ jobs:
           TEST_MYSQL_USER: root
           TEST_MYSQL_PASSWORD: ci-only-password
         run: ./mvnw --batch-mode -Dtest=JdbcRunRecordStoreTest test
+      - name: Verify backup and restore in an isolated MySQL container
+        timeout-minutes: 5
+        run: bash scripts/check_mysql_restore.sh
