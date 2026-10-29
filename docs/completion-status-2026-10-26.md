@@ -79,3 +79,9 @@ bash scripts/check_mysql_restore.sh
 - 故意改坏恢复库中的来源证据后，演练按预期返回失败，说明它能够发现内容损坏。正常演练通过；成功和失败后临时容器均已清理。脚本自动删除容器及其匿名卷，不上传 SQL 备份。
 - 同一脚本加入 GitHub CI 的 MySQL 任务，每次提交执行。Flyway 迁移及应用层读回继续由 Java 集成测试单独覆盖。
 - Railway 连接器已确认本项目 MySQL 正常运行，但没有提供备份计划管理工具；生产自动备份仍未确认启用。具体操作入口、恢复影响和留存说明见 [运行说明](operations.md#railway-生产备份设置待办)。
+
+### CI 环境维护
+
+恢复演练提交 `734c857` 的 [CI 40951116631](https://github.com/alisonzzzz-y/aurora-finder/actions/runs/40951116631) 三个任务全部通过，包括新增恢复检查。该运行提示旧 Actions 的 Node 20 执行环境及 setup-java v4 已弃用。
+
+随后按各官方仓库当前稳定版本更新 checkout、setup-java、setup-node 和 upload-artifact，并固定完整提交 SHA；测试系统固定为 Ubuntu 24.04，避免 `ubuntu-latest` 自动切换系统版本。项目运行时仍为 Java 21 和 Node 22，没有修改生产应用代码。
