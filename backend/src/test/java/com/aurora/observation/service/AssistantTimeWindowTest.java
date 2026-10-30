@@ -187,4 +187,39 @@ class AssistantTimeWindowTest {
         assertNull(window.localDate());
         assertEquals(91.0,window.points().getFirst().cloudCoverPercent());
     }
+
+    @Test void dayBeforeYesterdayOverridesEarlierTonightInBothLanguages() {
+        var history = List.of(new AssistantMessage("user", "Cloud cover tonight?"));
+        for (String reply : List.of("前天呢？", "前夜呢？", "前晚呢？", "Day before yesterday?", "day  before  yesterday")) {
+            String scope = AssistantCloudEvidence.requestTime(reply, history);
+            assertEquals(reply, scope);
+            var window = AssistantCloudEvidence.select(facts("Europe/Dublin", NOW, false), scope, null);
+            assertEquals(LocalDate.of(2026, 10, 24), window.localDate(), reply);
+            assertEquals("OUTSIDE_FORECAST_WINDOW", window.status(), reply);
+            assertTrue(window.points().isEmpty(), reply);
+        }
+    }
+
+    @Test void todayOverridesPreviousTomorrow() {
+        String scope = AssistantCloudEvidence.requestTime("What about today?",
+                List.of(new AssistantMessage("user", "Tomorrow night?")));
+        assertEquals(LocalDate.of(2026, 10, 26),
+                AssistantCloudEvidence.select(facts("Europe/Dublin", NOW, false), scope, null).localDate());
+    }
+
+    @Test void timeWordsInsideOtherWordsDoNotReplaceTheRequestedNight() {
+        var history = List.of(new AssistantMessage("user", "Tomorrow night?"));
+        assertEquals("Tomorrow night?", AssistantCloudEvidence.requestTime("What about snow?", history));
+        assertEquals("Tomorrow night?", AssistantCloudEvidence.requestTime("The conditions are unknown", history));
+    }
+
+    @Test void overlappingRelativePhrasesRemainUnambiguous() {
+        var today = LocalDate.of(2026, 10, 26);
+        for (String text : List.of("day after tomorrow", "day  after  tomorrow", "后天", "后晚")) {
+            assertEquals(today.plusDays(2), AssistantCloudEvidence.requestedDate(text, today), text);
+        }
+        assertNull(AssistantCloudEvidence.requestedDate("day before yesterday and yesterday", today));
+        assertNull(AssistantCloudEvidence.requestedDate("today and tomorrow", today));
+    }
+
 }
