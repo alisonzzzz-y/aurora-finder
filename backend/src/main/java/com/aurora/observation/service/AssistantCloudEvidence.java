@@ -12,8 +12,12 @@ final class AssistantCloudEvidence {
     private static final Pattern MONTH_DAY = Pattern.compile("(?<!\\d)(?:(\\d{4})年)?(\\d{1,2})月(\\d{1,2})[日号]?");
     private static final Pattern ENGLISH_DATE = Pattern.compile("(?i)\\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b");
     private static final Pattern CURRENT = Pattern.compile("(?i)\\b(?:now|currently)\\b|现在|目前|当前");
-    private static final Pattern RELATIVE = Pattern.compile(
-            "(?i)tonight|tomorrow|yesterday|last night|day after tomorrow|now|currently|right now|今[天晚夜]|明[天晚夜]|后[天晚夜]|昨[天晚夜]|前晚|现在|目前|当前");
+    private static final Pattern AFTER_TOMORROW = Pattern.compile("(?i)\\bday\\s+after\\s+tomorrow\\b|后[天晚夜]");
+    private static final Pattern BEFORE_YESTERDAY = Pattern.compile("(?i)\\bday\\s+before\\s+yesterday\\b|前[天晚夜]");
+    private static final Pattern TOMORROW = Pattern.compile("(?i)\\btomorrow\\b|明[天晚夜]");
+    private static final Pattern TODAY = Pattern.compile("(?i)\\b(?:today|tonight)\\b|今[天晚夜]");
+    private static final Pattern YESTERDAY = Pattern.compile("(?i)\\b(?:yesterday|last\\s+night)\\b|昨[天晚夜]");
+    private static final List<Pattern> RELATIVE = List.of(CURRENT, AFTER_TOMORROW, BEFORE_YESTERDAY, TOMORROW, TODAY, YESTERDAY);
     record Window(Location location, String status, LocalDate localDate, Instant startUtc, Instant endUtc,
                   List<WeatherCloudPoint> points, String source, String sourceUrl) {}
 
@@ -27,7 +31,7 @@ final class AssistantCloudEvidence {
     }
 
     private static boolean hasTime(String value) {
-        return value != null && (ISO_DATE.matcher(value).find() || MONTH_DAY.matcher(value).find() || ENGLISH_DATE.matcher(value).find() || RELATIVE.matcher(value).find());
+        return value != null && (ISO_DATE.matcher(value).find() || MONTH_DAY.matcher(value).find() || ENGLISH_DATE.matcher(value).find() || RELATIVE.stream().anyMatch(pattern -> pattern.matcher(value).find()));
     }
 
     static LocalDate requestedDate(String text, LocalDate today) {
@@ -59,16 +63,21 @@ final class AssistantCloudEvidence {
             explicit = candidate;
         }
         if (explicit != null) return explicit;
-        String lower = text.toLowerCase(Locale.ROOT);
-        if (CURRENT.matcher(lower).find()) return null;
+        if (CURRENT.matcher(text).find()) return null;
         Set<Integer> offsets = new HashSet<>();
-        if (lower.matches("(?s).*(day after tomorrow|后天|后晚|后夜).*")) {
-            offsets.add(2); lower = lower.replace("day after tomorrow", "");
+        // Remove longer phrases first so their embedded tomorrow/yesterday is not counted twice.
+        String remaining = text;
+        if (AFTER_TOMORROW.matcher(remaining).find()) {
+            offsets.add(2);
+            remaining = AFTER_TOMORROW.matcher(remaining).replaceAll(" ");
         }
-        if (lower.matches("(?s).*(tomorrow|明天|明晚|明夜).*")) offsets.add(1);
-        if (lower.matches("(?s).*(tonight|今天|今晚|今夜).*")) offsets.add(0);
-        if (lower.matches("(?s).*(yesterday|last night|昨天|昨晚|昨夜).*")) offsets.add(-1);
-        if (lower.contains("前晚")) offsets.add(-2);
+        if (BEFORE_YESTERDAY.matcher(remaining).find()) {
+            offsets.add(-2);
+            remaining = BEFORE_YESTERDAY.matcher(remaining).replaceAll(" ");
+        }
+        if (TOMORROW.matcher(remaining).find()) offsets.add(1);
+        if (TODAY.matcher(remaining).find()) offsets.add(0);
+        if (YESTERDAY.matcher(remaining).find()) offsets.add(-1);
         return offsets.size() == 1 ? today.plusDays(offsets.iterator().next()) : null;
     }
 
