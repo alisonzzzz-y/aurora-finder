@@ -14,6 +14,14 @@ type AssistantChatPanelProps = {
   locationId?: number
 }
 
+type PendingQuestion = {
+  question: string
+  history: AssistantMessage[]
+  language: 'en' | 'zh'
+  locationId?: number
+  mapLocationId?: number
+}
+
 export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const { language, t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -21,7 +29,8 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [messages, setMessages] = useState<AssistantMessage[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [failedRequest, setFailedRequest] = useState<{ question: string; history: AssistantMessage[]; location?: Location } | null>(null)
+  const [failedRequest, setFailedRequest] = useState<PendingQuestion | null>(null)
+  const inFlight = useRef(false)
   const conversationLocation = useRef<{ mapLocationId?: number; selectedId: number } | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
@@ -110,27 +119,29 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
     return [location.name, location.region, location.subregion, location.country].filter(Boolean).join(', ')
   }
 
-  async function sendQuestion(
-    question: string,
-    selectedLocation?: Location,
-    historyOverride?: AssistantMessage[],
-    appendUserMessage = true,
-  ) {
-    if (!question || busy) return
-    const history = historyOverride ?? messages
-    if (appendUserMessage) setMessages(current => [...current, { role: 'user', content: question }])
-    setDraft('')
+  async function sendQuestion(question: string, selectedLocation?: Location) {
+    const awaitingPlace = Boolean(messages.at(-1)?.locationCandidates?.length)
+    const remembered = conversationLocation.current
+    const selectedId = selectedLocation?.id ?? (awaitingPlace ? undefined
+      : remembered?.mapLocationId === locationId ? remembered?.selectedId : locationId)
+    await executeQuestion({ question, language, history: messages, locationId: selectedId, mapLocationId: locationId })
+  }
+
+  async function executeQuestion(request: PendingQuestion, appendUserMessage = true) {
+    if (!request.question || inFlight.current) return
+    inFlight.current = true
+    if (appendUserMessage) {
+      setMessages(current => [...current, { role: 'user', content: request.question }])
+      setDraft('')
+    }
     setError('')
     setFailedRequest(null)
     setBusy(true)
     try {
-      const awaitingPlace = Boolean(history.at(-1)?.locationCandidates?.length)
-      const remembered = conversationLocation.current
-      const selectedId = selectedLocation?.id ?? (awaitingPlace ? undefined
-        : remembered?.mapLocationId === locationId ? remembered?.selectedId : locationId)
-      const response = await askAssistant(question, language, history, selectedId)
+      // A retry keeps the context from the failed turn, even after map/language changes.
+      const response = await askAssistant(request.question, request.language, request.history, request.locationId)
       if (response.selectedLocationId != null) {
-        conversationLocation.current = { mapLocationId: locationId, selectedId: response.selectedLocationId }
+        conversationLocation.current = { mapLocationId: request.mapLocationId, selectedId: response.selectedLocationId }
       }
       setMessages(current => [...current, {
         role: 'assistant', content: response.answer,
@@ -143,8 +154,9 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         ? 'assistantRateLimited'
         : cause instanceof ApiRequestError && cause.status === 408
           ? 'assistantTimedOut' : 'assistantRequestFailed'))
-      setFailedRequest({ question, history, ...(selectedLocation ? { location: selectedLocation } : {}) })
+      setFailedRequest(request)
     } finally {
+      inFlight.current = false
       setBusy(false)
     }
   }
@@ -176,13 +188,11 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
         {busy && <p className="assistant-message assistant pending"><span>{t('assistantRole')}</span>{t('assistantWorking')}</p>}
       </div>}
       {error && <div className="assistant-error-wrap"><p className="assistant-notice error" role="alert">{error}</p>
-        {failedRequest && <button type="button" className="assistant-retry" disabled={busy} onClick={() => void sendQuestion(
-          failedRequest.question, failedRequest.location, failedRequest.history, false,
-        )}>{t('assistantRetry')}</button>}
+        {failedRequest && <button type="button" className="assistant-retry" disabled={busy} onClick={() => void executeQuestion(failedRequest, false)}>{t('assistantRetry')}</button>}
       </div>}
       <form className="assistant-composer" onSubmit={submitQuestion}>
         <label className="sr-only" htmlFor="assistant-question">{t('assistantInputLabel')}</label>
-        <textarea id="assistant-question" rows={2} maxLength={1000} value={draft} disabled={busy} placeholder={t('assistantInputPlaceholder')} onChange={event => { setDraft(event.target.value); setError('') }} onKeyDown={event => {
+        <textarea id="assistant-question" rows={2} maxLength={1000} value={draft} disabled={busy} placeholder={t('assistantInputPlaceholder')} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
           event.preventDefault()
           event.currentTarget.form?.requestSubmit()
