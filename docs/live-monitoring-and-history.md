@@ -19,6 +19,10 @@ Retention is seven days, with one snapshot per city per 15-minute UTC bucket. Du
 
 保留七天，每个城市每十五分钟最多一份。三个固定城市定时采样，其他城市查询后保存。服务休眠或数据故障可能留下空白，上线前没有历史记录。
 
+The `Keep history sampling awake` GitHub Actions workflow requests the backend health check every 10 minutes so the free Render instance does not sleep and the watchlist sampler keeps running. It uses the production backend URL unless the repository variable `BACKEND_URL` is set. GitHub can delay or skip scheduled runs, and it disables schedules in a public repository after 60 days without activity, so this reduces gaps but does not guarantee a snapshot every 15 minutes. Keeping the instance awake uses Render free instance hours (one always-on service uses roughly 720 of the monthly 750 hours).
+
+GitHub Actions 的 `Keep history sampling awake` 工作流每 10 分钟请求一次后端健康检查，使 Render 免费实例保持运行，固定城市采样得以继续。默认使用生产后端地址，可通过仓库变量 `BACKEND_URL` 更换。GitHub 定时任务可能延迟或跳过，公开仓库 60 天无活动时还会停用定时任务，因此只能减少空白，不能保证每 15 分钟都有快照。保持运行会消耗 Render 免费时长（单个常驻服务约用掉每月 750 小时中的 720 小时）。
+
 A snapshot preserves the model reading and its original status/times, the evaluated cloud value and darkness, sky-condition level, and rule version. It is not a full archive of global grids or every hourly weather value. Expired model/cloud samples are excluded from history curves. Snapshot selection and observation notes can be exported as JSON. User reports remain unverified and do not calibrate a probability automatically.
 
 快照保留模型读数、原始状态和时间、参与判断的云量与黑暗状态、天空条件等级及规则版本，并非全球模型或完整天气序列的档案。过期数据不进入历史曲线。可导出快照及观测备注，但报告仍未经核实，不会自动校准概率。
