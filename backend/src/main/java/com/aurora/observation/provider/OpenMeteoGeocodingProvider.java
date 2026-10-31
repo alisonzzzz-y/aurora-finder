@@ -83,8 +83,9 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
         });
     }
 
+    /** {@code allowNotFound} marks an ID lookup, which has its own share of the request budget. */
     private Optional<JsonNode> request(String url, boolean allowNotFound) {
-        rateLimiter.acquire();
+        rateLimiter.acquire(allowNotFound);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(requestTimeout).header("Accept", "application/json").GET().build();
         try {
