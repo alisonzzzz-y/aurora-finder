@@ -99,12 +99,12 @@ class AssistantControllerTest {
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.not(
                         org.hamcrest.Matchers.containsString("upstream key"))));
 
-        verify(limiter).check(any());
+        verify(limiter).admit(any());
     }
 
     @Test
     void returnsTooManyRequestsAndDoesNotCallAiWhenRateLimited() throws Exception {
-        doThrow(new AssistantRateLimitException()).when(limiter).check(any());
+        doThrow(new AssistantRateLimitException()).when(limiter).admit(any());
 
         mockMvc.perform(post("/api/v1/assistant/chat")
                         .contentType(APPLICATION_JSON)
