@@ -103,7 +103,7 @@ jobs:
           TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:3306/aurora_ci?allowPublicKeyRetrieval=true&sslMode=DISABLED&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
           TEST_MYSQL_USER: root
           TEST_MYSQL_PASSWORD: ci-only-password
-        run: ./mvnw --batch-mode -Dtest=JdbcRunRecordStoreTest test
+        run: ./mvnw --batch-mode -Dtest='JdbcRunRecordStoreTest,JdbcPushSubscriptionStoreTest' test
       - name: Verify backup and restore in an isolated MySQL container
         timeout-minutes: 5
         run: bash scripts/check_mysql_restore.sh

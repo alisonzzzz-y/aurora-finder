@@ -15,11 +15,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JdbcPushSubscriptionStoreTest {
     private static final Instant NOW = Instant.parse("2026-10-31T00:00:00Z");
+    // Set TEST_MYSQL_URL to run against MySQL, as the CI MySQL job does; otherwise H2 is used.
+    private final String mysqlUrl = System.getenv("TEST_MYSQL_URL");
+    private String mysqlSchema;
+
+    private JdbcTemplate database() {
+        if (mysqlUrl == null) return new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:push;DB_CLOSE_DELAY=-1", "sa", ""));
+        mysqlSchema = "push_test_" + java.util.UUID.randomUUID().toString().replace("-", "");
+        mysqlAdmin().execute("CREATE DATABASE " + mysqlSchema);
+        return new JdbcTemplate(new DriverManagerDataSource(mysqlUrl.replaceFirst("/[^/?]+(?=\\?|$)", "/" + mysqlSchema),
+                System.getenv("TEST_MYSQL_USER"), System.getenv("TEST_MYSQL_PASSWORD")));
+    }
+
+    private JdbcTemplate mysqlAdmin() {
+        return new JdbcTemplate(new DriverManagerDataSource(mysqlUrl, System.getenv("TEST_MYSQL_USER"), System.getenv("TEST_MYSQL_PASSWORD")));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void dropMysqlSchema() {
+        if (mysqlSchema != null) mysqlAdmin().execute("DROP DATABASE " + mysqlSchema);
+    }
 
     @Test
     void savesReplacesDeletesAndRecordsAlertsOnce() {
-        var jdbc = new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:push;DB_CLOSE_DELAY=-1", "sa", ""));
-        Flyway.configure().dataSource(jdbc.getDataSource()).locations("classpath:db/migration").load().migrate();
+        var jdbc = database();
+        Flyway.configure().dataSource(jdbc.getDataSource()).locations(mysqlUrl == null ? "classpath:db/migration" : "classpath:db/mysql").load().migrate();
         var store = new JdbcPushSubscriptionStore(jdbc, Clock.fixed(NOW, ZoneOffset.UTC));
         String endpoint = "https://fcm.googleapis.com/fcm/send/abc";
 
