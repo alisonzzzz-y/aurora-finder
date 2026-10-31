@@ -52,6 +52,18 @@ class LocationServiceTest {
     }
 
     @Test
+    void matchesChineseNamesIncludingACitySuffixWithoutCachingLocalizedNamesById() {
+        Location beijing = new Location(1816670, "北京", "", "", "中国", 39.9075, 116.39723, "Asia/Shanghai");
+        Location beijingEnglish = new Location(1816670, "Beijing", "", "", "China", 39.9075, 116.39723, "Asia/Shanghai");
+        Location unrelated = new Location(1, "南京", "", "", "中国", 32.06, 118.78, "Asia/Shanghai");
+        when(provider.search("北京市")).thenReturn(List.of(beijing, unrelated));
+        when(provider.get(1816670)).thenReturn(java.util.Optional.of(beijingEnglish));
+
+        assertEquals(List.of(beijing), service.search("北京市"));
+        assertEquals("Beijing", service.get(1816670).name());
+    }
+
+    @Test
     void filtersFuzzyProviderResultsThatDoNotMatchThePlaceName() {
         Location dublin = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");
