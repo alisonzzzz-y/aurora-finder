@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { parseAssistantMarkdown, type Inline } from './assistantMarkdown'
+import { parseAssistantMarkdown, type Inline } from './parseAssistantMarkdown'
 
 function renderInline(nodes: Inline[]): ReactNode[] {
   return nodes.map((node, index) => {

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { parseAssistantMarkdown, parseInline } from '../src/components/assistant/assistantMarkdown.ts'
+import { parseAssistantMarkdown, parseInline } from '../src/components/assistant/parseAssistantMarkdown.ts'
 
 test('bold, code and links become structured nodes instead of raw symbols', () => {
   assert.deepEqual(parseInline('**Kp 5** at `22:00`, see [NOAA](https://www.swpc.noaa.gov/).'), [
