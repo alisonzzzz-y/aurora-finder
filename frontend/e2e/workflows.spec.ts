@@ -106,6 +106,21 @@ test('assistant uses a newly chosen map place instead of pending choices', async
   expect(requests[1].locationId).toBe(place.id)
 })
 
+test('assistant answers render bold, lists and links without raw Markdown', async ({ page }) => {
+  await page.route('**/api/v1/assistant/chat', route => route.fulfill({ json: {
+    answer: '**Kp 5** expected.\n- 22:00: 40%\n- 23:00: 20%\nSource: [NOAA](https://www.swpc.noaa.gov/)', locationCandidates: [],
+  } }))
+  await page.locator('.agent-button').click()
+  const input = page.locator('#assistant-question')
+  await input.fill('Kp tonight?')
+  await input.press('Enter')
+  const answer = page.locator('.assistant-message.assistant .assistant-markdown')
+  await expect(answer.locator('strong')).toHaveText('Kp 5')
+  await expect(answer.locator('li')).toHaveCount(2)
+  await expect(answer.locator('a')).toHaveAttribute('href', 'https://www.swpc.noaa.gov/')
+  await expect(answer).not.toContainText('**')
+})
+
 test('assistant drag resize and close stay inside usable viewport', async ({ page }) => {
   await page.addStyleTag({ content: 'html { overflow-y: scroll !important; }' })
   await page.locator('.agent-button').click()
