@@ -39,14 +39,34 @@ class OutlookServiceTest {
         assertEquals(Instant.parse("2026-09-24T23:30:00Z"), response.generatedAtUtc());
         assertEquals(RuleStatus.NOT_VALIDATED, response.ruleStatus());
         assertEquals(3, response.nights().size());
-        assertEquals("2026-09-25", response.nights().getFirst().localDate().toString());
-        assertEquals(Instant.parse("2026-09-25T11:00:00Z"),
+        // 00:30 in Dublin is still the night that began on the evening of 24 September.
+        assertEquals("2026-09-24", response.nights().getFirst().localDate().toString());
+        assertEquals(Instant.parse("2026-09-24T11:00:00Z"),
                 response.nights().getFirst().evaluationWindowStartUtc());
-        assertEquals(Instant.parse("2026-09-26T11:00:00Z"),
+        assertEquals(Instant.parse("2026-09-25T11:00:00Z"),
                 response.nights().getFirst().evaluationWindowEndUtc());
         assertTrue(response.nights().stream().allMatch(night ->
                 night.level() == OutlookLevel.INSUFFICIENT_DATA
                         && night.reasonCode() == OutlookReasonCode.RULES_NOT_VALIDATED));
+    }
+
+    @Test
+    void keepsTheNightInProgressUntilDawnThenMovesToTheComingEvening() {
+        GeocodingProvider geocoding = mock(GeocodingProvider.class);
+        Location tromso = new Location(3133880, "Tromsø", "Troms", "Tromsø", "Norway", 69.6496, 18.957, "Europe/Oslo");
+        when(geocoding.get(tromso.id())).thenReturn(Optional.of(tromso));
+
+        assertEquals("2026-10-30", firstNight(geocoding, tromso, "2026-10-31T03:00:00Z"));
+        assertEquals("2026-10-31", firstNight(geocoding, tromso, "2026-10-31T10:00:00Z"));
+        assertEquals("2026-10-31", firstNight(geocoding, tromso, "2026-10-31T16:00:00Z"));
+        // The midnight sun has no civil darkness, so there is no night in progress to keep.
+        assertEquals("2026-06-21", firstNight(geocoding, tromso, "2026-06-20T23:30:00Z"));
+    }
+
+    private String firstNight(GeocodingProvider geocoding, Location location, String now) {
+        Clock clock = Clock.fixed(Instant.parse(now), ZoneOffset.UTC);
+        return new OutlookService(locationService(geocoding, clock), clock, new SolarDarknessService())
+                .forLocation(location.id()).nights().getFirst().localDate().toString();
     }
 
     @Test

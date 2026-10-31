@@ -85,7 +85,10 @@ final class AssistantCloudEvidence {
         Location place = facts.outlook().location();
         ZoneId zone = ZoneId.of(place.timezone());
         Instant now = facts.generatedAtUtc();
-        LocalDate requested = requestedDate(requestTime, now.atZone(zone).toLocalDate());
+        // Relative words follow the app's night: after midnight, tonight is still the night in progress.
+        LocalDate tonight = facts.outlook().nights() == null || facts.outlook().nights().isEmpty()
+                ? now.atZone(zone).toLocalDate() : facts.outlook().nights().getFirst().localDate();
+        LocalDate requested = requestedDate(requestTime, tonight);
         LocalDate date = toolDate == null ? requested : toolDate;
         if (toolDate != null && requested != null && !toolDate.equals(requested)) {
             throw new IllegalArgumentException("Use the user's requested local date: " + requested);
