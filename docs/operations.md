@@ -25,6 +25,23 @@ AI 工具从相同的后端来源服务查询数据。聊天原文不写入运�
 | APP_RUN_RECORD_ENABLED | 是否启用持久化，默认 false |
 | APP_RUN_RECORD_JDBC_URL / USERNAME / PASSWORD | 数据库连接，完整 key 和 TLS 示例见 [数据库配置](database-setup.md) |
 | APP_RUN_RECORD_RETENTION_DAYS | 运行记录保留 7 天；公开历史快照单独为 7 天 |
+| APP_PUSH_VAPID_PUBLIC_KEY / APP_PUSH_VAPID_PRIVATE_KEY | 关闭网页后的强活动推送所用 VAPID 密钥对；两个都设置才开启，只放在后端（Render） |
+| APP_PUSH_SUBJECT | 推送服务联系地址，`mailto:` 或 `https:`，默认使用项目联系邮箱 |
+
+### 开启关闭网页后的推送
+
+后台推送需要同时满足：已启用运行记录数据库（`APP_RUN_RECORD_ENABLED=true`，订阅保存在同一数据库的 `push_subscription` 表），并配置 VAPID 密钥对。
+
+1. 在本机生成一次密钥对（只需执行一次，不要提交到 Git）：
+
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+
+2. 在 Render 后端服务的 Environment 中设置 `APP_PUSH_VAPID_PUBLIC_KEY` 和 `APP_PUSH_VAPID_PRIVATE_KEY`，可选设置 `APP_PUSH_SUBJECT`。前端不需要配置，公钥由 `/api/v1/push/config` 提供。
+3. 重新部署后，页面“强活动提醒”下出现“关闭网页后也提醒”按钮。若密钥只设置了一个或公私钥不匹配，后端会拒绝启动。
+
+后端每 5 分钟检查一次 Kp，规则与页面提醒相同（当前时段或未来 72 小时 Kp ≥ 5），每个时段和等级只推送一次。推送服务返回 404/410 的订阅会被删除；订阅上限 5000 个。为防止服务器向任意地址发请求，只接受 Chrome、Firefox、Safari 和 Edge 推送服务的 HTTPS 地址。日志只记录发送数量，不记录订阅地址。更换密钥会使已有订阅失效，用户需要重新开启。iPhone 和 iPad 只有把网站添加到主屏幕后才支持网页推送。Render 免费实例休眠时不会检查，`Keep history sampling awake` 工作流可减少休眠。
 
 代理后的客户端 IP 尚未作为可信身份认证，多个访客可能共享客户端限流桶。全局限额独立于客户端 IP；目前为单实例设计。生产扩容前应改用共享限额存储，不能把当前限制作为多实例费用上限。
 

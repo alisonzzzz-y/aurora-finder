@@ -38,6 +38,9 @@ VALUES ('restore-proof',1,'restore_probe','2026-10-29 00:15:01.654321','OK','{"s
 INSERT INTO observation_history(location_ref,bucket_utc,captured_at_utc,snapshot_json)
 VALUES (2964574,1793232900,'2026-10-29 00:15:00','{"locationName":"都柏林","cloudCoverPercent":0.25,"synthetic":true}'),
        (2964574,1793233800,'2026-10-29 00:30:00','{"locationName":"都柏林","cloudCoverPercent":null,"synthetic":true}');
+INSERT INTO push_subscription(endpoint_hash,endpoint,p256dh,auth_secret,language,created_at_utc)
+VALUES (REPEAT('a',64),'https://fcm.googleapis.com/fcm/send/restore-proof','synthetic-key','synthetic-auth','zh','2026-10-29 00:15:00.123456');
+INSERT INTO push_alert(alert_key,sent_at_utc) VALUES ('current:2026-10-29T00:00:00Z:5','2026-10-29 00:16:00.654321');
 SQL
 
 "${dump_cmd[@]}" original_check > "$work_dir/backup.sql"

@@ -42,6 +42,9 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
 
     public record PersistenceCheck(String previousRunId, String newRunId) {}
 
+    /** The same bounded connection pool also stores push subscriptions. */
+    public JdbcTemplate jdbcTemplate() { return jdbc; }
+
     /** Startup check uses synthetic records only. IDs allow readback across deployments to be verified in logs. */
     public PersistenceCheck verifyPersistence() {
         var previous = jdbc.query("SELECT run_id FROM evaluation_run WHERE kind = 'PERSISTENCE_CHECK' AND result_status = 'COMPLETED' ORDER BY created_at_utc DESC LIMIT 1",

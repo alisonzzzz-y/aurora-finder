@@ -3,6 +3,7 @@ import { getKpIndex } from '../../api/kpIndex'
 import { useI18n } from '../../i18n'
 import { InfoHint } from '../InfoHint'
 import { freshStormData, stormAlerts, type StormAlert } from './stormAlerts'
+import { BackgroundAlerts } from './BackgroundAlerts'
 import './StormActivityAlert.css'
 
 export function StormActivityAlert() {
@@ -73,11 +74,12 @@ export function StormActivityAlert() {
   }
   const time = (value: string) => new Intl.DateTimeFormat(zh ? 'zh-CN' : 'en-IE', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', timeZoneName:'short' }).format(new Date(value))
   return <section className="storm-activity-alert" data-severity={status === 'ready' && alerts.some(alert => alert.kp >= 7) ? 'severe' : 'standard'} aria-label={zh ? '强活动提醒' : 'Strong activity alerts'}>
-    <header><h2>{zh ? '强活动提醒' : 'Strong activity alerts'}<InfoHint>{zh ? 'Kp 达到 5 时提醒。当前时段使用观测或估算值，未来时段使用预报值。全球活动不代表当地可见概率。数据来源：NOAA。网站打开期间每两分钟检查一次，关闭网站后不会推送。每个时段及等级本次访问只通知一次。' : 'Alerts start at Kp 5. Current periods use observed or estimated readings; future periods use forecasts. Global activity is not a local viewing probability. Source: NOAA. Checks run every two minutes while this page is open, with no push after closing it. Each period and level is notified once per visit.'}</InfoHint></h2>
+    <header><h2>{zh ? '强活动提醒' : 'Strong activity alerts'}<InfoHint>{zh ? 'Kp 达到 5 时提醒。当前时段使用观测或估算值，未来时段使用预报值。全球活动不代表当地可见概率。数据来源：NOAA。网站打开期间每两分钟检查一次；开启“关闭网页后也提醒”后，服务器每五分钟检查并推送浏览器通知（iPhone 和 iPad 需先把网站添加到主屏幕）。每个时段及等级本次访问只通知一次。' : 'Alerts start at Kp 5. Current periods use observed or estimated readings; future periods use forecasts. Global activity is not a local viewing probability. Source: NOAA. Checks run every two minutes while this page is open. With background alerts on, the server checks every five minutes and sends a browser notification after the page is closed (on iPhone and iPad, add the site to the Home Screen first). Each period and level is notified once per visit.'}</InfoHint></h2>
       <button type="button" className="comparison-action" aria-pressed={enabled} onClick={() => { void toggle() }}>{zh ? enabled ? '关闭提醒' : '开启提醒' : enabled ? 'Turn off alerts' : 'Enable alerts'}</button></header>
     <div role="status" aria-live="polite">{alerts.length ? alerts.map(alert => <article className={`storm-alert-reading ${alert.kp >= 7 ? 'storm-alert-severe' : ''}`} key={alert.key}>
       <strong>{text(alert)}</strong><time dateTime={alert.start}>{time(alert.start)} – {time(alert.end)}</time>
     </article>) : <p>{zh ? status === 'loading' ? '正在检查活动…' : status === 'unavailable' ? '提醒数据暂不可用' : '当前及未来 72 小时暂无强活动提醒' : status === 'loading' ? 'Checking activity…' : status === 'unavailable' ? 'Alert data is unavailable' : 'No strong activity alerts now or in the next 72 hours'}</p>}</div>
     {notice && <p role="status">{notice}</p>}
+    <BackgroundAlerts language={language} />
   </section>
 }

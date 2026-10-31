@@ -81,7 +81,7 @@ class JdbcRunRecordStoreTest {
     void migratesEmptyDatabaseAndReadsMinimalEvidenceAfterRestart() {
         String url = "jdbc:h2:file:" + directory.resolve("records") + ";DB_CLOSE_ON_EXIT=FALSE";
         JdbcTemplate first = jdbc(url);
-        assertEquals(3, Flyway.configure().dataSource(first.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
+        assertEquals(4, Flyway.configure().dataSource(first.getDataSource()).locations(migrations()).load().migrate().migrationsExecuted);
         JdbcRunRecordStore records = store(first, NOW);
         String id = records.begin("PAGE_FACTS", 2964574L);
         records.recordFacts(id, facts());
