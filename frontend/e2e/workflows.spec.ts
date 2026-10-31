@@ -86,6 +86,26 @@ test('assistant remembers a chosen place and retries without duplicating the que
   await expect(page.locator('.assistant-message.user')).toHaveCount(3)
 })
 
+test('assistant uses a newly chosen map place instead of pending choices', async ({ page }) => {
+  const requests: { message: string; locationId?: number }[] = []
+  await page.route('**/api/v1/assistant/chat', async route => {
+    requests.push(route.request().postDataJSON())
+    if (requests.length === 1) return route.fulfill({ json: { answer: 'Which Dublin?', locationCandidates: [place, other] } })
+    return route.fulfill({ json: { answer: 'Source samples for the selected night.', selectedLocationId: place.id, locationCandidates: [] } })
+  })
+  await page.locator('.agent-button').click()
+  const input = page.locator('#assistant-question')
+  await input.fill('Dublin tonight?')
+  await input.press('Enter')
+  await expect(page.locator('.assistant-location-choice')).toHaveCount(2)
+  await selectDublin(page)
+  await input.fill('How about here?')
+  await input.press('Enter')
+  await expect(input).toBeEnabled()
+  expect(requests).toHaveLength(2)
+  expect(requests[1].locationId).toBe(place.id)
+})
+
 test('assistant drag resize and close stay inside usable viewport', async ({ page }) => {
   await page.addStyleTag({ content: 'html { overflow-y: scroll !important; }' })
   await page.locator('.agent-button').click()
