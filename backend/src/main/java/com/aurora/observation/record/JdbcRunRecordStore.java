@@ -90,14 +90,12 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
     public String begin(String kind, Long locationId) {
         String id = UUID.randomUUID().toString();
         try {
-            transaction.executeWithoutResult(ignored -> {
-                deleteExpired();
-                jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, location_ref, "
-                                + "rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        id, kind, timestamp(clock.instant()), "RUNNING", locationId, RULE_VERSION, "NOT_VALIDATED");
-            });
+            // Expired rows are removed by the scheduled purge, not on every request.
+            jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, location_ref, "
+                            + "rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    id, kind, timestamp(clock.instant()), "RUNNING", locationId, RULE_VERSION, "NOT_VALIDATED");
             return id;
-        } catch (DataAccessException | TransactionException error) {
+        } catch (DataAccessException error) {
             throw new RunRecordUnavailableException(error);
         }
     }
@@ -150,7 +148,7 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
         }
     }
 
-    @Scheduled(fixedDelay = 86_400_000)
+    @Scheduled(initialDelay = 3_600_000, fixedDelay = 3_600_000)
     public void purgeExpired() {
         try {
             deleteExpired();
