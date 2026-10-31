@@ -36,8 +36,8 @@ public class NoaaGeomagneticWarningsProvider {
     private static final String SOURCE_URL = "https://services.swpc.noaa.gov/products/alerts.json";
     private static final Pattern VALID_FROM = Pattern.compile("(?m)^Valid From:\\s*(\\d{4}\\s+[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4})\\s+UTC");
     private static final Pattern VALID_TO = Pattern.compile("(?m)^(?:Valid To|Now Valid Until):\\s*(\\d{4}\\s+[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4})\\s+UTC");
-    private static final Pattern K_INDEX = Pattern.compile("K-index of (4|5) expected", Pattern.CASE_INSENSITIVE);
-    private static final Pattern NOAA_SCALE = Pattern.compile("(?im)^Noaa Scale:\\s*(G[1-5]\\s*-\\s*[^\\r\\n]+)");
+    private static final Pattern K_INDEX = Pattern.compile("K-index of ([4-7])(?: or greater)? expected", Pattern.CASE_INSENSITIVE);
+    private static final Pattern NOAA_SCALE = Pattern.compile("(?im)^Noaa Scale:\\s*(G[1-5](?:\\s+or\\s+greater)?\\s*-\\s*[^\\r\\n]+)");
     private static final Pattern WATCH_DAY = Pattern.compile("(?i)([A-Z]{3})\\s+(\\d{1,2}):\\s*(G[1-5]|None)");
     private static final DateTimeFormatter ISSUE_TIME = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS", Locale.US);
     private static final DateTimeFormatter WATCH_DATE = new DateTimeFormatterBuilder().parseCaseInsensitive()
@@ -108,7 +108,8 @@ public class NoaaGeomagneticWarningsProvider {
                     throw invalid("NOAA storm watch has an invalid issue time", error);
                 }
             }
-            if (!productId.matches("K0[45]W")) continue;
+            // NOAA issues K-index 4, 5, 6 and 7-or-greater warnings as K04W to K07W.
+            if (!productId.matches("K0[4-7]W")) continue;
             Matcher kMatcher = K_INDEX.matcher(message);
             Matcher startMatcher = VALID_FROM.matcher(message);
             Matcher endMatcher = VALID_TO.matcher(message);
