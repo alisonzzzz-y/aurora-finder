@@ -171,3 +171,37 @@ test('timezone search supports keyboard selection and escape', async ({ page }) 
   await input.press('Escape')
   await expect(input).toHaveCount(0)
 })
+
+function fakeYouTubeApi(event: 'play' | 'error') {
+  return `window.YT = { Player: class {
+    constructor(element, options) {
+      this.frame = document.createElement('iframe'); this.frame.src = 'about:blank'; element.replaceWith(this.frame)
+      setTimeout(() => ${event === 'play' ? 'options.events.onStateChange({ data: 1 })' : 'options.events.onError({ data: 150 })'}, 50)
+    }
+    getIframe() { return this.frame }
+    destroy() { this.frame.remove() }
+  } }; window.onYouTubeIframeAPIReady()`
+}
+
+test('camera viewer reports a playing stream', async ({ page }) => {
+  await page.route('https://www.youtube.com/iframe_api', route => route.fulfill({ contentType: 'text/javascript', body: fakeYouTubeApi('play') }))
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  const viewer = page.locator('.camera-viewer').first()
+  await expect(viewer).toHaveAttribute('data-status', 'playing')
+  await expect(viewer.locator('iframe')).toHaveAttribute('title', 'Churchill, Canada')
+  await expect(page.locator('.camera-notice')).toHaveCount(0)
+})
+
+test('camera viewer explains a stream that cannot play', async ({ page }) => {
+  await page.route('https://www.youtube.com/iframe_api', route => route.fulfill({ contentType: 'text/javascript', body: fakeYouTubeApi('error') }))
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  await expect(page.locator('.camera-viewer').first()).toHaveAttribute('data-status', 'unavailable')
+  await expect(page.locator('.camera-notice')).toContainText('cannot play right now')
+})
+
+test('camera viewer falls back to the plain embed when the player API is blocked', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  const viewer = page.locator('.camera-viewer').first()
+  await expect(viewer).toHaveAttribute('data-status', 'fallback')
+  await expect(viewer.locator('iframe.aurora-camera-frame')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/a0i1Kg6fROg/)
+})
