@@ -11,7 +11,8 @@ public class CorsConfig {
     @Bean
     public WebMvcConfigurer apiCorsConfigurer(
             @Value("${app.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
-        String[] origins = allowedOrigins.split(",");
+        // Accept "a, b" as well as "a,b" in the environment variable.
+        String[] origins = parseOrigins(allowedOrigins);
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
@@ -21,5 +22,10 @@ public class CorsConfig {
                         .maxAge(3600);
             }
         };
+    }
+
+    static String[] parseOrigins(String allowedOrigins) {
+        return java.util.Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim).filter(origin -> !origin.isEmpty()).toArray(String[]::new);
     }
 }
