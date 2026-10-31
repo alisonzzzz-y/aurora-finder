@@ -19,8 +19,9 @@ test('comparison uses exact shared times and excludes missing or expired cloud d
   assert.deepEqual(commonCloudTimes([a,b],now+3600000),[])
 })
 test('darkness checks half-open intervals and keeps unknown distinct from daylight',()=>{
-  const f={outlook:{nights:[{evaluationWindowStartUtc:'2026-10-13T12:00:00Z',evaluationWindowEndUtc:'2026-10-14T12:00:00Z',solarDarkness:{thresholds:[{threshold:'ASTRONOMICAL_TWILIGHT',status:'INTERVALS_FOUND',intervals:[{startUtc:'2026-10-13T20:00:00Z',endUtc:'2026-10-14T05:00:00Z'}]}]}}]}}
+  const f={outlook:{nights:[{evaluationWindowStartUtc:'2026-10-13T12:00:00Z',evaluationWindowEndUtc:'2026-10-14T12:00:00Z',solarDarkness:{thresholds:[{threshold:'NAUTICAL_TWILIGHT',status:'INTERVALS_FOUND',intervals:[{startUtc:'2026-10-13T20:00:00Z',endUtc:'2026-10-14T05:00:00Z'}]},{threshold:'ASTRONOMICAL_TWILIGHT',status:'NO_INTERVAL',intervals:[]}]}}]}}
   assert.equal(darknessAt(f,now),false)
+  // Uses the same −12° rule as the sky summary, even when the Sun never reaches −18°.
   assert.equal(darknessAt(f,Date.parse('2026-10-13T20:00:00Z')),true)
   assert.equal(darknessAt(f,Date.parse('2026-10-14T05:00:00Z')),false)
   assert.equal(darknessAt(f,now+48*3600000),null)
