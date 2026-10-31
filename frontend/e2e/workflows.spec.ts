@@ -205,3 +205,39 @@ test('camera viewer falls back to the plain embed when the player API is blocked
   await expect(viewer).toHaveAttribute('data-status', 'fallback')
   await expect(viewer.locator('iframe.aurora-camera-frame')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/a0i1Kg6fROg/)
 })
+
+test('background alerts subscribe with the page language and unsubscribe', async ({ page }) => {
+  await page.addInitScript(() => {
+    let subscription: unknown = null
+    const fake = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/test',
+      toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: 'p', auth: 'a' } }),
+      unsubscribe: async () => { subscription = null; return true },
+    }
+    const registration = { pushManager: { getSubscription: async () => subscription, subscribe: async () => (subscription = fake) } }
+    let registered = false
+    Object.defineProperty(navigator, 'serviceWorker', { value: {
+      register: async () => { registered = true; return registration },
+      getRegistration: async () => registered ? registration : undefined,
+      ready: Promise.resolve(registration),
+    } })
+    Object.defineProperty(window, 'PushManager', { value: function PushManager() {} })
+    Object.defineProperty(Notification, 'permission', { get: () => 'granted' })
+    Notification.requestPermission = async () => 'granted'
+  })
+  const posts: { path: string; body: { language?: string; endpoint: string } }[] = []
+  await page.route('**/api/v1/push/**', route => {
+    const url = new URL(route.request().url())
+    if (url.pathname === '/api/v1/push/config') return route.fulfill({ json: { enabled: true, publicKey: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4' } })
+    posts.push({ path: url.pathname, body: route.request().postDataJSON() })
+    return route.fulfill({ status: 204 })
+  })
+  await page.reload()
+  await page.getByRole('button', { name: 'English', exact: true }).click()
+  await page.getByRole('button', { name: 'Alert me after closing the page' }).click()
+  await expect(page.getByRole('button', { name: 'Turn off background alerts' })).toHaveAttribute('aria-pressed', 'true')
+  expect(posts[0]).toEqual({ path: '/api/v1/push/subscriptions', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: 'p', auth: 'a' }, language: 'en' } })
+  await page.getByRole('button', { name: 'Turn off background alerts' }).click()
+  await expect(page.getByRole('button', { name: 'Alert me after closing the page' })).toBeVisible()
+  expect(posts.at(-1)).toEqual({ path: '/api/v1/push/unsubscribe', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test' } })
+})
