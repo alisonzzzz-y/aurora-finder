@@ -86,6 +86,41 @@ test('assistant remembers a chosen place and retries without duplicating the que
   await expect(page.locator('.assistant-message.user')).toHaveCount(3)
 })
 
+test('assistant uses a newly chosen map place instead of pending choices', async ({ page }) => {
+  const requests: { message: string; locationId?: number }[] = []
+  await page.route('**/api/v1/assistant/chat', async route => {
+    requests.push(route.request().postDataJSON())
+    if (requests.length === 1) return route.fulfill({ json: { answer: 'Which Dublin?', locationCandidates: [place, other] } })
+    return route.fulfill({ json: { answer: 'Source samples for the selected night.', selectedLocationId: place.id, locationCandidates: [] } })
+  })
+  await page.locator('.agent-button').click()
+  const input = page.locator('#assistant-question')
+  await input.fill('Dublin tonight?')
+  await input.press('Enter')
+  await expect(page.locator('.assistant-location-choice')).toHaveCount(2)
+  await selectDublin(page)
+  await input.fill('How about here?')
+  await input.press('Enter')
+  await expect(input).toBeEnabled()
+  expect(requests).toHaveLength(2)
+  expect(requests[1].locationId).toBe(place.id)
+})
+
+test('assistant answers render bold, lists and links without raw Markdown', async ({ page }) => {
+  await page.route('**/api/v1/assistant/chat', route => route.fulfill({ json: {
+    answer: '**Kp 5** expected.\n- 22:00: 40%\n- 23:00: 20%\nSource: [NOAA](https://www.swpc.noaa.gov/)', locationCandidates: [],
+  } }))
+  await page.locator('.agent-button').click()
+  const input = page.locator('#assistant-question')
+  await input.fill('Kp tonight?')
+  await input.press('Enter')
+  const answer = page.locator('.assistant-message.assistant .assistant-markdown')
+  await expect(answer.locator('strong')).toHaveText('Kp 5')
+  await expect(answer.locator('li')).toHaveCount(2)
+  await expect(answer.locator('a')).toHaveAttribute('href', 'https://www.swpc.noaa.gov/')
+  await expect(answer).not.toContainText('**')
+})
+
 test('assistant drag resize and close stay inside usable viewport', async ({ page }) => {
   await page.addStyleTag({ content: 'html { overflow-y: scroll !important; }' })
   await page.locator('.agent-button').click()
@@ -135,4 +170,74 @@ test('timezone search supports keyboard selection and escape', async ({ page }) 
   await input.fill('not-a-timezone')
   await input.press('Escape')
   await expect(input).toHaveCount(0)
+})
+
+function fakeYouTubeApi(event: 'play' | 'error') {
+  return `window.YT = { Player: class {
+    constructor(element, options) {
+      this.frame = document.createElement('iframe'); this.frame.src = 'about:blank'; element.replaceWith(this.frame)
+      setTimeout(() => ${event === 'play' ? 'options.events.onStateChange({ data: 1 })' : 'options.events.onError({ data: 150 })'}, 50)
+    }
+    getIframe() { return this.frame }
+    destroy() { this.frame.remove() }
+  } }; window.onYouTubeIframeAPIReady()`
+}
+
+test('camera viewer reports a playing stream', async ({ page }) => {
+  await page.route('https://www.youtube.com/iframe_api', route => route.fulfill({ contentType: 'text/javascript', body: fakeYouTubeApi('play') }))
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  const viewer = page.locator('.camera-viewer').first()
+  await expect(viewer).toHaveAttribute('data-status', 'playing')
+  await expect(viewer.locator('iframe')).toHaveAttribute('title', 'Churchill, Canada')
+  await expect(page.locator('.camera-notice')).toHaveCount(0)
+})
+
+test('camera viewer explains a stream that cannot play', async ({ page }) => {
+  await page.route('https://www.youtube.com/iframe_api', route => route.fulfill({ contentType: 'text/javascript', body: fakeYouTubeApi('error') }))
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  await expect(page.locator('.camera-viewer').first()).toHaveAttribute('data-status', 'unavailable')
+  await expect(page.locator('.camera-notice')).toContainText('cannot play right now')
+})
+
+test('camera viewer falls back to the plain embed when the player API is blocked', async ({ page }) => {
+  await page.getByRole('button', { name: 'Start viewing: Churchill, Canada' }).click()
+  const viewer = page.locator('.camera-viewer').first()
+  await expect(viewer).toHaveAttribute('data-status', 'fallback')
+  await expect(viewer.locator('iframe.aurora-camera-frame')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/a0i1Kg6fROg/)
+})
+
+test('background alerts subscribe with the page language and unsubscribe', async ({ page }) => {
+  await page.addInitScript(() => {
+    let subscription: unknown = null
+    const fake = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/test',
+      toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: 'p', auth: 'a' } }),
+      unsubscribe: async () => { subscription = null; return true },
+    }
+    const registration = { pushManager: { getSubscription: async () => subscription, subscribe: async () => (subscription = fake) } }
+    let registered = false
+    Object.defineProperty(navigator, 'serviceWorker', { value: {
+      register: async () => { registered = true; return registration },
+      getRegistration: async () => registered ? registration : undefined,
+      ready: Promise.resolve(registration),
+    } })
+    Object.defineProperty(window, 'PushManager', { value: function PushManager() {} })
+    Object.defineProperty(Notification, 'permission', { get: () => 'granted' })
+    Notification.requestPermission = async () => 'granted'
+  })
+  const posts: { path: string; body: { language?: string; endpoint: string } }[] = []
+  await page.route('**/api/v1/push/**', route => {
+    const url = new URL(route.request().url())
+    if (url.pathname === '/api/v1/push/config') return route.fulfill({ json: { enabled: true, publicKey: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4' } })
+    posts.push({ path: url.pathname, body: route.request().postDataJSON() })
+    return route.fulfill({ status: 204 })
+  })
+  await page.reload()
+  await page.getByRole('button', { name: 'English', exact: true }).click()
+  await page.getByRole('button', { name: 'Alert me after closing the page' }).click()
+  await expect(page.getByRole('button', { name: 'Turn off background alerts' })).toHaveAttribute('aria-pressed', 'true')
+  expect(posts[0]).toEqual({ path: '/api/v1/push/subscriptions', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: 'p', auth: 'a' }, language: 'en' } })
+  await page.getByRole('button', { name: 'Turn off background alerts' }).click()
+  await expect(page.getByRole('button', { name: 'Alert me after closing the page' })).toBeVisible()
+  expect(posts.at(-1)).toEqual({ path: '/api/v1/push/unsubscribe', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test' } })
 })

@@ -48,7 +48,8 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
     public List<Location> search(String query) {
         if (!enabled) throw new ProviderUnavailableException(ProviderFailure.DISABLED, "Geocoding is disabled");
         String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
-        JsonNode response = request(baseUrl + "/search?name=" + encoded + "&count=10&language=en&format=json", false)
+        JsonNode response = request(baseUrl + "/search?name=" + encoded + "&count=10&language=" + searchLanguage(query)
+                + "&format=json", false)
                 .orElseThrow();
         if (!response.isObject() || response.path("error").asBoolean(false)) {
             throw invalidResponse("Search response is not a successful object");
@@ -66,6 +67,12 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
         return locations;
     }
 
+    /** Chinese queries need Chinese result names, or the local name filter rejects every match. */
+    public static String searchLanguage(String query) {
+        return query.codePoints().anyMatch(point -> Character.UnicodeScript.of(point) == Character.UnicodeScript.HAN)
+                ? "zh" : "en";
+    }
+
     @Override
     public Optional<Location> get(long id) {
         if (!enabled) throw new ProviderUnavailableException(ProviderFailure.DISABLED, "Geocoding is disabled");
@@ -76,8 +83,9 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
         });
     }
 
+    /** {@code allowNotFound} marks an ID lookup, which has its own share of the request budget. */
     private Optional<JsonNode> request(String url, boolean allowNotFound) {
-        rateLimiter.acquire();
+        rateLimiter.acquire(allowNotFound);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(requestTimeout).header("Accept", "application/json").GET().build();
         try {

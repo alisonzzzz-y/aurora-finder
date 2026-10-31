@@ -7,6 +7,7 @@ import type { ObservationFacts } from '../../types/observationFacts'
 import { InfoHint } from '../InfoHint'
 import { EvidenceChart, type EvidencePoint } from './EvidenceChart'
 import './MonitoringSections.css'
+import { CameraViewer } from './CameraViewer'
 
 type Series = { id: string; unit: string; status: string; points: EvidencePoint[] }
 type Solar = { retrievedAt: string; sourceUrl: string; series: Series[] }
@@ -87,19 +88,6 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
     </section>
     <ObservationHistory key={facts?.outlook.location.id ?? 'default'} facts={facts} />
   </>
-}
-function CameraViewer({ name, source, url, videoId, language }: { name: string; source: string; url: string; videoId?: string; language: string }) {
-  const [open, setOpen] = useState(false)
-  const zh = language === 'zh'
-  const embed = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=1&playsinline=1&rel=0` : url
-  return <article>
-    <h3>{name}</h3>
-    <div className={`camera-viewer${videoId ? ' camera-video' : ''}`}>
-      {open ? <iframe className="aurora-camera-frame" src={embed} title={name} referrerPolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : <button type="button" className="camera-start" onClick={() => setOpen(true)} aria-label={`${zh ? '开始查看' : 'Start viewing'}: ${name}`}><span aria-hidden="true">▶</span>{zh ? '开始查看' : 'Start viewing'}</button>}
-    </div>
-    {open && <button className="camera-stop" type="button" onClick={() => setOpen(false)}>{zh ? '■ 关闭画面' : '■ Close viewer'}</button>}
-    <p className="monitoring-source">{zh ? '来源' : 'Source'}: <a href={url} target="_blank" rel="noreferrer">{source} ↗</a></p>
-  </article>
 }
 function ObservationHistory({ facts }: { facts: ObservationFacts | null }) {
   const { language } = useI18n(), c = copy[language], locale = language === 'zh' ? 'zh-CN' : 'en'

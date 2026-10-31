@@ -18,6 +18,9 @@ import com.aurora.observation.service.GeomagneticStormForecastService;
 import com.aurora.observation.service.GeomagneticWarningsService;
 import com.aurora.observation.service.WeatherService;
 import com.aurora.observation.record.RunRecordStore;
+import com.aurora.observation.record.RunRecordUnavailableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 public class ObservationController {
+    private static final Logger log = LoggerFactory.getLogger(ObservationController.class);
     private final LocationService locations;
     private final OutlookService outlook;
     private final AuroraMapService auroraMap;
@@ -69,17 +73,45 @@ public class ObservationController {
 
     @GetMapping("/facts/{locationId}")
     public ObservationFactsResponse facts(@PathVariable long locationId) {
-        String runId = records.begin("PAGE_FACTS", locationId);
+        // Run records are an audit trail. A database outage must not hide the place's source facts.
+        String runId = beginRecord(locationId);
+        ObservationFactsResponse result;
         try {
-            ObservationFactsResponse result = facts.forLocation(locationId);
-            records.recordFacts(runId, result);
-            records.finish(runId, "COMPLETED");
-            history.capture(result);
-            return new ObservationFactsResponse(result.generatedAtUtc(), result.outlook(), result.auroraActivity(),
-                    result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId, result.viewingConditions());
+            result = facts.forLocation(locationId);
         } catch (RuntimeException failure) {
-            records.finish(runId, "FAILED");
+            finishRecord(runId, "FAILED");
             throw failure;
+        }
+        if (runId != null) {
+            try {
+                records.recordFacts(runId, result);
+                records.finish(runId, "COMPLETED");
+            } catch (RunRecordUnavailableException failure) {
+                log.error("Page facts were served without a complete run record.", failure);
+                finishRecord(runId, "FAILED");
+                runId = null;
+            }
+        }
+        history.capture(result);
+        return new ObservationFactsResponse(result.generatedAtUtc(), result.outlook(), result.auroraActivity(),
+                result.cloudForecast(), result.solarDarkness(), result.coverage(), result.sourceStatus(), runId, result.viewingConditions());
+    }
+
+    private String beginRecord(long locationId) {
+        try {
+            return records.begin("PAGE_FACTS", locationId);
+        } catch (RunRecordUnavailableException failure) {
+            log.error("Page facts are being served without a run record.", failure);
+            return null;
+        }
+    }
+
+    private void finishRecord(String runId, String status) {
+        if (runId == null) return;
+        try {
+            records.finish(runId, status);
+        } catch (RunRecordUnavailableException failure) {
+            log.warn("Run record {} could not be marked {}.", runId, status);
         }
     }
 

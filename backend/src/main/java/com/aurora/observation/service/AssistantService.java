@@ -27,14 +27,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
-    private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
-            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3]))(?::([0-5]\\d)|[时点])[^\\n%％]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*[%％]");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
     private static final String INSTRUCTIONS = """
@@ -66,8 +63,9 @@ public class AssistantService {
             Never turn a rating or model signal into a viewing percentage or extend it to a whole night.
             The tool's assistantCloudWindow is the only source for hourly cloud answers. It contains a single
             place, requested local date, exact start/end instants and localSamples with dates and UTC offsets.
-            Tonight means the current calendar date at that place, even after midnight. The grouping window is
-            local noon to next noon, not a guarantee of darkness. The following morning belongs to that night.
+            Tonight means the first localDate returned for that place. After midnight and before dawn it is still
+            the night that began the previous evening. The grouping window is local noon to next noon, not a
+            guarantee of darkness. The following morning belongs to that night.
             Never use an earlier morning, another night or another place to fill a missing requested window.
             For an explicit date not already selected, call get_night_cloud_forecast after get_local_night_facts.
             DATE_SELECTION_REQUIRED means select each requested date with that tool, or clarify an ambiguous date.
@@ -147,14 +145,24 @@ public class AssistantService {
             toolContext.latestCandidates = lastLocationCandidates(history);
             if (!toolContext.latestCandidates.isEmpty()) {
                 Location selected = resolveCandidate(request.message(), toolContext.latestCandidates);
-                if (selected == null) {
+                if (selected == null && normalize(request.message()).matches("[0-9]+")) {
+                    // A number is a selection attempt; ask again without spending a model call.
                     return new AssistantChatResponse(selectionPrompt(toolContext.latestCandidates,
                             "zh".equalsIgnoreCase(request.language())), openAi.model(), toolContext.latestCandidates);
                 }
-                toolContext.permittedLocationIds.add(selected.id());
-                toolContext.latestCandidates = List.of();
-                userMessage.append("\nUser selected this matching location: ")
-                        .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
+                if (selected == null) {
+                    // Any other reply may be a new question, so the user is never stuck on the earlier choice.
+                    // The earlier candidates stay unselected and are offered again if no new place is resolved.
+                    userMessage.append("\nEarlier place choices are still unselected: ")
+                            .append(String.join("; ", toolContext.latestCandidates.stream().map(this::locationDescription).toList()))
+                            .append(". The user's message did not choose one. Answer the new message; if it still needs one of")
+                            .append(" those places, ask the user to choose instead of guessing.");
+                } else {
+                    toolContext.permittedLocationIds.add(selected.id());
+                    toolContext.latestCandidates = List.of();
+                    userMessage.append("\nUser selected this matching location: ")
+                            .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
+                }
             }
         }
         input.add(message("user", userMessage.toString()));
@@ -191,9 +199,11 @@ public class AssistantService {
                 List<Location> choices = toolContext.latestCandidates.size() > 1
                         ? toolContext.latestCandidates : List.of();
                 if (hasConflictingCorrectedCloudValues(answer)) {
-                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    String examples = sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()), !examples.isEmpty()) + examples;
                 } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
-                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    String examples = sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language()), !examples.isEmpty()) + examples;
                 }
                 Long selectedLocationId = choices.isEmpty() && toolContext.localFacts.size() == 1
                         ? toolContext.localFacts.keySet().iterator().next()
@@ -209,46 +219,69 @@ public class AssistantService {
         if (!CORRECTION_WORD.matcher(answer).find()) return false;
 
         Map<String, String> percentagesByHour = new HashMap<>();
-        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
-        while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
-            String percentage = new BigDecimal(matcher.group(3)).stripTrailingZeros().toPlainString();
-            String previous = percentagesByHour.putIfAbsent(hour, percentage);
+        for (var claim : HourlyCloudClaims.parse(answer)) {
+            if (claim.isRange() || claim.values().size() != 1) continue;
+            String percentage = claim.values().getFirst().stripTrailingZeros().toPlainString();
+            String previous = percentagesByHour.putIfAbsent(claim.fromHour(), percentage);
             if (previous != null && !previous.equals(percentage)) return true;
         }
         return false;
     }
 
-    private String inconsistentCloudAnswer(boolean chinese) {
+    private String inconsistentCloudAnswer(boolean chinese, boolean withSourceReadings) {
+        if (!withSourceReadings) return chinese
+                ? "这条回答里的逐小时云量前后矛盾。请查看页面上的当地云量预报图。"
+                : "That answer gave conflicting hourly cloud values. Please check the local cloud forecast chart.";
         return chinese
-                ? "这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。"
-                : "I couldn't provide a consistent hourly cloud summary, so I won't guess. Please check the local cloud forecast chart or try again later.";
+                ? "这条回答里的逐小时云量前后矛盾，下面直接列出天气来源的数据。"
+                : "That answer gave conflicting hourly cloud values, so here are the weather source readings instead.";
     }
 
     private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
         if (!context.cloudFactsRequested) return false;
-        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
-        while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
-            BigDecimal stated = new BigDecimal(matcher.group(3));
-            // Multiple places or nights need explicit attribution. Use the structured source summary instead
-            // of accepting a value merely because that hour occurs somewhere in the combined evidence.
-            if (context.cloudWindows.size() != 1) return true;
-            var window = context.cloudWindows.values().iterator().next();
-            ZoneId zone = ZoneId.of(window.location().timezone());
-            var dateMatcher = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})").matcher(answer.substring(0, matcher.start()));
+        var claims = HourlyCloudClaims.parse(answer);
+        if (claims.isEmpty()) return false;
+        // Multiple places or nights need explicit attribution. Use the structured source summary instead
+        // of accepting a value merely because that hour occurs somewhere in the combined evidence.
+        if (context.cloudWindows.size() != 1) return true;
+        var window = context.cloudWindows.values().iterator().next();
+        ZoneId zone = ZoneId.of(window.location().timezone());
+        var hourFormat = java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT);
+        for (var claim : claims) {
+            var dateMatcher = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})").matcher(answer.substring(0, claim.start()));
             String date = null;
             while (dateMatcher.find()) date = dateMatcher.group(1);
-            final String explicitDate = date;
-            boolean matchesSource = window.points().stream().anyMatch(point -> {
+            final String explicitDate = claim.isRange() ? null : date;
+            var samples = window.points().stream().filter(point -> {
                 var local = point.validAt().atZone(zone);
-                return local.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)).equals(hour)
-                        && (explicitDate == null || explicitDate.equals(local.toLocalDate().toString()))
-                        && BigDecimal.valueOf(point.cloudCoverPercent()).subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0;
-            });
-            if (!matchesSource) return true;
+                String hour = local.format(hourFormat);
+                return (explicitDate == null || explicitDate.equals(local.toLocalDate().toString()))
+                        && (claim.isRange() ? withinLocalRange(hour, claim.fromHour(), claim.toHour())
+                            : hour.equals(claim.fromHour()));
+            }).toList();
+            // A single hour must match its sample. A range must include each stated value, such as its low and high.
+            boolean supported = !samples.isEmpty() && (claim.isRange() || claim.values().size() == 1
+                    ? claim.values().stream().allMatch(stated -> samples.stream().anyMatch(point ->
+                        BigDecimal.valueOf(point.cloudCoverPercent()).subtract(stated).abs()
+                                .compareTo(roundingTolerance(stated)) <= 0))
+                    : samples.stream().anyMatch(point -> withinStatedRange(point.cloudCoverPercent(), claim.values())));
+            if (!supported) return true;
         }
         return false;
+    }
+
+    private boolean withinLocalRange(String hour, String from, String to) {
+        return from.compareTo(to) <= 0
+                ? hour.compareTo(from) >= 0 && hour.compareTo(to) <= 0
+                : hour.compareTo(from) >= 0 || hour.compareTo(to) <= 0;
+    }
+
+    private boolean withinStatedRange(double value, List<BigDecimal> bounds) {
+        BigDecimal low = bounds.stream().min(BigDecimal::compareTo).orElseThrow();
+        BigDecimal high = bounds.stream().max(BigDecimal::compareTo).orElseThrow();
+        BigDecimal actual = BigDecimal.valueOf(value);
+        return actual.compareTo(low.subtract(roundingTolerance(low))) >= 0
+                && actual.compareTo(high.add(roundingTolerance(high))) <= 0;
     }
 
     private BigDecimal roundingTolerance(BigDecimal stated) {
@@ -257,16 +290,22 @@ public class AssistantService {
                 : new BigDecimal("0.15");
     }
 
-    private String unverifiedCloudAnswer(boolean chinese) {
+    private String unverifiedCloudAnswer(boolean chinese, boolean withSourceReadings) {
+        if (!withSourceReadings) return chinese
+                ? "这条回答里的逐小时云量无法与天气数据核对。请查看页面上的当地云量预报图。"
+                : "I couldn't verify the hourly cloud values in that answer. Please check the local cloud forecast chart.";
         return chinese
-                ? "这次回复中的小时云量数值无法与天气来源数据核对。为避免误报，请查看页面里的当地云量预报图。"
-                : "I couldn't verify the hourly cloud values against the weather source. To avoid giving you inaccurate figures, please check the local cloud forecast chart.";
+                ? "这条回答里的逐小时云量无法与天气数据核对，下面直接列出天气来源的数据。"
+                : "I couldn't verify the hourly cloud values in that answer, so here are the weather source readings instead.";
     }
 
     private String sourceCloudExamples(ToolContext context, boolean chinese) {
+        if (context.cloudWindows.isEmpty()) return "";
         StringBuilder summary = new StringBuilder();
+        var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
         for (var window : context.cloudWindows.values()) {
             var place = window.location();
+            ZoneId zone = ZoneId.of(place.timezone());
             summary.append("\n\n").append(place.name()).append(", ").append(place.country());
             if (window.localDate() != null) summary.append(" · ").append(window.localDate());
             summary.append(" · ").append(place.timezone()).append("\n");
@@ -274,19 +313,44 @@ public class AssistantService {
                 summary.append(chinese ? "所请求时段没有可用的云量预报。" : "No cloud forecast is available for the requested window.");
                 continue;
             }
-            summary.append(chinese ? "所请求时段的云量样本（当地时间）：\n" : "Sample readings for the requested window, in local time:\n");
-            var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
-            // Spread samples across the available window instead of showing only its first two hours.
-            var points = window.points();
+            var nightPoints = nightSamples(window, context.localFacts.get(place.id()), zone);
+            var points = nightPoints.isEmpty() ? window.points() : nightPoints;
+            summary.append(nightPoints.isEmpty()
+                    ? chinese ? "所请求时段的云量（当地时间）：\n" : "Cloud cover in the requested window, local time:\n"
+                    : chinese ? "夜间云量（当地时间）：\n" : "Night-time cloud cover, local time:\n");
+            // Spread up to three samples across the night instead of showing only its first hours.
             for (int index : java.util.stream.IntStream.of(0, points.size() / 2, points.size() - 1).distinct().toArray()) {
                 var point = points.get(index);
-                summary.append("- ").append(formatter.format(point.validAt().atZone(ZoneId.of(place.timezone())))).append(": ")
+                summary.append("- ").append(formatter.format(point.validAt().atZone(zone))).append(": ")
                         .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
             }
             summary.append(chinese ? "数据来源：" : "Source: ").append(window.source());
             if (window.sourceUrl() != null && !window.sourceUrl().equals(window.source())) summary.append("\n").append(window.sourceUrl());
         }
         return summary.toString();
+    }
+
+    /**
+     * Samples taken while the Sun is below -12 degrees, the same darkness rule as the sky summary. Without
+     * darkness data, local evening and night hours (18:00 to 05:59) are used instead of midday samples.
+     */
+    private List<com.aurora.observation.dto.WeatherCloudPoint> nightSamples(AssistantCloudEvidence.Window window,
+                                                                            ObservationFactsResponse facts, ZoneId zone) {
+        List<com.aurora.observation.dto.SolarDarkness.TimeInterval> dark = facts == null || facts.solarDarkness() == null
+                || facts.solarDarkness().data() == null ? List.of()
+                : facts.solarDarkness().data().stream()
+                    .filter(night -> night.solarDarkness() != null && night.solarDarkness().thresholds() != null)
+                    .flatMap(night -> night.solarDarkness().thresholds().stream())
+                    .filter(threshold -> threshold.threshold() == com.aurora.observation.dto.SolarDarkness.Threshold.NAUTICAL_TWILIGHT)
+                    .flatMap(threshold -> threshold.intervals().stream()).toList();
+        if (!dark.isEmpty()) {
+            return window.points().stream().filter(point -> dark.stream().anyMatch(interval ->
+                    !point.validAt().isBefore(interval.startUtc()) && point.validAt().isBefore(interval.endUtc()))).toList();
+        }
+        return window.points().stream().filter(point -> {
+            int hour = point.validAt().atZone(zone).getHour();
+            return hour >= 18 || hour < 6;
+        }).toList();
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
@@ -567,6 +631,8 @@ public class AssistantService {
 
     private String safeToolError(Exception error) {
         if (error instanceof LocationNotFoundException) return "The selected location was not found.";
+        if (error instanceof AssistantCloudEvidence.RequestedDateMismatchException mismatch) return mismatch.getMessage();
+        if (error instanceof java.time.format.DateTimeParseException) return "Use a local date in YYYY-MM-DD format.";
         if (error instanceof UnsupportedNightDateException unsupported) {
             return "That local date is outside the available window. Available dates: " + unsupported.availableDates();
         }

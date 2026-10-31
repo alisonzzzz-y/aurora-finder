@@ -10,9 +10,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +22,10 @@ import java.util.function.Supplier;
 
 @Service
 public class LocationService {
+    // Longest first, so 内蒙古自治区 loses 自治区 rather than only 区.
+    private static final List<String> CHINESE_ADMINISTRATIVE_SUFFIXES =
+            List.of("特别行政区", "自治区", "自治州", "自治县", "地区", "省", "市", "县", "区", "州", "盟", "旗");
+
     private final GeocodingProvider geocoding;
     private final Clock clock;
     private final int maxCacheEntries;
@@ -60,21 +66,40 @@ public class LocationService {
             if (secondCheck != null) return secondCheck;
             List<Location> result = matchingProviderResults(cleaned);
             write(searches, key, result, searchTtl);
-            for (Location location : result) write(locations, location.id(), location, locationTtl);
+            // Localized names stay with their search; ID lookups keep the provider's default English names.
+            if (!"zh".equals(com.aurora.observation.provider.OpenMeteoGeocodingProvider.searchLanguage(cleaned))) {
+                for (Location location : result) write(locations, location.id(), location, locationTtl);
+            }
             return result;
         });
     }
 
     private List<Location> matchingProviderResults(String query) {
-        List<Location> matches = filterMatches(query, geocoding.search(query));
-        if (!matches.isEmpty()) return matches;
+        Set<String> terms = new LinkedHashSet<>();
+        terms.add(query);
+        terms.addAll(searchTokens(query));
+        // The geocoder finds 北京 but not 北京市, so a suffixed Chinese name is retried without the suffix.
+        for (String term : List.copyOf(terms)) {
+            String withoutSuffix = withoutChineseAdministrativeSuffix(term);
+            if (withoutSuffix != null) terms.add(withoutSuffix);
+        }
 
-        for (String token : searchTokens(query)) {
-            if (token.length() < 2) continue;
-            matches = filterMatches(query, geocoding.search(token));
+        for (String term : terms) {
+            if (term.length() < 2) continue;
+            List<Location> matches = filterMatches(query, geocoding.search(term));
             if (!matches.isEmpty()) return matches;
         }
         return List.of();
+    }
+
+    private String withoutChineseAdministrativeSuffix(String term) {
+        if (!isHan(term)) return null;
+        for (String suffix : CHINESE_ADMINISTRATIVE_SUFFIXES) {
+            if (term.endsWith(suffix) && term.length() - suffix.length() >= 2) {
+                return term.substring(0, term.length() - suffix.length());
+            }
+        }
+        return null;
     }
 
     private List<Location> filterMatches(String query, List<Location> candidates) {
@@ -90,16 +115,39 @@ public class LocationService {
                 .flatMap(value -> searchTokens(value).stream())
                 .toList();
         return queryTokens.stream().allMatch(queryToken -> locationTokens.stream()
-                .anyMatch(locationToken -> locationToken.startsWith(queryToken)));
+                .anyMatch(locationToken -> locationToken.startsWith(queryToken)
+                        // Chinese names are often typed with a suffix such as 市 or 省 that the result omits.
+                        || isHan(locationToken) && locationToken.length() >= 2 && queryToken.startsWith(locationToken)));
+    }
+
+    private boolean isHan(String value) {
+        return value.codePoints().allMatch(point -> Character.UnicodeScript.of(point) == Character.UnicodeScript.HAN);
     }
 
     private List<String> searchTokens(String value) {
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+        String normalized = foldLettersWithoutDecomposition(Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
-                .toLowerCase(Locale.ROOT)
+                .toLowerCase(Locale.ROOT))
                 .replaceAll("[^\\p{L}\\p{N}]+", " ")
                 .trim();
         return normalized.isEmpty() ? List.of() : List.of(normalized.split("\\s+"));
+    }
+
+    /** NFD leaves letters such as ø and æ whole, so "Tromso" would never match "Tromsø" without this. */
+    private String foldLettersWithoutDecomposition(String value) {
+        StringBuilder folded = new StringBuilder(value.length());
+        value.codePoints().forEach(point -> folded.append(switch (point) {
+            case 'ø' -> "o";
+            case 'æ' -> "ae";
+            case 'œ' -> "oe";
+            case 'ß' -> "ss";
+            case 'ł' -> "l";
+            case 'đ', 'ð' -> "d";
+            case 'þ' -> "th";
+            case 'ı' -> "i";
+            default -> Character.toString(point);
+        }));
+        return folded.toString();
     }
 
     public Location get(long id) {

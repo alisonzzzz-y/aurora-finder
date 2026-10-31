@@ -42,6 +42,9 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
 
     public record PersistenceCheck(String previousRunId, String newRunId) {}
 
+    /** The same bounded connection pool also stores push subscriptions. */
+    public JdbcTemplate jdbcTemplate() { return jdbc; }
+
     /** Startup check uses synthetic records only. IDs allow readback across deployments to be verified in logs. */
     public PersistenceCheck verifyPersistence() {
         var previous = jdbc.query("SELECT run_id FROM evaluation_run WHERE kind = 'PERSISTENCE_CHECK' AND result_status = 'COMPLETED' ORDER BY created_at_utc DESC LIMIT 1",
@@ -90,14 +93,12 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
     public String begin(String kind, Long locationId) {
         String id = UUID.randomUUID().toString();
         try {
-            transaction.executeWithoutResult(ignored -> {
-                deleteExpired();
-                jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, location_ref, "
-                                + "rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        id, kind, timestamp(clock.instant()), "RUNNING", locationId, RULE_VERSION, "NOT_VALIDATED");
-            });
+            // Expired rows are removed by the scheduled purge, not on every request.
+            jdbc.update("INSERT INTO evaluation_run(run_id, kind, created_at_utc, result_status, location_ref, "
+                            + "rule_version, rule_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    id, kind, timestamp(clock.instant()), "RUNNING", locationId, RULE_VERSION, "NOT_VALIDATED");
             return id;
-        } catch (DataAccessException | TransactionException error) {
+        } catch (DataAccessException error) {
             throw new RunRecordUnavailableException(error);
         }
     }
@@ -150,7 +151,7 @@ public class JdbcRunRecordStore implements RunRecordStore, AutoCloseable {
         }
     }
 
-    @Scheduled(fixedDelay = 86_400_000)
+    @Scheduled(initialDelay = 3_600_000, fixedDelay = 3_600_000)
     public void purgeExpired() {
         try {
             deleteExpired();

@@ -21,6 +21,13 @@ final class AssistantCloudEvidence {
     record Window(Location location, String status, LocalDate localDate, Instant startUtc, Instant endUtc,
                   List<WeatherCloudPoint> points, String source, String sourceUrl) {}
 
+    /** The model chose a date other than the one the user asked for; its message tells the model which date to use. */
+    static final class RequestedDateMismatchException extends IllegalArgumentException {
+        RequestedDateMismatchException(LocalDate requested) {
+            super("Use the user's requested local date: " + requested);
+        }
+    }
+
     static String requestTime(String message, List<AssistantMessage> history) {
         if (hasTime(message)) return message;
         for (int i = history.size() - 1; i >= 0; i--) {
@@ -85,10 +92,13 @@ final class AssistantCloudEvidence {
         Location place = facts.outlook().location();
         ZoneId zone = ZoneId.of(place.timezone());
         Instant now = facts.generatedAtUtc();
-        LocalDate requested = requestedDate(requestTime, now.atZone(zone).toLocalDate());
+        // Relative words follow the app's night: after midnight, tonight is still the night in progress.
+        LocalDate tonight = facts.outlook().nights() == null || facts.outlook().nights().isEmpty()
+                ? now.atZone(zone).toLocalDate() : facts.outlook().nights().getFirst().localDate();
+        LocalDate requested = requestedDate(requestTime, tonight);
         LocalDate date = toolDate == null ? requested : toolDate;
         if (toolDate != null && requested != null && !toolDate.equals(requested)) {
-            throw new IllegalArgumentException("Use the user's requested local date: " + requested);
+            throw new RequestedDateMismatchException(requested);
         }
         // A night is grouped by local noon to next noon, including its following morning.
         // This calendar window does not assert darkness or aurora visibility.
