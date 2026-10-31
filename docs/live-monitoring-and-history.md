@@ -6,8 +6,8 @@
 - 区域活动来自 AuroraWatch UK，显示当前告警测站及原始预警颜色、署名和许可。小时值不是当地观测概率，最新一小时可能尚未结束。接口至少缓存三分钟。此接入限非商业用途；提供方要求使用者联系他们，本次未代发邮件。
 - Solar wind uses [NOAA real-time solar wind](https://www.spaceweather.gov/products/solar-wind): `rtsw_mag_1m.json` and `rtsw_wind_1m.json`. Only active satellite samples with numeric quality flag 0 are retained. Bz, Bt and speed have independent availability; samples older than 15 minutes are labelled stale. Gaps over five minutes are not connected. Satellite identity remains available in the chart readout.
 - 太阳风只保留当前使用的卫星及质量标记正常的测量。Bz、Bt 和速度分别处理缺测，超过十五分钟标记过期，超过五分钟的间隔不连线。悬停读数包含卫星来源。
-- Camera cards link to IRF Kiruna, UAF Poker Flat and the Finnish Meteorological Institute. Images and capture times are viewed on the original websites. No images are copied, and no automatic sighting claim is made.
-- 摄像头卡片链接至三个机构的原站，画面和拍摄时间在原站查看。本站不复制图片，也不自动声称看到了极光。
+- Cameras embed three YouTube livestreams after the user selects Start viewing: Churchill, Canada (Explore.org · Polar Bears International), Reykjavík, Iceland (Aurora Reykjavík) and Tasman, New Zealand (WISP Media). The YouTube IFrame Player API reports when playback starts, explains embed errors (removed, ended, private or non-embeddable streams) and says so if a stream has not started after 20 seconds. If the API script is blocked, the plain embed is shown instead. Each card links to its source. Images are not copied, and no automatic sighting claim is made.
+- 摄像头在用户点击“开始查看”后嵌入三路 YouTube 直播：加拿大丘吉尔（Explore.org · Polar Bears International）、冰岛雷克雅未克（Aurora Reykjavík）、新西兰塔斯曼（WISP Media）。页面通过 YouTube IFrame Player API 判断是否开始播放；直播被删除、结束、设为私有或禁止嵌入时显示原因，20 秒内仍未播放时提示可能离线。API 脚本被拦截时退回普通嵌入。每张卡片保留原站链接。本站不复制画面，也不自动声称看到了极光。直播能否实际播放取决于直播方、地区和浏览器规则，自动测试使用模拟播放器，不能代替真实直播验收。
 
 ## Public history / 公开历史
 
