@@ -89,7 +89,7 @@ class AssistantServiceTest {
                 "At 20:00 cloud cover is 72%, and at 21:00 it is 18.7%.");
 
         assertTrue(response.answer().contains("couldn't verify the hourly cloud values"));
-        assertTrue(response.answer().contains("local cloud forecast chart"));
+        assertTrue(response.answer().contains("here are the weather source readings instead"));
     }
 
     @Test
@@ -115,7 +115,7 @@ class AssistantServiceTest {
         assertTrue(answer.contains("2026-09-28 21:00 +01:00: 18.7%"));
         assertTrue(answer.contains("Source: MET Norway"));
         assertTrue(answer.contains("https://example.test/weather"));
-        assertFalse(chatWithCloudSource("At 20:00 cloud cover is 72%.", true).answer().contains("Sample readings"));
+        assertFalse(chatWithCloudSource("At 20:00 cloud cover is 72%.", true).answer().contains("cloud cover, local time"));
     }
 
     @Test
@@ -147,6 +147,49 @@ class AssistantServiceTest {
     void doesNotAttributeALaterHoursValueToAnEarlierHour() {
         assertTrue(chatWithCloudSource("Clouds thin after 20:00; at 21:00 they are 78.9%.")
                 .answer().contains("couldn't verify"));
+    }
+
+    @Test
+    void fallbackReadingsComeFromTheDarkPartOfTheRequestedNight() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        Location dublin = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland", 53.33306, -6.24889, "Europe/Dublin");
+        Instant now = Instant.parse("2026-10-31T11:00:00Z");
+        NightOutlook night = new NightOutlook(LocalDate.of(2026, 10, 31), "+00:00", Instant.parse("2026-10-31T12:00:00Z"),
+                Instant.parse("2026-11-01T12:00:00Z"), OutlookLevel.INSUFFICIENT_DATA, OutlookReasonCode.RULES_NOT_VALIDATED, null);
+        var points = List.of(new WeatherCloudPoint(Instant.parse("2026-10-31T13:00:00Z"), 10.0),
+                new WeatherCloudPoint(Instant.parse("2026-10-31T16:00:00Z"), 20.0),
+                new WeatherCloudPoint(Instant.parse("2026-10-31T20:00:00Z"), 30.0),
+                new WeatherCloudPoint(Instant.parse("2026-10-31T23:00:00Z"), 40.0),
+                new WeatherCloudPoint(Instant.parse("2026-11-01T03:00:00Z"), 50.0),
+                new WeatherCloudPoint(Instant.parse("2026-11-01T10:00:00Z"), 60.0));
+        var forecast = new WeatherForecastResponse(now, now.plusSeconds(86400), "MET Norway", 53.33, -6.25, points);
+        var cloudFact = new SourceFact<>(FactFetchStatus.CURRENT, FactTimeScope.THREE_LOCAL_NIGHTS, now, null, null,
+                now, now.plusSeconds(172800), "MET Norway", "https://example.test/weather", null, forecast);
+        var nautical = new com.aurora.observation.dto.SolarDarkness.ThresholdWindow(
+                com.aurora.observation.dto.SolarDarkness.Threshold.NAUTICAL_TWILIGHT, -12, com.aurora.observation.dto.SolarDarkness.Status.INTERVALS_FOUND,
+                List.of(new com.aurora.observation.dto.SolarDarkness.TimeInterval(Instant.parse("2026-10-31T18:00:00Z"), Instant.parse("2026-11-01T06:00:00Z"))));
+        var darkness = new SourceFact<>(FactFetchStatus.CURRENT, FactTimeScope.THREE_LOCAL_NIGHTS, now, null, null, null, null,
+                "SPA", "https://example.test/spa", null,
+                List.of(new com.aurora.observation.dto.SolarNightFact(night.localDate(), new com.aurora.observation.dto.SolarDarkness(List.of(nautical)))));
+        var facts = new ObservationFactsResponse(now, new OutlookResponse(dublin, now, RuleStatus.NOT_VALIDATED, List.of(night)),
+                null, cloudFact, darkness, null, FactFetchStatus.CURRENT);
+        when(tools.getLocalNightFacts(42)).thenReturn(facts);
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "get_local_night_facts", "{\"location_id\":42}"))
+                .thenReturn(responseWithText(mapper, "At 20:00 cloud cover is 99%."));
+
+        String answer = new AssistantService(openAi, tools, mapper)
+                .chat(new AssistantChatRequest("Clouds tonight?", "en", 42L, List.of())).answer();
+
+        assertTrue(answer.contains("Night-time cloud cover, local time"));
+        assertTrue(answer.contains("2026-10-31 20:00 Z: 30%"));
+        assertTrue(answer.contains("2026-10-31 23:00 Z: 40%"));
+        assertTrue(answer.contains("2026-11-01 03:00 Z: 50%"));
+        assertFalse(answer.contains("13:00"));
+        assertFalse(answer.contains("10:00 Z"));
     }
 
     private AssistantChatResponse chatWithCloudSource(String answer) {
@@ -495,7 +538,7 @@ class AssistantServiceTest {
         AssistantChatResponse result = new AssistantService(openAi, tools, mapper).chat(
                 new AssistantChatRequest("Dublin 今晚云量如何？", "zh", 2964574L, List.of()));
 
-        assertEquals("这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。",
+        assertEquals("这条回答里的逐小时云量前后矛盾。请查看页面上的当地云量预报图。",
                 result.answer());
         verify(tools).getLocalNightFacts(2964574);
     }
