@@ -6,27 +6,19 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 
 @Service
 public class GeomagneticStormForecastService {
     private static final Duration CACHE_TTL = Duration.ofMinutes(30);
     private final GeomagneticStormForecastProvider provider;
-    private final Clock clock;
-    private CacheEntry cache;
+    private final SingleFlightCache<GeomagneticStormForecastResponse> cache;
 
     public GeomagneticStormForecastService(GeomagneticStormForecastProvider provider, Clock clock) {
         this.provider = provider;
-        this.clock = clock;
+        this.cache = new SingleFlightCache<>(clock, CACHE_TTL);
     }
 
-    public synchronized GeomagneticStormForecastResponse latest() {
-        Instant now = clock.instant();
-        if (cache != null && now.isBefore(cache.expiresAt())) return cache.data();
-        GeomagneticStormForecastResponse response = provider.latest();
-        cache = new CacheEntry(response, now.plus(CACHE_TTL));
-        return response;
+    public GeomagneticStormForecastResponse latest() {
+        return cache.get(provider::latest).value();
     }
-
-    private record CacheEntry(GeomagneticStormForecastResponse data, Instant expiresAt) {}
 }
