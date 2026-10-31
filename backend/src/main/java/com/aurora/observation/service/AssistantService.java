@@ -199,9 +199,11 @@ public class AssistantService {
                 List<Location> choices = toolContext.latestCandidates.size() > 1
                         ? toolContext.latestCandidates : List.of();
                 if (hasConflictingCorrectedCloudValues(answer)) {
-                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    String examples = sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    answer = inconsistentCloudAnswer("zh".equalsIgnoreCase(request.language()), !examples.isEmpty()) + examples;
                 } else if (hasUnsupportedHourlyCloudValues(answer, toolContext)) {
-                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language())) + sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    String examples = sourceCloudExamples(toolContext, "zh".equalsIgnoreCase(request.language()));
+                    answer = unverifiedCloudAnswer("zh".equalsIgnoreCase(request.language()), !examples.isEmpty()) + examples;
                 }
                 Long selectedLocationId = choices.isEmpty() && toolContext.localFacts.size() == 1
                         ? toolContext.localFacts.keySet().iterator().next()
@@ -226,10 +228,13 @@ public class AssistantService {
         return false;
     }
 
-    private String inconsistentCloudAnswer(boolean chinese) {
+    private String inconsistentCloudAnswer(boolean chinese, boolean withSourceReadings) {
+        if (!withSourceReadings) return chinese
+                ? "这条回答里的逐小时云量前后矛盾。请查看页面上的当地云量预报图。"
+                : "That answer gave conflicting hourly cloud values. Please check the local cloud forecast chart.";
         return chinese
-                ? "这次回复中的逐小时云量数值前后不一致，我不想给你错误数据。请查看页面里的当地云量预报图，或稍后重试。"
-                : "I couldn't provide a consistent hourly cloud summary, so I won't guess. Please check the local cloud forecast chart or try again later.";
+                ? "这条回答里的逐小时云量前后矛盾，下面直接列出天气来源的数据。"
+                : "That answer gave conflicting hourly cloud values, so here are the weather source readings instead.";
     }
 
     private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
@@ -285,16 +290,22 @@ public class AssistantService {
                 : new BigDecimal("0.15");
     }
 
-    private String unverifiedCloudAnswer(boolean chinese) {
+    private String unverifiedCloudAnswer(boolean chinese, boolean withSourceReadings) {
+        if (!withSourceReadings) return chinese
+                ? "这条回答里的逐小时云量无法与天气数据核对。请查看页面上的当地云量预报图。"
+                : "I couldn't verify the hourly cloud values in that answer. Please check the local cloud forecast chart.";
         return chinese
-                ? "这次回复中的小时云量数值无法与天气来源数据核对。为避免误报，请查看页面里的当地云量预报图。"
-                : "I couldn't verify the hourly cloud values against the weather source. To avoid giving you inaccurate figures, please check the local cloud forecast chart.";
+                ? "这条回答里的逐小时云量无法与天气数据核对，下面直接列出天气来源的数据。"
+                : "I couldn't verify the hourly cloud values in that answer, so here are the weather source readings instead.";
     }
 
     private String sourceCloudExamples(ToolContext context, boolean chinese) {
+        if (context.cloudWindows.isEmpty()) return "";
         StringBuilder summary = new StringBuilder();
+        var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
         for (var window : context.cloudWindows.values()) {
             var place = window.location();
+            ZoneId zone = ZoneId.of(place.timezone());
             summary.append("\n\n").append(place.name()).append(", ").append(place.country());
             if (window.localDate() != null) summary.append(" · ").append(window.localDate());
             summary.append(" · ").append(place.timezone()).append("\n");
@@ -302,19 +313,44 @@ public class AssistantService {
                 summary.append(chinese ? "所请求时段没有可用的云量预报。" : "No cloud forecast is available for the requested window.");
                 continue;
             }
-            summary.append(chinese ? "所请求时段的云量样本（当地时间）：\n" : "Sample readings for the requested window, in local time:\n");
-            var formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm XXX", Locale.ROOT);
-            // Spread samples across the available window instead of showing only its first two hours.
-            var points = window.points();
+            var nightPoints = nightSamples(window, context.localFacts.get(place.id()), zone);
+            var points = nightPoints.isEmpty() ? window.points() : nightPoints;
+            summary.append(nightPoints.isEmpty()
+                    ? chinese ? "所请求时段的云量（当地时间）：\n" : "Cloud cover in the requested window, local time:\n"
+                    : chinese ? "夜间云量（当地时间）：\n" : "Night-time cloud cover, local time:\n");
+            // Spread up to three samples across the night instead of showing only its first hours.
             for (int index : java.util.stream.IntStream.of(0, points.size() / 2, points.size() - 1).distinct().toArray()) {
                 var point = points.get(index);
-                summary.append("- ").append(formatter.format(point.validAt().atZone(ZoneId.of(place.timezone())))).append(": ")
+                summary.append("- ").append(formatter.format(point.validAt().atZone(zone))).append(": ")
                         .append(BigDecimal.valueOf(point.cloudCoverPercent()).stripTrailingZeros().toPlainString()).append("%\n");
             }
             summary.append(chinese ? "数据来源：" : "Source: ").append(window.source());
             if (window.sourceUrl() != null && !window.sourceUrl().equals(window.source())) summary.append("\n").append(window.sourceUrl());
         }
         return summary.toString();
+    }
+
+    /**
+     * Samples taken while the Sun is below -12 degrees, the same darkness rule as the sky summary. Without
+     * darkness data, local evening and night hours (18:00 to 05:59) are used instead of midday samples.
+     */
+    private List<com.aurora.observation.dto.WeatherCloudPoint> nightSamples(AssistantCloudEvidence.Window window,
+                                                                            ObservationFactsResponse facts, ZoneId zone) {
+        List<com.aurora.observation.dto.SolarDarkness.TimeInterval> dark = facts == null || facts.solarDarkness() == null
+                || facts.solarDarkness().data() == null ? List.of()
+                : facts.solarDarkness().data().stream()
+                    .filter(night -> night.solarDarkness() != null && night.solarDarkness().thresholds() != null)
+                    .flatMap(night -> night.solarDarkness().thresholds().stream())
+                    .filter(threshold -> threshold.threshold() == com.aurora.observation.dto.SolarDarkness.Threshold.NAUTICAL_TWILIGHT)
+                    .flatMap(threshold -> threshold.intervals().stream()).toList();
+        if (!dark.isEmpty()) {
+            return window.points().stream().filter(point -> dark.stream().anyMatch(interval ->
+                    !point.validAt().isBefore(interval.startUtc()) && point.validAt().isBefore(interval.endUtc()))).toList();
+        }
+        return window.points().stream().filter(point -> {
+            int hour = point.validAt().atZone(zone).getHour();
+            return hour >= 18 || hour < 6;
+        }).toList();
     }
 
     private List<Location> lastLocationCandidates(List<AssistantMessage> history) {
