@@ -11,7 +11,12 @@ import './AuroraMap.css'
 
 setWorkerUrl(workerUrl)
 
-function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number }> {
+// Web Mercator draws one degree of latitude 1/cos(latitude) times taller than at the equator.
+function latitudeStretch(latitude: number) {
+  return 1 / Math.cos(Math.min(Math.abs(latitude), 85) * Math.PI / 180)
+}
+
+function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number; latitudeStretch: number }> {
   const forecastDeadline = Date.parse(data.forecastTime)
   const forecastIsCurrent = data.status === 'CURRENT'
     && Number.isFinite(forecastDeadline)
@@ -21,10 +26,17 @@ function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue:
     features: (forecastIsCurrent ? data.points : []).map(point => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [point.longitude, point.latitude] },
-      properties: { auroraValue: point.auroraValue },
+      properties: { auroraValue: point.auroraValue, latitudeStretch: latitudeStretch(point.latitude) },
     })),
   }
 }
+
+// MapLibre's heatmap kernel is a Gaussian with sigma = radius / 3. A radius of 2.5px at zoom 0 (512px spans
+// 360 degrees) gives sigma ~0.6 of the north-south grid spacing, enough to blend rows without stripes, and the
+// 2x-per-zoom curve keeps that at every zoom. Rows sit 1/cos(latitude) further apart than columns, so each
+// point's weight is divided by that stretch to keep the summed density, and the colour, independent of latitude.
+const heatmapRadiusAtZoom0 = 2.5
+const heatmapMaxZoom = 7
 
 function formatUtc(instant: string, locale: string, unavailable: string) {
   const date = new Date(instant)
@@ -169,11 +181,18 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
           id: 'ovation-heatmap',
           type: 'heatmap',
           source: 'ovation-grid',
-          maxzoom: 7,
+          maxzoom: heatmapMaxZoom,
           paint: {
-            'heatmap-weight': ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
-            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 7, 2.2],
-            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 7, 24],
+            'heatmap-weight': ['/',
+              ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
+              ['get', 'latitudeStretch'],
+            ],
+            // Matches the colours the previous fixed radius gave around 60 degrees at the default zoom.
+            'heatmap-intensity': 1.35,
+            'heatmap-radius': ['interpolate', ['exponential', 2], ['zoom'],
+              0, ['*', heatmapRadiusAtZoom0, ['get', 'latitudeStretch']],
+              heatmapMaxZoom, ['*', heatmapRadiusAtZoom0 * 2 ** heatmapMaxZoom, ['get', 'latitudeStretch']],
+            ],
             'heatmap-opacity': 0.82,
             'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
               0, 'rgba(32, 210, 157, 0)',
