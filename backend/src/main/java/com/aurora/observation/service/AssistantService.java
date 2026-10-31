@@ -63,8 +63,9 @@ public class AssistantService {
             Never turn a rating or model signal into a viewing percentage or extend it to a whole night.
             The tool's assistantCloudWindow is the only source for hourly cloud answers. It contains a single
             place, requested local date, exact start/end instants and localSamples with dates and UTC offsets.
-            Tonight means the current calendar date at that place, even after midnight. The grouping window is
-            local noon to next noon, not a guarantee of darkness. The following morning belongs to that night.
+            Tonight means the first localDate returned for that place. After midnight and before dawn it is still
+            the night that began the previous evening. The grouping window is local noon to next noon, not a
+            guarantee of darkness. The following morning belongs to that night.
             Never use an earlier morning, another night or another place to fill a missing requested window.
             For an explicit date not already selected, call get_night_cloud_forecast after get_local_night_facts.
             DATE_SELECTION_REQUIRED means select each requested date with that tool, or clarify an ambiguous date.

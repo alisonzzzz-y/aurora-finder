@@ -16,11 +16,15 @@ class AssistantTimeWindowTest {
     private static final Instant NOW = Instant.parse("2026-10-26T08:00:00Z");
 
     private ObservationFactsResponse facts(String timezone, Instant now, boolean expired) {
+        return facts(timezone, now, expired, now.atZone(ZoneId.of(timezone)).toLocalDate());
+    }
+
+    private ObservationFactsResponse facts(String timezone, Instant now, boolean expired, LocalDate firstNight) {
         var zone = ZoneId.of(timezone);
         var today = now.atZone(zone).toLocalDate();
         var place = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland", 53.33, -6.25, timezone);
         var nights = java.util.stream.IntStream.range(0,3).mapToObj(i -> {
-            var date = today.plusDays(i);
+            var date = firstNight.plusDays(i);
             return new NightOutlook(date, date.atTime(12,0).atZone(zone).getOffset().toString(),
                     date.atTime(12,0).atZone(zone).toInstant(), date.plusDays(1).atTime(12,0).atZone(zone).toInstant(),
                     OutlookLevel.INSUFFICIENT_DATA, OutlookReasonCode.RULES_NOT_VALIDATED, null);
@@ -156,10 +160,16 @@ class AssistantTimeWindowTest {
         assertTrue(AssistantCloudEvidence.localSamples(window).getFirst().get("localTime").toString().contains("+13:00"));
     }
 
-    @Test void midnightRetainsDocumentedTonightMeaningAndExcludesPreviousNightMorning() {
-        var window = AssistantCloudEvidence.select(facts("Europe/Dublin",Instant.parse("2026-10-26T00:30:00Z"),false),"tonight",null);
-        assertEquals(LocalDate.of(2026,10,26),window.localDate());
-        assertEquals(21.5,window.points().getFirst().cloudCoverPercent());
+    @Test void afterMidnightTonightIsTheNightInProgress() {
+        // The outlook keeps the evening's date until dawn, so 00:30 on 26 October belongs to the 25 October night.
+        var facts = facts("Europe/Dublin",Instant.parse("2026-10-26T00:30:00Z"),false,LocalDate.of(2026,10,25));
+        var tonight = AssistantCloudEvidence.select(facts,"tonight",null);
+        assertEquals(LocalDate.of(2026,10,25),tonight.localDate());
+        assertEquals("AVAILABLE",tonight.status());
+        assertEquals(91.0,tonight.points().getFirst().cloudCoverPercent());
+        var tomorrow = AssistantCloudEvidence.select(facts,"tomorrow night",null);
+        assertEquals(LocalDate.of(2026,10,26),tomorrow.localDate());
+        assertEquals(21.5,tomorrow.points().getFirst().cloudCoverPercent());
     }
 
     @Test void autumnDstNightHasTwentyFiveHoursAndSpringHasTwentyThree() {
