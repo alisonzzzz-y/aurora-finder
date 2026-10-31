@@ -1,5 +1,6 @@
 package com.aurora.observation.monitoring;
 
+import com.aurora.observation.service.SingleFlightCache;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
@@ -24,12 +25,14 @@ public class MonitoringService {
     private final HttpClient client;
     private final ObjectMapper mapper;
     private final Clock clock;
-    private Solar solarCache;
-    private Regional regionalCache;
-    private Instant solarRetry = Instant.MIN, regionalRetry = Instant.MIN;
+    // Each refresh, including an unavailable result, is reused for three minutes.
+    private final SingleFlightCache<Solar> solarCache;
+    private final SingleFlightCache<Regional> regionalCache;
     private static final String AW = "https://aurorawatch-api.lancs.ac.uk/0.2/";
     public MonitoringService(HttpClient client, ObjectMapper mapper, Clock clock) {
         this.client=client; this.mapper=mapper; this.clock=clock;
+        this.solarCache=new SingleFlightCache<>(clock,Duration.ofSeconds(180));
+        this.regionalCache=new SingleFlightCache<>(clock,Duration.ofSeconds(180));
     }
     private String get(String url) throws Exception {
         var request=HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(10))
@@ -38,9 +41,9 @@ public class MonitoringService {
         if(response.statusCode()!=200) throw new IllegalStateException("Monitoring source unavailable");
         return response.body();
     }
-    public synchronized Solar solar() {
+    public Solar solar() { return solarCache.get(this::loadSolar).value(); }
+    private Solar loadSolar() {
         Instant now=clock.instant();
-        if(now.isBefore(solarRetry) && solarCache!=null) return solarCache;
         List<Series> result=new ArrayList<>();
         try {
             String body=get("https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json");
@@ -49,9 +52,7 @@ public class MonitoringService {
         } catch(Exception e) { interrupted(e); result.add(empty("Bz","nT")); result.add(empty("Bt","nT")); }
         try { result.add(parseSolar(get("https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json"),"proton_speed","speed","km/s",now)); }
         catch(Exception e) { interrupted(e); result.add(empty("speed","km/s")); }
-        solarCache=new Solar(now,"https://www.spaceweather.gov/products/solar-wind",List.copyOf(result));
-        solarRetry=now.plusSeconds(180);
-        return solarCache;
+        return new Solar(now,"https://www.spaceweather.gov/products/solar-wind",List.copyOf(result));
     }
     private static void interrupted(Exception e) { if(e instanceof InterruptedException) Thread.currentThread().interrupt(); }
     private static Series empty(String id,String unit) {return new Series(id,unit,"UNAVAILABLE",List.of());}
@@ -73,9 +74,9 @@ public class MonitoringService {
         String status=points.isEmpty()?"UNAVAILABLE":points.lastKey().isBefore(now.minusSeconds(900))?"STALE":"CURRENT";
         return new Series(id,unit,status,List.copyOf(points.values()));
     }
-    public synchronized Regional regional() {
+    public Regional regional() { return regionalCache.get(this::loadRegional).value(); }
+    private Regional loadRegional() {
         Instant now=clock.instant();
-        if(now.isBefore(regionalRetry)&&regionalCache!=null) return regionalCache;
         try {
             String activity=get(AW+"status/alerting-site-activity.xml");
             Element root=xml(activity).getDocumentElement();
@@ -83,13 +84,11 @@ public class MonitoringService {
             if(!site.matches("site:[A-Za-z0-9]+:[A-Za-z0-9]+")) throw new IllegalArgumentException("Invalid station");
             String[] ids=site.split(":");
             String meta=get(AW+"project/"+ids[1].toLowerCase(Locale.ROOT)+"/"+ids[2].toLowerCase(Locale.ROOT)+".xml");
-            regionalCache=parseRegional(activity,meta,get(AW+"status-descriptions.xml"),now);
+            return parseRegional(activity,meta,get(AW+"status-descriptions.xml"),now);
         } catch(Exception e) {
             interrupted(e);
-            regionalCache=new Regional(now,null,"UNAVAILABLE","AuroraWatch UK",null,null,"","","https://aurorawatch.lancs.ac.uk/",List.of());
+            return new Regional(now,null,"UNAVAILABLE","AuroraWatch UK",null,null,"","","https://aurorawatch.lancs.ac.uk/",List.of());
         }
-        regionalRetry=now.plusSeconds(180);
-        return regionalCache;
     }
     Regional parseRegional(String activity,String metadata,String descriptions,Instant now) throws Exception {
         Document document=xml(activity), meta=xml(metadata), levels=xml(descriptions);
