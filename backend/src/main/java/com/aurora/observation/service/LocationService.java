@@ -60,7 +60,10 @@ public class LocationService {
             if (secondCheck != null) return secondCheck;
             List<Location> result = matchingProviderResults(cleaned);
             write(searches, key, result, searchTtl);
-            for (Location location : result) write(locations, location.id(), location, locationTtl);
+            // Localized names stay with their search; ID lookups keep the provider's default English names.
+            if (!"zh".equals(com.aurora.observation.provider.OpenMeteoGeocodingProvider.searchLanguage(cleaned))) {
+                for (Location location : result) write(locations, location.id(), location, locationTtl);
+            }
             return result;
         });
     }
@@ -90,7 +93,13 @@ public class LocationService {
                 .flatMap(value -> searchTokens(value).stream())
                 .toList();
         return queryTokens.stream().allMatch(queryToken -> locationTokens.stream()
-                .anyMatch(locationToken -> locationToken.startsWith(queryToken)));
+                .anyMatch(locationToken -> locationToken.startsWith(queryToken)
+                        // Chinese names are often typed with a suffix such as 市 or 省 that the result omits.
+                        || isHan(locationToken) && locationToken.length() >= 2 && queryToken.startsWith(locationToken)));
+    }
+
+    private boolean isHan(String value) {
+        return value.codePoints().allMatch(point -> Character.UnicodeScript.of(point) == Character.UnicodeScript.HAN);
     }
 
     private List<String> searchTokens(String value) {
