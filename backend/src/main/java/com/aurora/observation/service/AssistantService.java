@@ -595,6 +595,8 @@ public class AssistantService {
 
     private String safeToolError(Exception error) {
         if (error instanceof LocationNotFoundException) return "The selected location was not found.";
+        if (error instanceof AssistantCloudEvidence.RequestedDateMismatchException mismatch) return mismatch.getMessage();
+        if (error instanceof java.time.format.DateTimeParseException) return "Use a local date in YYYY-MM-DD format.";
         if (error instanceof UnsupportedNightDateException unsupported) {
             return "That local date is outside the available window. Available dates: " + unsupported.availableDates();
         }
