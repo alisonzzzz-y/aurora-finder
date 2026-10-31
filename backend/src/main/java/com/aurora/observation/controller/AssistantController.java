@@ -25,8 +25,7 @@ public class AssistantController {
     @PostMapping("/chat")
     public AssistantChatResponse chat(@Valid @RequestBody AssistantChatRequest request,
                                       HttpServletRequest servletRequest) {
-        limiter.check(clientKey(servletRequest));
-        try (var permit = limiter.acquire()) {
+        try (var permit = limiter.admit(clientKey(servletRequest))) {
             return assistant.chat(request);
         }
     }

@@ -67,6 +67,16 @@ class AssistantRequestLimiterTest {
         assertDoesNotThrow(() -> limiter.acquire().close());
     }
 
+    @Test
+    void sharedLimitRejectionDoesNotUseTheClientsAllowance() {
+        var limiter = new AssistantRequestLimiter(1, Duration.ofMinutes(10), new AdjustableClock(), 24, 1);
+        var busy = limiter.admit("a");
+        assertThrows(AssistantRateLimitException.class, () -> limiter.admit("b"));
+        busy.close();
+        assertDoesNotThrow(() -> limiter.admit("b").close());
+        assertThrows(AssistantRateLimitException.class, () -> limiter.admit("b"));
+    }
+
     private static final class AdjustableClock extends Clock {
         private Instant instant = Instant.EPOCH;
 
