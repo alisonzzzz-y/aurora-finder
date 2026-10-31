@@ -32,6 +32,8 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [failedRequest, setFailedRequest] = useState<PendingQuestion | null>(null)
   const inFlight = useRef(false)
   const conversationLocation = useRef<{ mapLocationId?: number; selectedId: number } | null>(null)
+  // Map place shown when the assistant offered choices; a different map place replaces those choices.
+  const choicesMapLocation = useRef<number | undefined>(undefined)
   const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; width: number; height: number } | null>(null)
@@ -121,6 +123,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
 
   async function sendQuestion(question: string, selectedLocation?: Location) {
     const awaitingPlace = Boolean(messages.at(-1)?.locationCandidates?.length)
+      && choicesMapLocation.current === locationId
     const remembered = conversationLocation.current
     const selectedId = selectedLocation?.id ?? (awaitingPlace ? undefined
       : remembered?.mapLocationId === locationId ? remembered?.selectedId : locationId)
@@ -143,6 +146,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       if (response.selectedLocationId != null) {
         conversationLocation.current = { mapLocationId: request.mapLocationId, selectedId: response.selectedLocationId }
       }
+      if (response.locationCandidates?.length) choicesMapLocation.current = request.mapLocationId
       setMessages(current => [...current, {
         role: 'assistant', content: response.answer,
         ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),

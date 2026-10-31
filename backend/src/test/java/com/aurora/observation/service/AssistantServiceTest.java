@@ -326,10 +326,13 @@ class AssistantServiceTest {
     }
 
     @Test
-    void keepsAskingWithNumberedChoicesInsteadOfCallingModelWhenReplyIsUnclear() {
+    void unresolvedFreeTextReplyReachesModelAndKeepsEarlierChoicesOffered() {
         OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
         ObjectMapper mapper = new ObjectMapper();
+        org.mockito.ArgumentCaptor<ArrayNode> inputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
         when(openAi.model()).thenReturn("gpt-6-luna");
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithText(mapper, "Which Dublin should I use?"));
         AssistantService service = new AssistantService(openAi, mock(ObservationToolsService.class), mapper);
         List<Location> candidates = List.of(
                 new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland", 53.33306, -6.24889, "Europe/Dublin"),
@@ -338,10 +341,34 @@ class AssistantServiceTest {
         AssistantChatResponse response = service.chat(new AssistantChatRequest("确认", "zh", null,
                 List.of(new com.aurora.observation.dto.AssistantMessage("assistant", "Which Dublin?", candidates))));
 
-        assertTrue(response.answer().contains("1."));
-        assertTrue(response.answer().contains("2."));
+        assertEquals("Which Dublin should I use?", response.answer());
         assertEquals(2, response.locationCandidates().size());
-        verify(openAi, never()).respond(anyString(), any(ArrayNode.class), any(ArrayNode.class));
+        verify(openAi).respond(anyString(), inputs.capture(), any(ArrayNode.class));
+        assertTrue(inputs.getValue().toString().contains("Earlier place choices are still unselected"));
+    }
+
+    @Test
+    void newPlaceQuestionLeavesEarlierCandidatePrompt() {
+        OpenAiAssistantProvider openAi = mock(OpenAiAssistantProvider.class);
+        ObservationToolsService tools = mock(ObservationToolsService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        Location tromso = new Location(3133880, "Tromsø", "Troms", "Tromsø", "Norway", 69.6496, 18.957, "Europe/Oslo");
+        when(openAi.model()).thenReturn("gpt-6-luna");
+        when(tools.searchPlaces("Tromsø")).thenReturn(List.of(tromso));
+        when(openAi.respond(anyString(), any(ArrayNode.class), any(ArrayNode.class)))
+                .thenReturn(responseWithFunctionCall(mapper, "search_places", "{\"query\":\"Tromsø\"}"))
+                .thenReturn(responseWithText(mapper, "Tromsø is selected."));
+        List<Location> candidates = List.of(
+                new Location(2964574, "Dublin", "Leinster", "County Dublin", "Ireland", 53.33306, -6.24889, "Europe/Dublin"),
+                new Location(4192510, "Dublin", "Georgia", "Laurens County", "United States", 32.54044, -82.90375, "America/New_York"));
+
+        AssistantChatResponse response = new AssistantService(openAi, tools, mapper).chat(new AssistantChatRequest(
+                "Never mind, what about Tromsø?", "en", null,
+                List.of(new AssistantMessage("assistant", "Which Dublin?", candidates))));
+
+        assertEquals("Tromsø is selected.", response.answer());
+        assertTrue(response.locationCandidates().isEmpty());
+        assertEquals(3133880L, response.selectedLocationId());
     }
 
     @Test

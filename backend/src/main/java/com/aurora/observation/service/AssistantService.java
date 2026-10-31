@@ -147,14 +147,24 @@ public class AssistantService {
             toolContext.latestCandidates = lastLocationCandidates(history);
             if (!toolContext.latestCandidates.isEmpty()) {
                 Location selected = resolveCandidate(request.message(), toolContext.latestCandidates);
-                if (selected == null) {
+                if (selected == null && normalize(request.message()).matches("[0-9]+")) {
+                    // A number is a selection attempt; ask again without spending a model call.
                     return new AssistantChatResponse(selectionPrompt(toolContext.latestCandidates,
                             "zh".equalsIgnoreCase(request.language())), openAi.model(), toolContext.latestCandidates);
                 }
-                toolContext.permittedLocationIds.add(selected.id());
-                toolContext.latestCandidates = List.of();
-                userMessage.append("\nUser selected this matching location: ")
-                        .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
+                if (selected == null) {
+                    // Any other reply may be a new question, so the user is never stuck on the earlier choice.
+                    // The earlier candidates stay unselected and are offered again if no new place is resolved.
+                    userMessage.append("\nEarlier place choices are still unselected: ")
+                            .append(String.join("; ", toolContext.latestCandidates.stream().map(this::locationDescription).toList()))
+                            .append(". The user's message did not choose one. Answer the new message; if it still needs one of")
+                            .append(" those places, ask the user to choose instead of guessing.");
+                } else {
+                    toolContext.permittedLocationIds.add(selected.id());
+                    toolContext.latestCandidates = List.of();
+                    userMessage.append("\nUser selected this matching location: ")
+                            .append(locationDescription(selected)).append(" (location ID ").append(selected.id()).append(").");
+                }
             }
         }
         input.add(message("user", userMessage.toString()));
