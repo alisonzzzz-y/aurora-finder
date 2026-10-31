@@ -49,6 +49,10 @@ See the [current delivery status](docs/completion-status-2026-10-26.md) and [ope
 
 Aurora activity, weather, and place information come from separate public data services. The app shows their sources and update times so you can understand what each result is based on. The map background is provided by MapTiler. Place search uses Open-Meteo data under CC BY 4.0. Credit: Open-Meteo.
 
+### License
+
+The code is available under the [MIT License](LICENSE). Data from third-party services keeps its own terms and attribution requirements; the code license does not cover it.
+
 <a id="简体中文"></a>
 
 ## 简体中文
@@ -95,3 +99,7 @@ npm run dev
 ### 数据与署名
 
 极光活动、天气和地点信息来自不同的公开数据服务。页面会标明数据来源和更新时间，方便了解每项结果的依据。地图底图由 MapTiler 提供。地点搜索使用 Open-Meteo 数据，遵循 CC BY 4.0。署名：Open-Meteo。
+
+### 许可证
+
+代码采用 [MIT 许可证](LICENSE)。第三方服务的数据仍遵循各自的条款和署名要求，不受代码许可证覆盖。
