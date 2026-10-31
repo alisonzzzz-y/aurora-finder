@@ -27,14 +27,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class AssistantService {
     private static final int MAX_MODEL_TURNS = 5;
-    private static final Pattern HOURLY_CLOUD_PERCENT = Pattern.compile(
-            "(?m)(?<!\\d)((?:[01]?\\d|2[0-3]))(?::([0-5]\\d)|[时点])[^\\n%％]{0,60}?([0-9]+(?:\\.[0-9]+)?)\\s*[%％]");
     private static final Pattern CORRECTION_WORD = Pattern.compile(
             "(?i)\\b(?:correction|corrected|actually|i mean|to correct)\\b|更正|修正|改为|应为|更准确地说");
     private static final String INSTRUCTIONS = """
@@ -219,11 +216,10 @@ public class AssistantService {
         if (!CORRECTION_WORD.matcher(answer).find()) return false;
 
         Map<String, String> percentagesByHour = new HashMap<>();
-        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
-        while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
-            String percentage = new BigDecimal(matcher.group(3)).stripTrailingZeros().toPlainString();
-            String previous = percentagesByHour.putIfAbsent(hour, percentage);
+        for (var claim : HourlyCloudClaims.parse(answer)) {
+            if (claim.isRange() || claim.values().size() != 1) continue;
+            String percentage = claim.values().getFirst().stripTrailingZeros().toPlainString();
+            String previous = percentagesByHour.putIfAbsent(claim.fromHour(), percentage);
             if (previous != null && !previous.equals(percentage)) return true;
         }
         return false;
@@ -237,28 +233,49 @@ public class AssistantService {
 
     private boolean hasUnsupportedHourlyCloudValues(String answer, ToolContext context) {
         if (!context.cloudFactsRequested) return false;
-        Matcher matcher = HOURLY_CLOUD_PERCENT.matcher(answer);
-        while (matcher.find()) {
-            String hour = String.format(Locale.ROOT, "%02d:%s", Integer.parseInt(matcher.group(1)), matcher.group(2) == null ? "00" : matcher.group(2));
-            BigDecimal stated = new BigDecimal(matcher.group(3));
-            // Multiple places or nights need explicit attribution. Use the structured source summary instead
-            // of accepting a value merely because that hour occurs somewhere in the combined evidence.
-            if (context.cloudWindows.size() != 1) return true;
-            var window = context.cloudWindows.values().iterator().next();
-            ZoneId zone = ZoneId.of(window.location().timezone());
-            var dateMatcher = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})").matcher(answer.substring(0, matcher.start()));
+        var claims = HourlyCloudClaims.parse(answer);
+        if (claims.isEmpty()) return false;
+        // Multiple places or nights need explicit attribution. Use the structured source summary instead
+        // of accepting a value merely because that hour occurs somewhere in the combined evidence.
+        if (context.cloudWindows.size() != 1) return true;
+        var window = context.cloudWindows.values().iterator().next();
+        ZoneId zone = ZoneId.of(window.location().timezone());
+        var hourFormat = java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT);
+        for (var claim : claims) {
+            var dateMatcher = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})").matcher(answer.substring(0, claim.start()));
             String date = null;
             while (dateMatcher.find()) date = dateMatcher.group(1);
-            final String explicitDate = date;
-            boolean matchesSource = window.points().stream().anyMatch(point -> {
+            final String explicitDate = claim.isRange() ? null : date;
+            var samples = window.points().stream().filter(point -> {
                 var local = point.validAt().atZone(zone);
-                return local.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)).equals(hour)
-                        && (explicitDate == null || explicitDate.equals(local.toLocalDate().toString()))
-                        && BigDecimal.valueOf(point.cloudCoverPercent()).subtract(stated).abs().compareTo(roundingTolerance(stated)) <= 0;
-            });
-            if (!matchesSource) return true;
+                String hour = local.format(hourFormat);
+                return (explicitDate == null || explicitDate.equals(local.toLocalDate().toString()))
+                        && (claim.isRange() ? withinLocalRange(hour, claim.fromHour(), claim.toHour())
+                            : hour.equals(claim.fromHour()));
+            }).toList();
+            // A single hour must match its sample. A range must include each stated value, such as its low and high.
+            boolean supported = !samples.isEmpty() && (claim.isRange() || claim.values().size() == 1
+                    ? claim.values().stream().allMatch(stated -> samples.stream().anyMatch(point ->
+                        BigDecimal.valueOf(point.cloudCoverPercent()).subtract(stated).abs()
+                                .compareTo(roundingTolerance(stated)) <= 0))
+                    : samples.stream().anyMatch(point -> withinStatedRange(point.cloudCoverPercent(), claim.values())));
+            if (!supported) return true;
         }
         return false;
+    }
+
+    private boolean withinLocalRange(String hour, String from, String to) {
+        return from.compareTo(to) <= 0
+                ? hour.compareTo(from) >= 0 && hour.compareTo(to) <= 0
+                : hour.compareTo(from) >= 0 || hour.compareTo(to) <= 0;
+    }
+
+    private boolean withinStatedRange(double value, List<BigDecimal> bounds) {
+        BigDecimal low = bounds.stream().min(BigDecimal::compareTo).orElseThrow();
+        BigDecimal high = bounds.stream().max(BigDecimal::compareTo).orElseThrow();
+        BigDecimal actual = BigDecimal.valueOf(value);
+        return actual.compareTo(low.subtract(roundingTolerance(low))) >= 0
+                && actual.compareTo(high.add(roundingTolerance(high))) <= 0;
     }
 
     private BigDecimal roundingTolerance(BigDecimal stated) {

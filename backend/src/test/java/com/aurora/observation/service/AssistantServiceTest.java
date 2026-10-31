@@ -125,6 +125,30 @@ class AssistantServiceTest {
         assertEquals(supported, chatWithCloudSource(supported).answer());
     }
 
+    @Test
+    void ignoresUtcOffsetsWhenCheckingHourlyCloudValues() {
+        String answer = "Dublin (UTC+01:00), 2026-09-28: 20:00: 78.9%, 21:00: 18.7%.";
+        assertEquals(answer, chatWithCloudSource(answer).answer());
+        String isoStyle = "20:00+01:00: 78.9%; GMT+1 21:00 18.7%.";
+        assertEquals(isoStyle, chatWithCloudSource(isoStyle).answer());
+    }
+
+    @Test
+    void checksTimeRangesAgainstTheirLowAndHighSamples() {
+        String english = "From 20:00 to 21:00, cloud cover ranges between 18.7% and 78.9%.";
+        assertEquals(english, chatWithCloudSource(english).answer());
+        String chinese = "20时至21时云量约19%到79%。";
+        assertEquals(chinese, chatWithCloudSource(chinese).answer());
+        assertTrue(chatWithCloudSource("From 20:00 to 21:00, cloud cover stays between 40% and 60%.")
+                .answer().contains("couldn't verify"));
+    }
+
+    @Test
+    void doesNotAttributeALaterHoursValueToAnEarlierHour() {
+        assertTrue(chatWithCloudSource("Clouds thin after 20:00; at 21:00 they are 78.9%.")
+                .answer().contains("couldn't verify"));
+    }
+
     private AssistantChatResponse chatWithCloudSource(String answer) {
         return chatWithCloudSource(answer, false);
     }
