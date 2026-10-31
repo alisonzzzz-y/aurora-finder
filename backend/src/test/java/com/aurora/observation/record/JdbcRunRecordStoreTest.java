@@ -73,7 +73,7 @@ class JdbcRunRecordStoreTest {
         assertEquals(1,loaded.size()); assertEquals(snapshot,loaded.getFirst());
         assertTrue(records.history(2965768L).isEmpty());
         assertTrue(store(jdbc,NOW.plusSeconds(8*86400)).history(2964574L).isEmpty());
-        store(jdbc,NOW.plusSeconds(8*86400)).begin("PAGE_FACTS",2964574L);
+        store(jdbc,NOW.plusSeconds(8*86400)).purgeExpired();
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM observation_history",Integer.class));
     }
 
