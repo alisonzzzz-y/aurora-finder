@@ -3,6 +3,7 @@ import { askAssistant, type AssistantMessage } from '../../api/assistant'
 import type { Location } from '../../types/location'
 import { useI18n } from '../../i18n'
 import { ApiRequestError } from '../../api/requestError'
+import { AssistantMarkdown } from './AssistantMarkdown'
 
 const exampleQuestions = [
   'assistantExampleTonight',
@@ -182,7 +183,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       {messages.length > 0 && <div className="assistant-messages" aria-live="polite">
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
           <span>{message.role === 'assistant' ? t('assistantRole') : t('assistantYou')}</span>
-          <div>{message.content}</div>
+          {message.role === 'assistant' ? <AssistantMarkdown text={message.content} /> : <div>{message.content}</div>}
           {message.role === 'assistant' && message.locationCandidates?.map((candidate, candidateIndex) => <button
             type="button" className="assistant-location-choice" key={candidate.id} disabled={busy}
             onClick={() => void sendQuestion(selectionLabel(candidate), candidate)}>

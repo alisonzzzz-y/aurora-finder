@@ -130,9 +130,16 @@ footer { margin: 35px clamp(16px, 3vw, 56px) 0; color: #928ca2; font-size: 15.04
 .assistant-message { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; margin: 0; padding: 10px 12px; border-radius: 8px; color: #ddd8e8; background: #211b2d; font-size: 15.04px; line-height: 1.55; white-space: pre-wrap; }
 .assistant-message > div { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 .assistant-message.user { margin-left: 34px; background: #34264b; }
+.assistant-markdown { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.assistant-markdown > * { margin: 0 0 8px; }
+.assistant-markdown > :last-child { margin-bottom: 0; }
+.assistant-markdown ul, .assistant-markdown ol { padding-left: 1.3em; }
+.assistant-markdown li + li { margin-top: 2px; }
+.assistant-markdown a { color: #c9b6ff; text-decoration: underline; }
+.assistant-markdown code { padding: 0 4px; border-radius: 4px; background: #2d2540; font-size: .92em; }
 .assistant-message.assistant { margin-right: 20px; }
 .assistant-message.pending { color: #aaa2bb; }
-.assistant-message span { display: block; margin-bottom: 4px; color: #998cad; font-size: 15.04px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.assistant-message > span { display: block; margin-bottom: 4px; color: #998cad; font-size: 15.04px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .assistant-location-choice { box-sizing: border-box; display: block; width: 100%; min-width: 0; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; margin-top: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #191522; color: var(--text); text-align: left; font: inherit; font-size: 15.04px; cursor: pointer; }
 .assistant-location-choice:hover { border-color: var(--accent); }
 .assistant-location-choice:disabled { opacity: .6; cursor: wait; }
