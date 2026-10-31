@@ -57,6 +57,28 @@ class AssistantTimeWindowTest {
         return new AssistantService(provider,tools,mapper).chat(new AssistantChatRequest(request,"en",42L,history));
     }
 
+    @Test void wrongToolDateTellsTheModelWhichDateTheUserAskedFor() {
+        var provider = mock(OpenAiAssistantProvider.class);
+        var tools = mock(ObservationToolsService.class);
+        when(tools.getLocalNightFacts(42)).thenReturn(facts("Europe/Dublin",NOW,false));
+        var factsCall = mapper.createObjectNode().put("type","function_call").put("name","get_local_night_facts")
+                .put("call_id","facts").put("arguments","{\"location_id\":42}");
+        var cloudCall = mapper.createObjectNode().put("type","function_call").put("name","get_night_cloud_forecast")
+                .put("call_id","cloud").put("arguments","{\"location_id\":42,\"local_date\":\"2026-10-27\"}");
+        var answer = mapper.createObjectNode().set("output", mapper.createArrayNode().add(
+                mapper.createObjectNode().put("type","message").set("content",mapper.createArrayNode().add(
+                        mapper.createObjectNode().put("type","output_text").put("text","Checked tonight.")))));
+        var inputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+        when(provider.respond(anyString(), any(), any())).thenReturn(
+                mapper.createObjectNode().set("output", mapper.createArrayNode().add(factsCall)),
+                mapper.createObjectNode().set("output", mapper.createArrayNode().add(cloudCall)), answer);
+
+        new AssistantService(provider,tools,mapper).chat(new AssistantChatRequest("Clouds tonight?","en",42L,List.of()));
+
+        verify(provider, times(3)).respond(anyString(), inputs.capture(), any());
+        assertTrue(inputs.getAllValues().get(2).toString().contains("Use the user's requested local date: 2026-10-26"));
+    }
+
     @Test void chineseCalendarFollowupOverridesEarlierTonight() {
         var request = AssistantCloudEvidence.requestTime("10月27日呢？", List.of(new AssistantMessage("user", "今晚呢？")));
         var window = AssistantCloudEvidence.select(facts("Europe/Dublin",NOW,false),request,null);
