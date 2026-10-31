@@ -70,7 +70,7 @@ public class ApiErrorHandler {
         };
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setProperty("code", error.failure() == ProviderFailure.FORBIDDEN
-                ? "WEATHER_FORBIDDEN" : "GEOCODING_" + error.failure().name());
+                ? "WEATHER_FORBIDDEN" : "PROVIDER_" + error.failure().name());
         return problem;
     }
 
