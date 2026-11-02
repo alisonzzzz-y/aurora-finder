@@ -98,8 +98,9 @@ export function KpTrendChart({ records, timeZone }: { records: KpIndexRecord[]; 
       }} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
         <title>{t('kpChartTitle')}</title><desc>{t('kpChartDescription')}</desc>
         <defs><clipPath id={clipId}><rect x={left - 5} y={top - 5} width={right - left + 10} height={bottom - top + 10} /></clipPath></defs>
-        {[0, 3, 5, 6, 7, 9].map(tick => <g key={tick}><line className={tick >= 5 && tick <= 7 ? `kp-gridline kp-threshold kp-storm-g${tick - 4}` : 'kp-gridline'} x1={left} x2={right} y1={yFor(tick)} y2={yFor(tick)} /><text className="kp-axis-label" x={left - 9} y={yFor(tick) + 4} textAnchor="end">{tick}</text></g>)}
-        {[5, 6, 7].map(threshold => <text key={threshold} className={`kp-threshold-label kp-storm-g${threshold - 4}`} x={right} y={yFor(threshold) - 6} textAnchor="end">{t('kpThresholdLabel').replace('G1', `G${threshold - 4}`)} · Kp {threshold}</text>)}
+        {[0, 3, 5, 6, 7, 9].map(tick => <g key={tick}>{(tick < 5 || tick > 7) && <line className="kp-gridline" x1={left} x2={right} y1={yFor(tick)} y2={yFor(tick)} />}<text className="kp-axis-label" x={left - 9} y={yFor(tick) + 4} textAnchor="end">{tick}</text></g>)}
+        {/* NOAA rounds Kp before assigning a G level, so each level starts one third below the whole number. */}
+        {[[1, 4.67], [2, 5.67], [3, 6.67]].map(([level, threshold]) => <g key={level}><line className={`kp-gridline kp-threshold kp-storm-g${level}`} x1={left} x2={right} y1={yFor(threshold)} y2={yFor(threshold)} /><text className={`kp-threshold-label kp-storm-g${level}`} x={right} y={yFor(threshold) - 6} textAnchor="end">{t('kpThresholdLabel').replace('G1', `G${level}`)} · Kp {threshold}</text></g>)}
         <g clipPath={`url(#${clipId})`}>
           {sorted.slice(0, -1).map((record, index) => {
             const next = sorted[index + 1]

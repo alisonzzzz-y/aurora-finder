@@ -49,6 +49,11 @@ public class JdbcPushSubscriptionStore implements PushSubscriptionStore {
                 (row, number) -> new PushSubscription(row.getString(1), row.getString(2), row.getString(3), row.getString(4)));
     }
 
+    @Override public boolean alertSent(String alertKey) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM push_alert WHERE alert_key = ?", Integer.class, alertKey);
+        return count != null && count > 0;
+    }
+
     @Override public boolean markAlertSent(String alertKey) {
         try {
             jdbc.update("INSERT INTO push_alert(alert_key, sent_at_utc) VALUES (?, ?)", alertKey, Timestamp.from(clock.instant()));

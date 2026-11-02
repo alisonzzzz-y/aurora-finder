@@ -50,7 +50,9 @@ class JdbcPushSubscriptionStoreTest {
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM push_subscription WHERE endpoint_hash = ?", Integer.class,
                 JdbcPushSubscriptionStore.hash(endpoint)));
 
+        assertFalse(store.alertSent("current:2026-10-31T00:00:00Z:5"));
         assertTrue(store.markAlertSent("current:2026-10-31T00:00:00Z:5"));
+        assertTrue(store.alertSent("current:2026-10-31T00:00:00Z:5"));
         assertFalse(store.markAlertSent("current:2026-10-31T00:00:00Z:5"));
         store.purgeAlertsBefore(NOW.plusSeconds(1));
         assertTrue(store.markAlertSent("current:2026-10-31T00:00:00Z:5"));

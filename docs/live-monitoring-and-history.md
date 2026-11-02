@@ -35,9 +35,9 @@ Backend tests cover source parsing, quality filtering, stale data, XML external-
 
 ## Recent activity and assistant tools / 近期活动与 AI 查询
 
-The map sidebar separates recent events from predictions. Recent events group adjacent completed Kp 5+ intervals in the available 72-hour feed; gaps split events, and observed values take precedence over estimates at the same timestamp. This is a rolling source window, not a permanent event catalogue or a record of local sightings.
+The map sidebar separates recent events from predictions. Recent events group adjacent completed intervals at NOAA level G1 or above (Kp rounds to 5 or more, so 4.67 counts) in the available 72-hour feed; gaps split events, and observed values take precedence over estimates at the same timestamp. This is a rolling source window, not a permanent event catalogue or a record of local sightings.
 
-地图右侧分别展示历史事件与预测。历史事件合并最近七十二小时来源数据中相邻、已结束的 Kp 5 以上时段；缺测不连成一次事件，同一时间优先采用观测值。这是滚动数据窗口，并非永久事件档案，也不是当地实际观测记录。
+地图右侧分别展示历史事件与预测。历史事件合并最近七十二小时来源数据中相邻、已结束且达到 NOAA G1 及以上的时段（Kp 四舍五入后不低于 5，4.67 也算）；缺测不连成一次事件，同一时间优先采用观测值。这是滚动数据窗口，并非永久事件档案，也不是当地实际观测记录。
 
 The assistant can call `get_recent_geomagnetic_history` for past global readings and a current reference timestamp, and `get_local_history` for a resolved city's saved snapshots between local noon and next noon on the requested date. Empty local history does not imply no aurora. These tools do not provide web search or a verified sighting feed. Recurrence-frequency claims still require a validated dataset.
 

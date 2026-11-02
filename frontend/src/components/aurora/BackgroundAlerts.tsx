@@ -49,7 +49,7 @@ export function BackgroundAlerts({ language }: { language: 'en' | 'zh' }) {
         ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(publicKey) })
       await saveSubscription(subscription, language)
       setState('on')
-      setNotice(zh ? '已开启：关闭网页后，Kp 达到 5 时也会收到浏览器通知。' : 'On: you will get a browser notification at Kp 5 even after closing the page.')
+      setNotice(zh ? '已开启：关闭网页后，达到 G1（Kp 约 5）时也会收到浏览器通知。' : 'On: you will get a browser notification at G1 (about Kp 5) even after closing the page.')
     } catch {
       setState('off')
       setNotice(zh ? '无法开启后台提醒，请稍后重试。' : 'Background alerts could not be turned on. Please try again later.')

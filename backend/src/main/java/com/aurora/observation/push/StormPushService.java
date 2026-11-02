@@ -2,6 +2,7 @@ package com.aurora.observation.push;
 
 import com.aurora.observation.dto.KpIndexRecord;
 import com.aurora.observation.dto.KpIndexType;
+import com.aurora.observation.dto.NoaaGeomagneticStormScale;
 import com.aurora.observation.service.KpIndexService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Pushes the same strong-activity alerts as the page (Kp 5 or more now, or forecast within 72 hours) to
+ * Pushes the same strong-activity alerts as the page (G1 or above now, or forecast within 72 hours) to
  * browsers that subscribed, even when the page is closed. Each period and level is pushed once.
  */
 @Service
@@ -56,7 +57,10 @@ public class StormPushService {
             Instant now = clock.instant();
             store.purgeAlertsBefore(now.minus(Duration.ofDays(7)));
             for (Alert alert : alerts(kpIndex.latest().records(), now)) {
-                if (store.markAlertSent(alert.key())) broadcast(alert);
+                if (store.alertSent(alert.key())) continue;
+                // Recorded only after the broadcast, so a failure is retried. Browsers replace a repeat with the same tag.
+                broadcast(alert);
+                store.markAlertSent(alert.key());
             }
         } catch (RuntimeException failure) {
             log.warn("Strong-activity push check failed: {}", failure.getClass().getSimpleName());
@@ -71,17 +75,22 @@ public class StormPushService {
                 .filter(r -> r.type() != KpIndexType.PREDICTED && !r.periodStart().isAfter(now) && r.periodStart().plus(PERIOD).isAfter(now))
                 .max(Comparator.comparing(KpIndexRecord::periodStart).thenComparing(r -> r.type() == KpIndexType.OBSERVED));
         var forecast = valid.stream()
-                .filter(r -> r.type() == KpIndexType.PREDICTED && r.kp() >= 5 && r.periodStart().isAfter(now)
+                // NOAA can publish future slots as ESTIMATED before switching to PREDICTED.
+                .filter(r -> r.type() != KpIndexType.OBSERVED && isStorm(r) && r.periodStart().isAfter(now)
                         && !r.periodStart().isAfter(now.plus(Duration.ofHours(72))))
                 .min(Comparator.comparing(KpIndexRecord::periodStart));
         List<Alert> alerts = new ArrayList<>();
-        current.filter(r -> r.kp() >= 5).ifPresent(r -> alerts.add(alert("current", r)));
+        current.filter(StormPushService::isStorm).ifPresent(r -> alerts.add(alert("current", r)));
         forecast.ifPresent(r -> alerts.add(alert("forecast", r)));
         return alerts;
     }
 
+    private static boolean isStorm(KpIndexRecord record) {
+        return NoaaGeomagneticStormScale.fromKp(record.kp()) != NoaaGeomagneticStormScale.BELOW_G1;
+    }
+
     private static Alert alert(String kind, KpIndexRecord record) {
-        return new Alert(kind + ":" + record.periodStart() + ":" + (int) Math.floor(record.kp()), kind, record.kp(),
+        return new Alert(kind + ":" + record.periodStart() + ":" + Math.round(record.kp()), kind, record.kp(),
                 record.periodStart(), record.periodStart().plus(PERIOD));
     }
 
