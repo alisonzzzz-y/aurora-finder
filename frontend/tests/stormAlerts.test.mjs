@@ -19,10 +19,15 @@ test('stale, invalid and expired readings cannot trigger', () => {
   assert.deepEqual(stormAlerts(data([record('invalid',6),record('2026-10-13T12:00:00Z',NaN),record('2026-10-13T12:00:00Z',10),record('2026-10-13T09:00:00Z',7)]),now),[])
 })
 test('observed correction overrides an estimate and low values do not alert', () => {
-  assert.deepEqual(stormAlerts(data([record('2026-10-13T12:00:00Z',6,'ESTIMATED'),record('2026-10-13T12:00:00Z',4.67)]),now),[])
+  assert.deepEqual(stormAlerts(data([record('2026-10-13T12:00:00Z',6,'ESTIMATED'),record('2026-10-13T12:00:00Z',4.33)]),now),[])
 })
 test('notification identity changes with severity, not minor revisions', () => {
   const key = kp=>stormAlerts(data([record('2026-10-13T12:00:00Z',kp)]),now)[0].key
-  assert.equal(key(5),key(5.67))
-  assert.notEqual(key(5.67),key(6))
+  assert.equal(key(5),key(5.33))
+  assert.equal(key(5.67),key(6))
+  assert.notEqual(key(5.33),key(5.67))
+})
+test('Kp 4.67 alerts because NOAA rates it G1, and future estimates count as forecasts', () => {
+  const result = stormAlerts(data([record('2026-10-13T12:00:00Z',4.67),record('2026-10-13T15:00:00Z',4.67,'ESTIMATED')]),now)
+  assert.deepEqual(result.map(r=>[r.kind,r.kp]),[['current',4.67],['forecast',4.67]])
 })

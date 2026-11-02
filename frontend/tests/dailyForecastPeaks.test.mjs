@@ -7,6 +7,10 @@ test('daily peaks exclude past periods and observations, retain ongoing predicti
  assert.deepEqual(dailyForecastPeaks(data,Date.parse('2026-10-08T13:00:00Z')).map(p=>p.kp),[4,5])
  assert.equal(data.length,6)
 })
+test('future slots NOAA labels as estimated count, current ones do not', () => {
+ const data = [point('2026-10-08T12:00:00Z',8,'ESTIMATED'),point('2026-10-08T15:00:00Z',4.67,'ESTIMATED'),point('2026-10-08T18:00:00Z',3)]
+ assert.deepEqual(dailyForecastPeaks(data,Date.parse('2026-10-08T13:00:00Z')).map(p=>p.kp),[4.67])
+})
 test('ties choose earlier period and output is limited to three chronological dates', () => {
  const data=[point('2026-10-09T09:00:00Z',3),point('2026-10-09T06:00:00Z',3),point('2026-10-08T12:00:00Z',2),point('2026-10-10T12:00:00Z',4),point('2026-10-11T12:00:00Z',7)]
  assert.deepEqual(dailyForecastPeaks(data,Date.parse('2026-10-08T12:00:00Z')).map(p=>p.periodStart),['2026-10-08T12:00:00Z','2026-10-09T06:00:00Z','2026-10-10T12:00:00Z'])

@@ -38,7 +38,39 @@ class StormPushServiceTest {
 
         assertEquals(List.of("current:2026-10-31T21:00:00Z:5", "forecast:2026-11-01T03:00:00Z:6"),
                 alerts.stream().map(StormPushService.Alert::key).toList());
-        assertTrue(StormPushService.alerts(List.of(record("2026-10-31T21:00:00Z", 4.9, KpIndexType.OBSERVED)), NOW).isEmpty());
+        assertTrue(StormPushService.alerts(List.of(record("2026-10-31T21:00:00Z", 4.33, KpIndexType.OBSERVED)), NOW).isEmpty());
+    }
+
+    @Test
+    void treatsKp467AsG1AndFutureEstimatesAsForecasts() {
+        var alerts = StormPushService.alerts(List.of(
+                record("2026-10-31T21:00:00Z", 4.67, KpIndexType.OBSERVED),
+                record("2026-11-01T00:00:00Z", 4.67, KpIndexType.ESTIMATED)), NOW);
+
+        assertEquals(List.of("current:2026-10-31T21:00:00Z:5", "forecast:2026-11-01T00:00:00Z:5"),
+                alerts.stream().map(StormPushService.Alert::key).toList());
+    }
+
+    @Test
+    void retriesAnAlertWhoseBroadcastFailed() {
+        var kp = mock(KpIndexService.class);
+        when(kp.latest()).thenReturn(new KpIndexResponse(NOW, "NOAA", List.of(record("2026-10-31T21:00:00Z", 5.33, KpIndexType.OBSERVED))));
+        var store = mock(PushSubscriptionStore.class);
+        var subscription = new PushSubscription("https://fcm.googleapis.com/fcm/send/a", "k", "a", "en");
+        when(store.available()).thenReturn(true);
+        when(store.alertSent(any())).thenReturn(false);
+        when(store.all()).thenThrow(new IllegalStateException("database unavailable")).thenReturn(List.of(subscription));
+        var sender = mock(WebPushSender.class);
+        when(sender.enabled()).thenReturn(true);
+        when(sender.send(eq(subscription), any(), any())).thenReturn(WebPushSender.Result.SENT);
+        var service = new StormPushService(kp, store, sender, new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+
+        service.checkAndPush();
+        verify(store, never()).markAlertSent(any());
+
+        service.checkAndPush();
+        verify(sender).send(eq(subscription), any(), any());
+        verify(store).markAlertSent("current:2026-10-31T21:00:00Z:5");
     }
 
     @Test
@@ -50,7 +82,7 @@ class StormPushServiceTest {
         var expired = new PushSubscription("https://fcm.googleapis.com/fcm/send/b", "k", "a", "en");
         when(store.available()).thenReturn(true);
         when(store.all()).thenReturn(List.of(active, expired));
-        when(store.markAlertSent("current:2026-10-31T21:00:00Z:5")).thenReturn(true, false);
+        when(store.alertSent("current:2026-10-31T21:00:00Z:5")).thenReturn(false, true);
         var sender = mock(WebPushSender.class);
         when(sender.enabled()).thenReturn(true);
         when(sender.send(eq(active), any(), any())).thenReturn(WebPushSender.Result.SENT);

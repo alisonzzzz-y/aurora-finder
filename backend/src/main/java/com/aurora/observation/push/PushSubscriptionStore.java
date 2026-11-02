@@ -13,6 +13,8 @@ public interface PushSubscriptionStore {
 
     List<PushSubscription> all();
 
+    boolean alertSent(String alertKey);
+
     /** Records an alert as broadcast. Returns false if it was already recorded. */
     boolean markAlertSent(String alertKey);
 
