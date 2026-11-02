@@ -91,7 +91,8 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
-            if (status == 404 && allowNotFound) return Optional.empty();
+            // Open-Meteo answers an unknown ID with HTTP 400 and {"reason":"Location ID not found."}.
+            if (allowNotFound && (status == 404 || status == 400 && response.body().contains("not found"))) return Optional.empty();
             if (status == 429) throw new ProviderUnavailableException(ProviderFailure.RATE_LIMITED, "Geocoding returned HTTP 429");
             if (status == 408 || status == 504) throw new ProviderUnavailableException(ProviderFailure.TIMEOUT, "Geocoding returned HTTP " + status);
             if (status != 200) throw new ProviderUnavailableException(ProviderFailure.UPSTREAM_ERROR, "Geocoding returned HTTP " + status);

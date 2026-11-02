@@ -75,6 +75,13 @@ class OpenMeteoGeocodingProviderTest {
         reply.set(new Reply(404, ""));
         assertTrue(provider.get(999).isEmpty());
 
+        reply.set(new Reply(400, "{\"error\":true,\"reason\":\"Location ID not found.\"}"));
+        assertTrue(provider.get(999).isEmpty());
+
+        reply.set(new Reply(400, "{\"error\":true,\"reason\":\"Parameter id is invalid.\"}"));
+        assertEquals(ProviderFailure.UPSTREAM_ERROR, assertThrows(ProviderUnavailableException.class,
+                () -> provider.get(999)).failure());
+
         reply.set(new Reply(429, ""));
         assertFailure(ProviderFailure.RATE_LIMITED);
 
