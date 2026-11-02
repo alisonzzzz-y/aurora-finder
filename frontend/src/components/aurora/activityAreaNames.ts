@@ -1,4 +1,5 @@
 import type { AuroraMapPoint } from '../../types/auroraMap'
+import { toSimplifiedChinese } from './simplifiedChinese.ts'
 
 type NamedFeature = {
   text?: string
@@ -25,7 +26,10 @@ export function activityAreaName(data: ReverseGeocodingResult, language: 'zh' | 
   const layer = (type: string) => features.find(f => f.place_type?.includes(type))
   const country = layer('country')
   const region = layer('subregion') ?? layer('region')
-  const clean = (name: string | undefined) => name?.trim().split('/')[0].trim() ?? ''
+  const clean = (name: string | undefined) => {
+    const first = name?.trim().split('/')[0].trim() ?? ''
+    return language === 'zh' ? toSimplifiedChinese(first) : first
+  }
   const countryName = clean(country?.text ?? region?.context?.find(c => c.id?.startsWith('country.'))?.text)
   if (countryName) {
     const regionName = clean(region?.text)
