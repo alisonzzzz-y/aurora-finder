@@ -1,4 +1,5 @@
 import { ApiRequestError } from './requestError.ts'
+import { trackSlowRequest } from './slowRequests.ts'
 
 // The deadline includes reading the body, not just receiving HTTP headers.
 export async function fetchJson<T>(
@@ -16,6 +17,8 @@ export async function fetchJson<T>(
     timedOut = true
     controller.abort()
   }, timeoutMs)
+  // Assistant answers are POSTs that are slow for their own reasons, and map names come from another service.
+  const finishTracking = url.includes('/api/v1/') && (options.method ?? 'GET') === 'GET' ? trackSlowRequest() : undefined
   try {
     const response = await fetch(url, { ...options, signal: controller.signal })
     if (!response.ok) {
@@ -30,6 +33,7 @@ export async function fetchJson<T>(
     throw error
   } finally {
     clearTimeout(timer)
+    finishTracking?.()
     options.signal?.removeEventListener('abort', abortFromCaller)
   }
 }

@@ -241,3 +241,15 @@ test('background alerts subscribe with the page language and unsubscribe', async
   await expect(page.getByRole('button', { name: 'Alert me after closing the page' })).toBeVisible()
   expect(posts.at(-1)).toEqual({ path: '/api/v1/push/unsubscribe', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test' } })
 })
+
+test('explains a long wait while the backend wakes up, then clears the message', async ({ page }) => {
+  await setup(page)
+  await page.route('**/api/v1/kp-index', async route => {
+    await new Promise(resolve => setTimeout(resolve, 9000))
+    await route.fulfill({ status: 503, json: { message: 'Fixture: source unavailable' } })
+  })
+  await page.reload()
+  const notice = page.locator('.backend-waking-notice')
+  await expect(notice).toBeVisible({ timeout: 12000 })
+  await expect(notice).toBeHidden({ timeout: 5000 })
+})

@@ -153,7 +153,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
 }
 
 function ForecastGuide() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const items = [
     ['guideMapTitle', 'guideMapCopy'],
     ['guideKpTitle', 'guideKpCopy'],
@@ -166,7 +166,7 @@ function ForecastGuide() {
     <ol className="forecast-guide-list">
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><p className="guide-inline-explanation">{t('guideDetails')}：{t(copy)}</p></div>
+        <div><h3>{t(title)}</h3><p className="guide-inline-explanation">{t('guideDetails')}{language === 'zh' ? '：' : ': '}{t(copy)}</p></div>
       </li>)}
     </ol>
   </section>
