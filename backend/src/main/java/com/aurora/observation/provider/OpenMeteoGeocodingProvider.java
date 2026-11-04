@@ -46,9 +46,14 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
 
     @Override
     public List<Location> search(String query) {
+        return search(query, searchLanguage(query));
+    }
+
+    @Override
+    public List<Location> search(String query, String language) {
         if (!enabled) throw new ProviderUnavailableException(ProviderFailure.DISABLED, "Geocoding is disabled");
         String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
-        JsonNode response = request(baseUrl + "/search?name=" + encoded + "&count=10&language=" + searchLanguage(query)
+        JsonNode response = request(baseUrl + "/search?name=" + encoded + "&count=10&language=" + language
                 + "&format=json", false)
                 .orElseThrow();
         if (!response.isObject() || response.path("error").asBoolean(false)) {
@@ -75,8 +80,17 @@ public class OpenMeteoGeocodingProvider implements GeocodingProvider {
 
     @Override
     public Optional<Location> get(long id) {
+        return lookUp(id, baseUrl + "/get?id=" + id);
+    }
+
+    @Override
+    public Optional<Location> get(long id, String language) {
+        return lookUp(id, baseUrl + "/get?id=" + id + "&language=" + language);
+    }
+
+    private Optional<Location> lookUp(long id, String url) {
         if (!enabled) throw new ProviderUnavailableException(ProviderFailure.DISABLED, "Geocoding is disabled");
-        return request(baseUrl + "/get?id=" + id, true).map(node -> {
+        return request(url, true).map(node -> {
             Location location = toLocation(node);
             if (location.id() != id) throw invalidResponse("Location ID does not match the requested ID");
             return location;

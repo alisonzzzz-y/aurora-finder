@@ -2,6 +2,8 @@ package com.aurora.observation.service;
 
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.provider.GeocodingProvider;
+import com.aurora.observation.provider.OpenMeteoGeocodingProvider;
+import com.aurora.observation.provider.ProviderUnavailableException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +36,10 @@ public class LocationService {
     private final Duration locationTtl;
     private final Map<String, CacheEntry<List<Location>>> searches = new LinkedHashMap<>();
     private final Map<Long, CacheEntry<Location>> locations = new LinkedHashMap<>();
+    private final Map<Long, CacheEntry<Location>> chineseLocations = new LinkedHashMap<>();
     private final Map<String, CompletableFuture<List<Location>>> searchesInFlight = new ConcurrentHashMap<>();
     private final Map<Long, CompletableFuture<Location>> locationsInFlight = new ConcurrentHashMap<>();
+    private final Map<Long, CompletableFuture<Location>> chineseLocationsInFlight = new ConcurrentHashMap<>();
 
     public LocationService(GeocodingProvider geocoding, Clock clock,
                            @Value("${app.geocoding.cache.max-entries:256}") int maxCacheEntries,
@@ -52,6 +56,7 @@ public class LocationService {
         this.locationTtl = locationTtl;
     }
 
+    /** Names follow the language of the query, so the geocoder's answer can be matched against what was typed. */
     public List<Location> search(String query) {
         if (query == null) throw new InvalidLocationRequestException("Enter a location name between 2 and 80 characters.");
         String cleaned = query.strip();
@@ -68,11 +73,89 @@ public class LocationService {
             List<Location> result = matchingProviderResults(cleaned);
             write(searches, key, result, searchTtl);
             // Localized names stay with their search; ID lookups keep the provider's default English names.
-            if (!"zh".equals(com.aurora.observation.provider.OpenMeteoGeocodingProvider.searchLanguage(cleaned))) {
+            if (!"zh".equals(OpenMeteoGeocodingProvider.searchLanguage(cleaned))) {
                 for (Location location : result) write(locations, location.id(), location, locationTtl);
             }
             return result;
         });
+    }
+
+    /** The same matches, named in the language the page is showing. */
+    public List<Location> search(String query, String language) {
+        List<Location> matches = search(query);
+        if (language == null) return matches;
+        String wanted = supportedLanguage(language);
+        String cleaned = query.strip();
+        if (matches.isEmpty() || wanted.equals(OpenMeteoGeocodingProvider.searchLanguage(cleaned))) return matches;
+
+        String key = wanted + "|" + cleaned.toLowerCase(Locale.ROOT);
+        List<Location> cached = read(searches, key);
+        if (cached != null) return cached;
+        return loadCoalesced(key, searchesInFlight, () -> {
+            List<Location> result;
+            try {
+                result = "en".equals(wanted) ? inEnglish(matches) : inChinese(matches);
+            } catch (ProviderUnavailableException unavailable) {
+                return matches;
+            }
+            write(searches, key, result, searchTtl);
+            return result;
+        });
+    }
+
+    /** The geocoder finds nothing for a Chinese name when asked to answer in English, so these go by ID. */
+    private List<Location> inEnglish(List<Location> matches) {
+        return matches.stream().map(match -> {
+            try {
+                return get(match.id());
+            } catch (LocationNotFoundException gone) {
+                return match;
+            }
+        }).toList();
+    }
+
+    private List<Location> inChinese(List<Location> matches) {
+        Map<Long, Location> named = new LinkedHashMap<>();
+        geocoding.search(matches.getFirst().name(), "zh").forEach(location -> named.put(location.id(), location));
+        return matches.stream()
+                .map(match -> named.containsKey(match.id()) ? inLanguage(named.get(match.id()), "zh") : match)
+                .toList();
+    }
+
+    /** The place's names in the given language, for showing a place that was found or saved in another one. */
+    public Location get(long id, String language) {
+        if ("en".equals(supportedLanguage(language))) return get(id);
+        if (id <= 0) throw new InvalidLocationRequestException("Location ID must be positive.");
+        Location cached = read(chineseLocations, id);
+        if (cached != null) return cached;
+
+        return loadCoalesced(id, chineseLocationsInFlight, () -> {
+            Location secondCheck = read(chineseLocations, id);
+            if (secondCheck != null) return secondCheck;
+            Location location = geocoding.get(id, "zh").map(found -> inLanguage(found, "zh"))
+                    .orElseThrow(() -> new LocationNotFoundException(id));
+            write(chineseLocations, id, location, locationTtl);
+            return location;
+        });
+    }
+
+    private String supportedLanguage(String language) {
+        if ("en".equals(language) || "zh".equals(language)) return language;
+        throw new InvalidLocationRequestException("Language must be en or zh.");
+    }
+
+    /** The geocoder leaves many Chinese regions in English and gives some cities a Traditional or a rarer name. */
+    private Location inLanguage(Location location, String language) {
+        if (!"zh".equals(language)) return location;
+        ChineseLocationAliases.Alias alias = ChineseLocationAliases.forLocation(location.id());
+        return new Location(location.id(), alias == null ? location.name() : alias.name(),
+                hanOnly(location.region()), hanOnly(location.subregion()),
+                alias == null ? location.country() : alias.country(),
+                location.latitude(), location.longitude(), location.timezone());
+    }
+
+    private String hanOnly(String value) {
+        return value != null && !value.isBlank() && isHan(value) ? value : "";
     }
 
     private List<Location> matchingProviderResults(String query) {
@@ -90,7 +173,8 @@ public class LocationService {
         for (String term : terms) {
             if (term.length() < 2) continue;
             List<Location> found = filterMatches(query, geocoding.search(term));
-            found.forEach(location -> matches.putIfAbsent(location.id(), location));
+            String language = OpenMeteoGeocodingProvider.searchLanguage(query);
+            found.forEach(location -> matches.putIfAbsent(location.id(), inLanguage(location, language)));
             if (!found.isEmpty()) break;
         }
         return List.copyOf(matches.values());

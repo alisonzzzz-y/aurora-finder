@@ -2,6 +2,8 @@ package com.aurora.observation.service;
 
 import com.aurora.observation.dto.Location;
 import com.aurora.observation.provider.GeocodingProvider;
+import com.aurora.observation.provider.ProviderFailure;
+import com.aurora.observation.provider.ProviderUnavailableException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -108,6 +110,76 @@ class LocationServiceTest {
         when(provider.get(3413829)).thenReturn(Optional.empty());
 
         assertTrue(service.search("雷克雅未克").isEmpty());
+    }
+
+    @Test
+    void namesAPlaceInChineseWithThePreferredNameAndWithoutEnglishRegions() {
+        when(provider.get(3413829, "zh")).thenReturn(Optional.of(new Location(3413829, "雷克亞維克", "首都区", "Reykjavíkurborg", "冰岛",
+                64.13548, -21.89541, "Atlantic/Reykjavik")));
+
+        assertEquals(new Location(3413829, "雷克雅未克", "首都区", "", "冰岛", 64.13548, -21.89541, "Atlantic/Reykjavik"),
+                service.get(3413829, "zh"));
+        service.get(3413829, "zh");
+        verify(provider).get(3413829, "zh");
+    }
+
+    @Test
+    void chineseNamesDoNotReplaceTheEnglishNameOfTheSamePlace() {
+        Location dublin = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland", 53.33, -6.24, "Europe/Dublin");
+        when(provider.get(2964574)).thenReturn(Optional.of(dublin));
+        when(provider.get(2964574, "zh")).thenReturn(Optional.of(new Location(2964574, "都柏林", "倫斯特省", "Dublin City", "爱尔兰", 53.33, -6.24, "Europe/Dublin")));
+
+        assertEquals("都柏林", service.get(2964574, "zh").name());
+        assertEquals(dublin, service.get(2964574, "en"));
+        assertEquals(dublin, service.get(2964574));
+    }
+
+    @Test
+    void rejectsALanguageTheSiteDoesNotHave() {
+        assertThrows(InvalidLocationRequestException.class, () -> service.get(2964574, "fr"));
+        assertThrows(InvalidLocationRequestException.class, () -> service.search("Dublin", "fr"));
+    }
+
+    @Test
+    void anEnglishQueryOnAChinesePageGetsChineseNames() {
+        Location reykjavik = new Location(3413829, "Reykjavik", "Capital Region", "Reykjavíkurborg", "Iceland", 64.13, -21.89, "Atlantic/Reykjavik");
+        Location airport = new Location(6295712, "Reykjavik Airport", "Capital Region", "", "Iceland", 64.13, -21.94, "Atlantic/Reykjavik");
+        when(provider.search("Reykjavik")).thenReturn(List.of(reykjavik, airport));
+        when(provider.search("Reykjavik", "zh")).thenReturn(List.of(new Location(3413829, "雷克亞維克", "首都区", "", "冰岛", 64.13, -21.89, "Atlantic/Reykjavik")));
+
+        List<Location> found = service.search("Reykjavik", "zh");
+
+        assertEquals("雷克雅未克", found.getFirst().name());
+        assertEquals("冰岛", found.getFirst().country());
+        // The geocoder had no Chinese answer for this one, so its own name remains.
+        assertEquals(airport, found.get(1));
+        assertEquals(reykjavik, service.search("Reykjavik", "en").getFirst());
+    }
+
+    @Test
+    void aChineseQueryOnAnEnglishPageGetsEnglishNames() {
+        Location tromso = new Location(3133895, "Tromsø", "Troms", "Tromsø", "Norway", 69.64, 18.95, "Europe/Oslo");
+        when(provider.search("特罗姆瑟")).thenReturn(List.of(new Location(3133895, "特罗姆瑟", "特罗姆斯郡", "Tromsø", "挪威", 69.64, 18.95, "Europe/Oslo")));
+        when(provider.get(3133895)).thenReturn(Optional.of(tromso));
+
+        assertEquals(List.of(tromso), service.search("特罗姆瑟", "en"));
+    }
+
+    @Test
+    void aNameFromTheAliasListIsAlsoNamedInEnglishOnAnEnglishPage() {
+        Location reykjavik = new Location(3413829, "Reykjavik", "Capital Region", "", "Iceland", 64.13, -21.89, "Atlantic/Reykjavik");
+        when(provider.get(3413829)).thenReturn(Optional.of(reykjavik));
+
+        assertEquals(List.of(reykjavik), service.search("雷克雅未克", "en"));
+    }
+
+    @Test
+    void keepsTheMatchesWhenTheyCannotBeRenamed() {
+        Location dublin = new Location(2964574, "Dublin", "Leinster", "", "Ireland", 53.33, -6.24, "Europe/Dublin");
+        when(provider.search("Dublin")).thenReturn(List.of(dublin));
+        when(provider.search("Dublin", "zh")).thenThrow(new ProviderUnavailableException(ProviderFailure.RATE_LIMITED, "budget"));
+
+        assertEquals(List.of(dublin), service.search("Dublin", "zh"));
     }
 
     @Test

@@ -1,6 +1,7 @@
 import type { Location } from '../../types/location'
 import { useI18n } from '../../i18n'
 import { InfoHint } from '../InfoHint'
+import { storePlaceNames } from '../../api/placeNames'
 import './PopularPlaces.css'
 const places = [
   {id:6185377,name:'Yellowknife',zh:'耶洛奈夫',region:'Northwest Territories',subregion:'North Slave Region',country:'Canada',countryZh:'加拿大',latitude:62.45411,longitude:-114.37248,timezone:'America/Edmonton',source:'https://www.yellowknife.ca/weather-and-aurora-borealis'},
@@ -8,6 +9,11 @@ const places = [
   {id:2191562,name:'Dunedin',zh:'但尼丁',region:'Otago',subregion:'Dunedin City',country:'New Zealand',countryZh:'新西兰',latitude:-45.87416,longitude:170.50362,timezone:'Pacific/Auckland',source:'https://media.newzealand.com/home/natural-phenomena-in-new-zealand/'},
   {id:2163355,name:'Hobart',zh:'霍巴特',region:'Tasmania',subregion:'Hobart',country:'Australia',countryZh:'澳大利亚',latitude:-42.87936,longitude:147.3294,timezone:'Australia/Hobart',source:'https://production.tourismtasmania.com.au/experiences/stories/southern-lights/'},
 ]
+// These names are already known, so choosing a place never shows another name first.
+for (const place of places) {
+  storePlaceNames(place.id, 'en', place)
+  storePlaceNames(place.id, 'zh', { name: place.zh, region: '', subregion: '', country: place.countryZh })
+}
 export function PopularPlaces({onSelect}:{onSelect:(place:Location)=>void}) {
   const {language}=useI18n(), zh=language==='zh'
   const [north,south]=[places.filter(p=>p.latitude>0),places.filter(p=>p.latitude<0)]

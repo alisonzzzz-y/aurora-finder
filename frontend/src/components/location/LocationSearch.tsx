@@ -3,6 +3,8 @@ import { searchLocations } from '../../api/locations'
 import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import './LocationSearch.css'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
+import { timezoneLabel } from './placeLabel'
 
 type Props = {
   title?: string
@@ -14,7 +16,7 @@ type Props = {
 type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error'
 
 export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const id = useId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Location[]>([])
@@ -25,6 +27,7 @@ export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
   const searchRequest = useRef<AbortController | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const normalizedQuery = query.trim()
+  const shownSelection = useLocalizedPlace(selectedLocation)
 
   useEffect(() => () => searchRequest.current?.abort(), [])
 
@@ -39,7 +42,7 @@ export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
       setError(null)
       setActiveIndex(-1)
       try {
-        const locations = await searchLocations(normalizedQuery, controller.signal)
+        const locations = await searchLocations(normalizedQuery, language, controller.signal)
         if (controller.signal.aborted || searchRequest.current !== controller) return
         setResults(locations)
         setState(locations.length === 0 ? 'empty' : 'results')
@@ -55,7 +58,7 @@ export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [normalizedQuery, selectedLocation])
+  }, [language, normalizedQuery, selectedLocation])
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -136,8 +139,8 @@ export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
       {state === 'loading' && <p className="search-status" role="status">{t('loading')}</p>}
       {state === 'error' && error !== null && <p id={`${id}-error`} className="error search-status" role="alert">{localizeError(error, t)}</p>}
       {state === 'empty' && <p id={`${id}-status`} className="hint search-status" role="status">{t('emptySearch')}</p>}
-      {selectedLocation && <p className="selected-place-confirmation" role="status">
-        {t('selectedPlace')}: {[selectedLocation.name, selectedLocation.region, selectedLocation.subregion, selectedLocation.country].filter(Boolean).join(', ')}
+      {shownSelection && <p className="selected-place-confirmation" role="status">
+        {t('selectedPlace')}: {[shownSelection.name, shownSelection.region, shownSelection.subregion, shownSelection.country].filter(Boolean).join(', ')}
       </p>}
       {state === 'results' && <ul id={`${id}-results`} className="results" role="listbox" aria-label={t('matchingLocations')}>
         {results.map((location, index) => {
@@ -157,7 +160,7 @@ export function LocationSearch({ busy, onSelect, title, buttonLabel }: Props) {
                 <span className="location-country">{location.country}</span>
               </span>
               <span className="location-option-detail">
-                {[administrativeArea, `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`, location.timezone].filter(Boolean).join(' · ')}
+                {[administrativeArea, `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`, timezoneLabel(location.timezone, language)].filter(Boolean).join(' · ')}
               </span>
             </button>
           </li>

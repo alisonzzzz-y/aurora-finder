@@ -8,7 +8,8 @@ import { LocalAuroraActivityCard } from '../aurora/LocalAuroraActivityCard'
 import { NightOutlookCard } from './NightOutlookCard'
 import { NightDarknessChart } from './NightDarknessChart'
 import './VisualOutlook.css'
-import { placeLabel } from '../location/placeLabel'
+import { placeLabel, timezoneLabel } from '../location/placeLabel'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
 
 export function LocalOutlookDashboard({ facts }: { facts: ObservationFacts }) {
   const { language, t } = useI18n()
@@ -17,9 +18,10 @@ export function LocalOutlookDashboard({ facts }: { facts: ObservationFacts }) {
   const night = outlook.nights[selectedIndex] ?? outlook.nights[0]
   const activity = facts.auroraActivity
   const locale = language === 'zh' ? 'zh-CN' : 'en'
+  const shownPlace = useLocalizedPlace(outlook.location)
   const generatedAt = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: outlook.location.timezone }).format(new Date(facts.generatedAtUtc))
   return <section className="selected-location-outlook" aria-live="polite">
-    <div className="selected-location-heading"><h2>{placeLabel(outlook.location)}<InfoHint>{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidatedShort')}</InfoHint></h2><p>{outlook.location.timezone}</p></div>
+    <div className="selected-location-heading"><h2>{placeLabel(shownPlace)}<InfoHint>{t(outlook.ruleStatus === 'VALIDATED' ? 'rulesValidated' : 'rulesNotValidatedShort')}</InfoHint></h2><p>{timezoneLabel(outlook.location.timezone, language)}</p></div>
     <ViewingConditionsSummary facts={facts} />
     <div className="local-summary-strip">
       <div><span>{t('dataStatusShort')}</span><strong>{t(facts.sourceStatus === 'CURRENT' ? 'sourcesCurrentShort' : facts.sourceStatus === 'PARTIAL' ? 'sourcesPartialShort' : 'sourceUnavailable')}</strong></div>

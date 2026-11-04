@@ -62,8 +62,13 @@ public class ObservationController {
     }
 
     @GetMapping("/locations")
-    public List<Location> search(@RequestParam String q) {
-        return locations.search(q);
+    public List<Location> search(@RequestParam String q, @RequestParam(required = false) String language) {
+        return locations.search(q, language);
+    }
+
+    @GetMapping("/locations/{locationId}")
+    public Location location(@PathVariable long locationId, @RequestParam(defaultValue = "en") String language) {
+        return locations.get(locationId, language);
     }
 
     @GetMapping("/outlooks/{locationId}")

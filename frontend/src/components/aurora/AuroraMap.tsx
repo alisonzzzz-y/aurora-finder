@@ -8,7 +8,8 @@ import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
-import { placeLabel } from '../location/placeLabel'
+import { placeLabel, timezoneLabel } from '../location/placeLabel'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
 
 setWorkerUrl(workerUrl)
 
@@ -81,6 +82,8 @@ function applyControlLanguage(instance: MapLibreMap, t: ReturnType<typeof useI18
   setText('.maplibregl-mobile-message', t('mapGestureHintTouch'))
   setTitle('.maplibregl-ctrl-zoom-in', t('mapZoomIn'))
   setTitle('.maplibregl-ctrl-zoom-out', t('mapZoomOut'))
+  setTitle('.maplibregl-ctrl-attrib-button', t('mapAttributionToggle'))
+  root.querySelector('.maplibregl-canvas')?.setAttribute('aria-label', t('mapCanvasLabel'))
 }
 
 function formatUtc(instant: string, locale: string, unavailable: string) {
@@ -152,7 +155,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   const dataRef = useRef<AuroraMapData | null>(null)
   const activityPointsRef = useRef(activityPoints)
   const activityAreaNamesRef = useRef(activityAreaNames)
-  const selectedLocationRef = useRef(selectedLocation)
+  const shownLocation = useLocalizedPlace(selectedLocation ?? null)
+  const selectedLocationRef = useRef(shownLocation)
   const activityPopup = useRef<Popup | null>(null)
   const selectActivityRef = useRef(onSelectActivity)
   const translateRef = useRef(t)
@@ -183,8 +187,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   }, [activityAreaNames, selectedActivityIndex, t])
 
   useEffect(() => {
-    selectedLocationRef.current = selectedLocation
-  }, [selectedLocation])
+    selectedLocationRef.current = shownLocation
+  }, [shownLocation])
 
   useEffect(() => {
     selectActivityRef.current = onSelectActivity
@@ -366,7 +370,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
         const name = document.createElement('strong')
         name.textContent = properties.name ?? translateRef.current('selectedPlaceLabel')
         const timezone = document.createElement('div')
-        timezone.textContent = properties.timezone ?? ''
+        timezone.textContent = properties.timezone ? timezoneLabel(properties.timezone, languageRef.current) : ''
         content.append(name, timezone)
         new Popup({ closeButton: true, closeOnClick: true })
           .setLngLat(coordinates as [number, number])
@@ -422,8 +426,6 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
 
   useEffect(() => {
     const instance = map.current
-    const source = instance?.getSource('selected-location') as GeoJSONSource | undefined
-    source?.setData(asSelectedLocationGeoJson(selectedLocation))
     if (selectedLocation && instance) {
       instance.flyTo({
         center: [selectedLocation.longitude, selectedLocation.latitude],
@@ -432,6 +434,12 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       })
     }
   }, [selectedLocation])
+
+  // Separate from the move above, so a name arriving later does not fly the map again.
+  useEffect(() => {
+    const source = map.current?.getSource('selected-location') as GeoJSONSource | undefined
+    source?.setData(asSelectedLocationGeoJson(shownLocation))
+  }, [shownLocation])
 
   useEffect(() => {
     const instance = map.current
@@ -460,8 +468,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     }
   }, [activityPoints, selectedActivityIndex, t, tilesReady])
 
-  const mapLabel = selectedLocation
-    ? `${t('mapAria')}: ${placeLabel(selectedLocation)}`
+  const mapLabel = shownLocation
+    ? `${t('mapAria')}: ${placeLabel(shownLocation)}`
     : t('mapAria')
 
   return <section className="aurora-map-panel" aria-label={mapLabel}>
@@ -479,7 +487,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     <div className="map-key" aria-label={t('relativeModelValue')}>
       <span>{t('modelSignal')}</span><div className="map-key-gradient" /><div className="map-key-labels"><span>{t('lower')}</span><span>{t('higher')}</span></div>
     </div>
-    <a className="maptiler-logo" href="https://www.maptiler.com/" target="_blank" rel="noreferrer" aria-label="MapTiler website">
+    <a className="maptiler-logo" href="https://www.maptiler.com/" target="_blank" rel="noreferrer" aria-label={t('mapLogoLink')}>
       <img src="https://api.maptiler.com/resources/logo.svg" alt="MapTiler" width="92" height="20" />
     </a>
     <div className="map-credit"><a href={data?.source ?? 'https://www.swpc.noaa.gov/products/aurora-30-minute-forecast'} target="_blank" rel="noreferrer">{language === 'zh' ? '美国太空天气预报数据' : 'U.S. space weather forecast'} ↗</a></div>
