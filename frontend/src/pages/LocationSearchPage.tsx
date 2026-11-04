@@ -19,6 +19,7 @@ import { useAuroraMapData } from '../hooks/useAuroraMapData'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useActivityAreaNames } from '../hooks/useActivityAreaNames'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
+import { placeLabel } from '../components/location/placeLabel'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
 
@@ -96,7 +97,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           </div>}
           {sidebarView === 'activity' && <CurrentActivityAreas points={activityPoints} areaNames={activityAreaNames} data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
           {sidebarView === 'local' && <div className="map-sidebar-location-panel">
-            {mapLocation && <h3>{mapLocation.name}, {mapLocation.country}</h3>}
+            {mapLocation && <h3>{placeLabel(mapLocation)}</h3>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
             {visibleFacts && <>
