@@ -16,11 +16,15 @@ class AssistantTimeWindowTest {
     private static final Instant NOW = Instant.parse("2026-10-26T08:00:00Z");
 
     private ObservationFactsResponse facts(String timezone, Instant now, boolean expired) {
+        return facts(timezone, now, expired, now.atZone(ZoneId.of(timezone)).toLocalDate());
+    }
+
+    private ObservationFactsResponse facts(String timezone, Instant now, boolean expired, LocalDate firstNight) {
         var zone = ZoneId.of(timezone);
         var today = now.atZone(zone).toLocalDate();
         var place = new Location(42, "Dublin", "Leinster", "Dublin City", "Ireland", 53.33, -6.25, timezone);
         var nights = java.util.stream.IntStream.range(0,3).mapToObj(i -> {
-            var date = today.plusDays(i);
+            var date = firstNight.plusDays(i);
             return new NightOutlook(date, date.atTime(12,0).atZone(zone).getOffset().toString(),
                     date.atTime(12,0).atZone(zone).toInstant(), date.plusDays(1).atTime(12,0).atZone(zone).toInstant(),
                     OutlookLevel.INSUFFICIENT_DATA, OutlookReasonCode.RULES_NOT_VALIDATED, null);
@@ -51,6 +55,28 @@ class AssistantTimeWindowTest {
                         mapper.createObjectNode().put("type","output_text").put("text",answer)))));
         when(provider.respond(anyString(), any(), any())).thenReturn(toolResponse, finalResponse);
         return new AssistantService(provider,tools,mapper).chat(new AssistantChatRequest(request,"en",42L,history));
+    }
+
+    @Test void wrongToolDateTellsTheModelWhichDateTheUserAskedFor() {
+        var provider = mock(OpenAiAssistantProvider.class);
+        var tools = mock(ObservationToolsService.class);
+        when(tools.getLocalNightFacts(42)).thenReturn(facts("Europe/Dublin",NOW,false));
+        var factsCall = mapper.createObjectNode().put("type","function_call").put("name","get_local_night_facts")
+                .put("call_id","facts").put("arguments","{\"location_id\":42}");
+        var cloudCall = mapper.createObjectNode().put("type","function_call").put("name","get_night_cloud_forecast")
+                .put("call_id","cloud").put("arguments","{\"location_id\":42,\"local_date\":\"2026-10-27\"}");
+        var answer = mapper.createObjectNode().set("output", mapper.createArrayNode().add(
+                mapper.createObjectNode().put("type","message").set("content",mapper.createArrayNode().add(
+                        mapper.createObjectNode().put("type","output_text").put("text","Checked tonight.")))));
+        var inputs = org.mockito.ArgumentCaptor.forClass(ArrayNode.class);
+        when(provider.respond(anyString(), any(), any())).thenReturn(
+                mapper.createObjectNode().set("output", mapper.createArrayNode().add(factsCall)),
+                mapper.createObjectNode().set("output", mapper.createArrayNode().add(cloudCall)), answer);
+
+        new AssistantService(provider,tools,mapper).chat(new AssistantChatRequest("Clouds tonight?","en",42L,List.of()));
+
+        verify(provider, times(3)).respond(anyString(), inputs.capture(), any());
+        assertTrue(inputs.getAllValues().get(2).toString().contains("Use the user's requested local date: 2026-10-26"));
     }
 
     @Test void chineseCalendarFollowupOverridesEarlierTonight() {
@@ -156,10 +182,16 @@ class AssistantTimeWindowTest {
         assertTrue(AssistantCloudEvidence.localSamples(window).getFirst().get("localTime").toString().contains("+13:00"));
     }
 
-    @Test void midnightRetainsDocumentedTonightMeaningAndExcludesPreviousNightMorning() {
-        var window = AssistantCloudEvidence.select(facts("Europe/Dublin",Instant.parse("2026-10-26T00:30:00Z"),false),"tonight",null);
-        assertEquals(LocalDate.of(2026,10,26),window.localDate());
-        assertEquals(21.5,window.points().getFirst().cloudCoverPercent());
+    @Test void afterMidnightTonightIsTheNightInProgress() {
+        // The outlook keeps the evening's date until dawn, so 00:30 on 26 October belongs to the 25 October night.
+        var facts = facts("Europe/Dublin",Instant.parse("2026-10-26T00:30:00Z"),false,LocalDate.of(2026,10,25));
+        var tonight = AssistantCloudEvidence.select(facts,"tonight",null);
+        assertEquals(LocalDate.of(2026,10,25),tonight.localDate());
+        assertEquals("AVAILABLE",tonight.status());
+        assertEquals(91.0,tonight.points().getFirst().cloudCoverPercent());
+        var tomorrow = AssistantCloudEvidence.select(facts,"tomorrow night",null);
+        assertEquals(LocalDate.of(2026,10,26),tomorrow.localDate());
+        assertEquals(21.5,tomorrow.points().getFirst().cloudCoverPercent());
     }
 
     @Test void autumnDstNightHasTwentyFiveHoursAndSpringHasTwentyThree() {

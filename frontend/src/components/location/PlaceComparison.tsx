@@ -6,6 +6,7 @@ import type { ObservationFacts } from '../../types/observationFacts'
 import { ViewingConditionsSummary } from '../outlook/ViewingConditionsSummary'
 import { InfoHint } from '../InfoHint'
 import './PlaceComparison.css'
+import { placeLabel } from './placeLabel'
 
 type Props = {
   places: Location[]
@@ -50,7 +51,7 @@ function ComparisonRow({ place, revision, onSelect, onRemove }: {
     return () => { controller?.abort(); window.clearInterval(timer) }
   }, [place.id, revision])
   return <article className="comparison-row">
-    <header><h3>{place.name}, {place.country}</h3><button className="comparison-remove" type="button" aria-label={`${t('compareRemove')} ${place.name}, ${place.country}`} onClick={onRemove}>{t('compareRemove')}</button></header>
+    <header><h3>{placeLabel(place)}</h3><button className="comparison-remove" type="button" aria-label={`${t('compareRemove')} ${place.name}, ${place.country}`} onClick={onRemove}>{t('compareRemove')}</button></header>
     {loading && <p role="status">{t('loading')}</p>}
     {error !== null && <p role="status">{localizeError(error, t)}</p>}
     {!loading && facts && <ViewingConditionsSummary facts={facts} />}

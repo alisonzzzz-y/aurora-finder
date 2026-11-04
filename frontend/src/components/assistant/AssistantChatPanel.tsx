@@ -3,6 +3,7 @@ import { askAssistant, type AssistantMessage } from '../../api/assistant'
 import type { Location } from '../../types/location'
 import { useI18n } from '../../i18n'
 import { ApiRequestError } from '../../api/requestError'
+import { AssistantMarkdown } from './AssistantMarkdown'
 
 const exampleQuestions = [
   'assistantExampleTonight',
@@ -32,6 +33,8 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
   const [failedRequest, setFailedRequest] = useState<PendingQuestion | null>(null)
   const inFlight = useRef(false)
   const conversationLocation = useRef<{ mapLocationId?: number; selectedId: number } | null>(null)
+  // Map place shown when the assistant offered choices; a different map place replaces those choices.
+  const choicesMapLocation = useRef<number | undefined>(undefined)
   const panelRef = useRef<HTMLElement>(null)
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
   const resizeRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; width: number; height: number } | null>(null)
@@ -121,6 +124,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
 
   async function sendQuestion(question: string, selectedLocation?: Location) {
     const awaitingPlace = Boolean(messages.at(-1)?.locationCandidates?.length)
+      && choicesMapLocation.current === locationId
     const remembered = conversationLocation.current
     const selectedId = selectedLocation?.id ?? (awaitingPlace ? undefined
       : remembered?.mapLocationId === locationId ? remembered?.selectedId : locationId)
@@ -143,6 +147,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       if (response.selectedLocationId != null) {
         conversationLocation.current = { mapLocationId: request.mapLocationId, selectedId: response.selectedLocationId }
       }
+      if (response.locationCandidates?.length) choicesMapLocation.current = request.mapLocationId
       setMessages(current => [...current, {
         role: 'assistant', content: response.answer,
         ...(response.locationCandidates?.length ? { locationCandidates: response.locationCandidates } : {}),
@@ -178,7 +183,7 @@ export function AssistantChatPanel({ locationId }: AssistantChatPanelProps) {
       {messages.length > 0 && <div className="assistant-messages" aria-live="polite">
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
           <span>{message.role === 'assistant' ? t('assistantRole') : t('assistantYou')}</span>
-          <div>{message.content}</div>
+          {message.role === 'assistant' ? <AssistantMarkdown text={message.content} /> : <div>{message.content}</div>}
           {message.role === 'assistant' && message.locationCandidates?.map((candidate, candidateIndex) => <button
             type="button" className="assistant-location-choice" key={candidate.id} disabled={busy}
             onClick={() => void sendQuestion(selectionLabel(candidate), candidate)}>

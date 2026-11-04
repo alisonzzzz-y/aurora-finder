@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AttributionControl, Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type MapEventType } from 'maplibre-gl'
+import { AttributionControl, Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type GeoJSONSource, type MapEventType, type SymbolLayerSpecification } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { FeatureCollection, Point } from 'geojson'
 import type { AuroraMapData, AuroraMapPoint } from '../../types/auroraMap'
@@ -8,10 +8,16 @@ import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
+import { placeLabel } from '../location/placeLabel'
 
 setWorkerUrl(workerUrl)
 
-function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number }> {
+// Web Mercator draws one degree of latitude 1/cos(latitude) times taller than at the equator.
+function latitudeStretch(latitude: number) {
+  return 1 / Math.cos(Math.min(Math.abs(latitude), 85) * Math.PI / 180)
+}
+
+function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue: number; latitudeStretch: number }> {
   const forecastDeadline = Date.parse(data.forecastTime)
   const forecastIsCurrent = data.status === 'CURRENT'
     && Number.isFinite(forecastDeadline)
@@ -21,9 +27,60 @@ function asGeoJson(data: AuroraMapData): FeatureCollection<Point, { auroraValue:
     features: (forecastIsCurrent ? data.points : []).map(point => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [point.longitude, point.latitude] },
-      properties: { auroraValue: point.auroraValue },
+      properties: { auroraValue: point.auroraValue, latitudeStretch: latitudeStretch(point.latitude) },
     })),
   }
+}
+
+// MapLibre's heatmap kernel is a Gaussian with sigma = radius / 3. A radius of 2.5px at zoom 0 (512px spans
+// 360 degrees) gives sigma ~0.6 of the north-south grid spacing, enough to blend rows without stripes, and the
+// 2x-per-zoom curve keeps that at every zoom. Rows sit 1/cos(latitude) further apart than columns, so each
+// point's weight is divided by that stretch to keep the summed density, and the colour, independent of latitude.
+const heatmapRadiusAtZoom0 = 2.5
+const mapMaxZoom = 8
+// A radius this wide reaches past the neighbouring tile when zoomed in. MapLibre only draws points from tiles it has
+// loaded, so low-zoom tiles keep the points just off screen in the sum and the colour does not change while panning.
+const auroraSourceMaxZoom = 5
+
+type LabelField = NonNullable<SymbolLayerSpecification['layout']>['text-field']
+const appLayerIds = new Set(['selected-location-label', 'strong-activity-labels'])
+
+// Reads the style's name labels so they can be swapped for Chinese and restored for English.
+function basemapNameLabels(instance: MapLibreMap) {
+  const labels = new Map<string, LabelField>()
+  for (const layer of instance.getStyle()?.layers ?? []) {
+    if (layer.type !== 'symbol' || appLayerIds.has(layer.id)) continue
+    const field = layer.layout?.['text-field']
+    if (field && JSON.stringify(field).includes('name')) labels.set(layer.id, field)
+  }
+  return labels
+}
+
+function applyBasemapLanguage(instance: MapLibreMap, labels: Map<string, LabelField>, language: 'zh' | 'en') {
+  for (const [layerId, field] of labels) {
+    if (!instance.getLayer(layerId)) continue
+    instance.setLayoutProperty(layerId, 'text-field', language === 'zh'
+      ? ['coalesce', ['get', 'name:zh-Hans'], ['get', 'name:zh'], ['get', 'name:en'], ['get', 'name']]
+      : field)
+  }
+}
+
+// MapLibre writes these strings once when the map is built, and the language can change after that.
+function applyControlLanguage(instance: MapLibreMap, t: ReturnType<typeof useI18n>['t']) {
+  const root = instance.getContainer()
+  const setText = (selector: string, text: string) => {
+    const element = root.querySelector(selector)
+    if (element) element.textContent = text
+  }
+  const setTitle = (selector: string, text: string) => {
+    const element = root.querySelector(selector)
+    element?.setAttribute('title', text)
+    element?.setAttribute('aria-label', text)
+  }
+  setText('.maplibregl-desktop-message', t(navigator.userAgent.includes('Mac') ? 'mapGestureHintMac' : 'mapGestureHintWindows'))
+  setText('.maplibregl-mobile-message', t('mapGestureHintTouch'))
+  setTitle('.maplibregl-ctrl-zoom-in', t('mapZoomIn'))
+  setTitle('.maplibregl-ctrl-zoom-out', t('mapZoomOut'))
 }
 
 function formatUtc(instant: string, locale: string, unavailable: string) {
@@ -40,7 +97,7 @@ function asSelectedLocationGeoJson(location: Location | null): FeatureCollection
     features: location ? [{
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
-      properties: { name: `${location.name}, ${location.country}`, timezone: location.timezone },
+      properties: { name: placeLabel(location), timezone: location.timezone },
     }] : [],
   }
 }
@@ -79,7 +136,8 @@ type Props = {
 }
 
 const baseMaps = [
-  { id: 'dataviz-dark', label: 'mapStyleDark' },
+  // The v4 styles use tiles that carry name:zh-Hans. The older dataviz-dark only has name:zh, mostly Traditional.
+  { id: 'dataviz-v4-dark', label: 'mapStyleDark' },
   { id: 'streets-v4', label: 'mapStyleStreets' },
   { id: 'hybrid-v4', label: 'mapStyleSatellite' },
 ] as const
@@ -98,6 +156,8 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   const activityPopup = useRef<Popup | null>(null)
   const selectActivityRef = useRef(onSelectActivity)
   const translateRef = useRef(t)
+  const languageRef = useRef(language)
+  const basemapLabels = useRef(new Map<string, LabelField>())
   const [tilesReady, setTilesReady] = useState(false)
   const [mapError, setMapError] = useState('')
   const [baseMapId, setBaseMapId] = useState<(typeof baseMaps)[number]['id']>(initialBaseMapId)
@@ -146,7 +206,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
       center: selectedLocationRef.current ? [selectedLocationRef.current.longitude, selectedLocationRef.current.latitude] : [0, 62],
       zoom: selectedLocationRef.current ? 3.2 : 1.15,
       minZoom: 0.6,
-      maxZoom: 8,
+      maxZoom: mapMaxZoom,
       attributionControl: false,
       scrollZoom: false,
       cooperativeGestures: true,
@@ -158,22 +218,30 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     let keyRejected = false
     let initialStyleLoaded = false
     const installAuroraLayer = () => {
+      basemapLabels.current = basemapNameLabels(instance)
+      applyBasemapLanguage(instance, basemapLabels.current, languageRef.current)
       const sourceData = dataRef.current ? asGeoJson(dataRef.current) : asGeoJson({
         status: 'CURRENT', observationTime: '', forecastTime: '', retrievedAt: '', source: '', points: [],
       })
       if (!instance.getSource('ovation-grid')) {
-        instance.addSource('ovation-grid', { type: 'geojson', data: sourceData })
+        instance.addSource('ovation-grid', { type: 'geojson', data: sourceData, maxzoom: auroraSourceMaxZoom })
       }
       if (!instance.getLayer('ovation-heatmap')) {
         instance.addLayer({
           id: 'ovation-heatmap',
           type: 'heatmap',
           source: 'ovation-grid',
-          maxzoom: 7,
           paint: {
-            'heatmap-weight': ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
-            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 7, 2.2],
-            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 7, 24],
+            'heatmap-weight': ['/',
+              ['interpolate', ['linear'], ['get', 'auroraValue'], 0, 0, 25, 0.35, 100, 1],
+              ['get', 'latitudeStretch'],
+            ],
+            // Matches the colours the previous fixed radius gave around 60 degrees at the default zoom.
+            'heatmap-intensity': 1.35,
+            'heatmap-radius': ['interpolate', ['exponential', 2], ['zoom'],
+              0, ['*', heatmapRadiusAtZoom0, ['get', 'latitudeStretch']],
+              mapMaxZoom, ['*', heatmapRadiusAtZoom0 * 2 ** mapMaxZoom, ['get', 'latitudeStretch']],
+            ],
             'heatmap-opacity': 0.82,
             'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
               0, 'rgba(32, 210, 157, 0)',
@@ -337,6 +405,14 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
     }
   }, [mapTilerKey])
 
+  useEffect(() => {
+    languageRef.current = language
+    const instance = map.current
+    if (!instance) return
+    applyControlLanguage(instance, t)
+    applyBasemapLanguage(instance, basemapLabels.current, language)
+  }, [language, t])
+
   function changeBaseMap(baseMap: (typeof baseMaps)[number]['id']) {
     setBaseMapId(baseMap)
     if (!map.current || !mapTilerKey || baseMap === baseMapId) return
@@ -385,7 +461,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   }, [activityPoints, selectedActivityIndex, t, tilesReady])
 
   const mapLabel = selectedLocation
-    ? `${t('mapAria')}: ${selectedLocation.name}, ${selectedLocation.country}`
+    ? `${t('mapAria')}: ${placeLabel(selectedLocation)}`
     : t('mapAria')
 
   return <section className="aurora-map-panel" aria-label={mapLabel}>

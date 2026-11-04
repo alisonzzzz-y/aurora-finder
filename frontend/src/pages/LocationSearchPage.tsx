@@ -19,6 +19,7 @@ import { useAuroraMapData } from '../hooks/useAuroraMapData'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useActivityAreaNames } from '../hooks/useActivityAreaNames'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
+import { placeLabel } from '../components/location/placeLabel'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
 
@@ -96,7 +97,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           </div>}
           {sidebarView === 'activity' && <CurrentActivityAreas points={activityPoints} areaNames={activityAreaNames} data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
           {sidebarView === 'local' && <div className="map-sidebar-location-panel">
-            {mapLocation && <h3>{mapLocation.name}, {mapLocation.country}</h3>}
+            {mapLocation && <h3>{placeLabel(mapLocation)}</h3>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
             {visibleFacts && <>
@@ -153,7 +154,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
 }
 
 function ForecastGuide() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const items = [
     ['guideMapTitle', 'guideMapCopy'],
     ['guideKpTitle', 'guideKpCopy'],
@@ -166,7 +167,7 @@ function ForecastGuide() {
     <ol className="forecast-guide-list">
       {items.map(([title, copy], index) => <li key={title}>
         <span className="forecast-guide-number" aria-hidden="true">0{index + 1}</span>
-        <div><h3>{t(title)}</h3><p className="guide-inline-explanation">{t('guideDetails')}：{t(copy)}</p></div>
+        <div><h3>{t(title)}</h3><p className="guide-inline-explanation">{t('guideDetails')}{language === 'zh' ? '：' : ': '}{t(copy)}</p></div>
       </li>)}
     </ol>
   </section>

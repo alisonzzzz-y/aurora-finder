@@ -30,3 +30,9 @@ test('retains the original coordinate key and tooltip for map navigation', () =>
   assert.equal(activityCoordinates(point), '64.0° S · 53.0° E')
   assert.equal(activityCoordinates({ latitude: 71, longitude: -122 }), '71.0° N · 122.0° W')
 })
+
+test('Chinese names are shown in Simplified characters', () => {
+  const marine = { features: [{ text: '巴倫支海', place_type: ['continental_marine'] }] }
+  assert.equal(activityAreaName(marine, 'zh'), '巴伦支海')
+  assert.equal(activityAreaName(marine, 'en'), '巴倫支海')
+})

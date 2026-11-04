@@ -28,7 +28,7 @@ test('time zone formatting keeps the source instant and changes calendar dates a
 })
 
 test('storm highlights include each threshold and retain the strongest band above G3', () => {
-  for (const [kp, band] of [[0, ''], [4.67, ''], [5, 'kp-storm-g1'], [5.67, 'kp-storm-g1'], [6, 'kp-storm-g2'], [6.67, 'kp-storm-g2'], [7, 'kp-storm-g3'], [8.67, 'kp-storm-g3'], [9, 'kp-storm-g3']]) {
+  for (const [kp, band] of [[0, ''], [4.33, ''], [4.67, 'kp-storm-g1'], [5, 'kp-storm-g1'], [5.33, 'kp-storm-g1'], [5.67, 'kp-storm-g2'], [6, 'kp-storm-g2'], [6.67, 'kp-storm-g3'], [7, 'kp-storm-g3'], [8.67, 'kp-storm-g3'], [9, 'kp-storm-g3']]) {
     assert.equal(kpStormBand(kp), band)
   }
 })

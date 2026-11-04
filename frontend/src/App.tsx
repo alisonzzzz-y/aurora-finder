@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { getObservationFacts } from './api/observationFacts'
 import type { Location } from './types/location'
 import type { ObservationFacts } from './types/observationFacts'
@@ -7,9 +7,11 @@ import { I18nProvider, useI18n } from './i18n'
 import { AssistantChatPanel } from './components/assistant/AssistantChatPanel'
 import './App.css'
 import { isProductionApiConfigured } from './api/apiUrl'
+import { hasSlowRequest, subscribeSlowRequests } from './api/slowRequests'
 
 function AppContent() {
   const { language, setLanguage, t } = useI18n()
+  const backendWaking = useSyncExternalStore(subscribeSlowRequests, hasSlowRequest)
   const [facts, setFacts] = useState<ObservationFacts | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -81,6 +83,7 @@ function AppContent() {
       </div>
     </header>
     {!isProductionApiConfigured && <p className="deployment-config-alert" role="alert">{t('apiOriginMissing')}</p>}
+    {backendWaking && <p className="backend-waking-notice" role="status">{t('backendWaking')}</p>}
     <main>
       <LocationSearchPage busy={busy} facts={facts} error={error} onSelect={selectLocation} />
     </main>

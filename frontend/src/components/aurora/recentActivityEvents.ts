@@ -1,4 +1,5 @@
 import type { KpIndexRecord } from '../../types/kpIndex'
+import { kpStormLevel } from './kpChartData.ts'
 
 export type ActivityEvent = { start: string; end: string; peak: number; estimated: boolean }
 /** Completed source intervals only. Forecasts never become historical observations. */
@@ -13,7 +14,7 @@ export function recentActivityEvents(records: KpIndexRecord[], now: number): Act
   }
   const events: ActivityEvent[] = []
   for (const [at, record] of [...byTime].sort(([a], [b]) => a - b)) {
-    if (record.kp < 5) continue
+    if (kpStormLevel(record.kp) === 0) continue
     const last = events.at(-1)
     if (last && Date.parse(last.end) === at) {
       last.end = new Date(at + 10800000).toISOString()

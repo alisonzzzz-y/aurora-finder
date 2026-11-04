@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -17,27 +16,25 @@ public class KpIndexService {
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
     private final KpIndexProvider provider;
-    private final Clock clock;
-    private CacheEntry cache;
+    private final SingleFlightCache<KpIndexResponse> cache;
 
     public KpIndexService(KpIndexProvider provider, Clock clock) {
         this.provider = provider;
-        this.clock = clock;
+        this.cache = new SingleFlightCache<>(clock, CACHE_TTL);
     }
 
-    public synchronized KpIndexResponse latest() {
-        Instant now = clock.instant();
-        if (cache != null && now.isBefore(cache.expiresAt())) return cache.data();
+    public KpIndexResponse latest() {
+        return cache.get(this::load).value();
+    }
 
+    private KpIndexResponse load() {
         KpIndexResponse upstream = provider.latest();
         List<KpIndexRecord> records = upstream.records().stream()
                 .map(record -> new KpIndexRecord(record.periodStart(), record.kp(), record.type(),
                         record.noaaScale(), activityLevel(record.kp()),
                         NoaaGeomagneticStormScale.fromKp(record.kp())))
                 .toList();
-        KpIndexResponse response = new KpIndexResponse(upstream.retrievedAt(), upstream.source(), records);
-        cache = new CacheEntry(response, now.plus(CACHE_TTL));
-        return response;
+        return new KpIndexResponse(upstream.retrievedAt(), upstream.source(), records);
     }
 
     private AuroraActivityLevel activityLevel(double kp) {
@@ -45,6 +42,4 @@ public class KpIndexService {
         if (kp < 6) return AuroraActivityLevel.MEDIUM;
         return AuroraActivityLevel.HIGH;
     }
-
-    private record CacheEntry(KpIndexResponse data, Instant expiresAt) {}
 }

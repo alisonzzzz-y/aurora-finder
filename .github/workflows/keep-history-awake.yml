@@ -1,0 +1,28 @@
+name: Keep history sampling awake
+
+# Render's free instance sleeps after about 15 minutes without requests, which leaves gaps in the
+# 15-minute history snapshots. A health request every 10 minutes keeps it running so the backend's own
+# watchlist sampler can continue. GitHub may delay or skip scheduled runs, so gaps remain possible.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keep-history-awake
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Wake backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      # Set the repository variable BACKEND_URL to use another deployment.
+      BACKEND_URL: ${{ vars.BACKEND_URL || 'https://aurora-observation-agent.onrender.com' }}
+    steps:
+      - name: Request health check
+        # A cold start can take about a minute, so allow retries before failing.
+        run: curl --fail --silent --show-error --max-time 90 --retry 4 --retry-delay 15 --retry-all-errors "$BACKEND_URL/actuator/health"

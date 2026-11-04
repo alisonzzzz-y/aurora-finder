@@ -8,5 +8,6 @@
 .storm-activity-alert .comparison-action { min-height: 36px; padding: 6px 10px; background: transparent; color: #e8a3a0; border: 1px solid #795354; font-size: 13px; }
 .storm-activity-alert .comparison-action:hover { background: #e8a3a012; border-color: #e8a3a0; }
 .storm-activity-alert .comparison-action[aria-pressed="true"] { background: #e8a3a01a; color: #ffd0cb; }
+.background-alerts { margin-top: 10px; }
 .storm-activity-alert[data-severity="severe"] h2 { color: #ff8fa1; }
 @media (max-width: 720px) { .storm-activity-alert .comparison-action { min-height: 44px; } }

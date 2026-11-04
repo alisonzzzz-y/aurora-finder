@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class OpenMeteoGeocodingProviderTest {
     private final AtomicReference<Reply> reply = new AtomicReference<>();
     private final AtomicInteger requestCount = new AtomicInteger();
+    private final AtomicReference<String> lastQuery = new AtomicReference<>();
     private HttpServer server;
     private OpenMeteoGeocodingProvider provider;
 
@@ -74,6 +75,13 @@ class OpenMeteoGeocodingProviderTest {
         reply.set(new Reply(404, ""));
         assertTrue(provider.get(999).isEmpty());
 
+        reply.set(new Reply(400, "{\"error\":true,\"reason\":\"Location ID not found.\"}"));
+        assertTrue(provider.get(999).isEmpty());
+
+        reply.set(new Reply(400, "{\"error\":true,\"reason\":\"Parameter id is invalid.\"}"));
+        assertEquals(ProviderFailure.UPSTREAM_ERROR, assertThrows(ProviderUnavailableException.class,
+                () -> provider.get(999)).failure());
+
         reply.set(new Reply(429, ""));
         assertFailure(ProviderFailure.RATE_LIMITED);
 
@@ -91,6 +99,17 @@ class OpenMeteoGeocodingProviderTest {
         assertEquals(2964574, provider.get(2964574).orElseThrow().id());
         assertEquals(ProviderFailure.INVALID_RESPONSE, assertThrows(ProviderUnavailableException.class,
                 () -> provider.get(12)).failure());
+    }
+
+    @Test
+    void requestsChineseNamesForChineseQueries() {
+        reply.set(new Reply(200, "{\"results\":[{\"id\":1816670,\"name\":\"北京\",\"latitude\":39.9075,"
+                + "\"longitude\":116.39723,\"timezone\":\"Asia/Shanghai\",\"country\":\"中国\"}]}"));
+        assertEquals("北京", provider.search("北京").getFirst().name());
+        assertTrue(lastQuery.get().contains("language=zh"));
+        reply.set(new Reply(200, result("53.33306", "Europe/Dublin")));
+        provider.search("Dublin");
+        assertTrue(lastQuery.get().contains("language=en"));
     }
 
     @Test
@@ -125,6 +144,7 @@ class OpenMeteoGeocodingProviderTest {
 
     private void respond(HttpExchange exchange) throws IOException {
         requestCount.incrementAndGet();
+        lastQuery.set(exchange.getRequestURI().getQuery());
         Reply current = reply.get();
         byte[] body = current.body().getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(current.status(), body.length == 0 ? -1 : body.length);
