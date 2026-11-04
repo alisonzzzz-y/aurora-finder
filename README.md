@@ -16,6 +16,7 @@ The global map shows modelled aurora activity. It does not tell you the exact ch
 - Search for a place and choose the matching city.
 - Check short-term aurora activity, cloud cover, and local darker hours when data is available.
 - See the latest global activity outlook and the time and source behind the data.
+- Turn on strong-activity alerts, including optional browser notifications after the page is closed when the server is configured for them.
 - Switch between English and Simplified Chinese.
 
 The bilingual AI chat can answer questions using the same current source data shown by Aurora Finder. It is read-only and does not create a viewing probability. Chat history stays in the current browser session.
@@ -49,6 +50,10 @@ See the [current delivery status](docs/completion-status-2026-10-26.md) and [ope
 
 Aurora activity, weather, and place information come from separate public data services. The app shows their sources and update times so you can understand what each result is based on. The map background is provided by MapTiler. Place search uses Open-Meteo data under CC BY 4.0. Credit: Open-Meteo.
 
+### License
+
+The code is available under the [MIT License](LICENSE). Data from third-party services keeps its own terms and attribution requirements; the code license does not cover it.
+
 <a id="简体中文"></a>
 
 ## 简体中文
@@ -63,6 +68,7 @@ Aurora Finder 帮助普通观测者了解当前极光活动，并查看指定地
 - 搜索地点，并从候选项中选择正确的城市。
 - 在数据可用时查看短时极光活动、云量和当地较暗时段。
 - 查看最新的全球活动趋势，以及数据来源和更新时间。
+- 开启强活动提醒；服务器配置后，还可在关闭网页后收到浏览器通知。
 - 在英文和简体中文之间切换。
 
 中英双语 AI 对话可以基于 Aurora Finder 页面使用的实时来源数据回答问题。它是只读功能，不会生成个人观测概率；聊天记录只保留在当前浏览器页面中。
@@ -95,3 +101,7 @@ npm run dev
 ### 数据与署名
 
 极光活动、天气和地点信息来自不同的公开数据服务。页面会标明数据来源和更新时间，方便了解每项结果的依据。地图底图由 MapTiler 提供。地点搜索使用 Open-Meteo 数据，遵循 CC BY 4.0。署名：Open-Meteo。
+
+### 许可证
+
+代码采用 [MIT 许可证](LICENSE)。第三方服务的数据仍遵循各自的条款和署名要求，不受代码许可证覆盖。

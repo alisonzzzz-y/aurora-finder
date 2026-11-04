@@ -26,7 +26,7 @@ class KpIndexServiceTest {
                             KpIndexType.PREDICTED, null, null, null),
                     new KpIndexRecord(Instant.parse("2026-09-24T15:00:00Z"), 3.00,
                             KpIndexType.PREDICTED, null, null, null),
-                    new KpIndexRecord(Instant.parse("2026-09-24T18:00:00Z"), 5.67,
+                    new KpIndexRecord(Instant.parse("2026-09-24T18:00:00Z"), 5.33,
                             KpIndexType.PREDICTED, null, null, null),
                     new KpIndexRecord(Instant.parse("2026-09-24T21:00:00Z"), 6.00,
                             KpIndexType.PREDICTED, "G1", null, null)));
@@ -51,12 +51,15 @@ class KpIndexServiceTest {
 
     @Test
     void mapsNoaaStormScaleAtEachKpThreshold() {
-        assertEquals(NoaaGeomagneticStormScale.BELOW_G1, NoaaGeomagneticStormScale.fromKp(4.99));
-        assertEquals(NoaaGeomagneticStormScale.G1, NoaaGeomagneticStormScale.fromKp(5.00));
-        assertEquals(NoaaGeomagneticStormScale.G1, NoaaGeomagneticStormScale.fromKp(5.99));
+        assertEquals(NoaaGeomagneticStormScale.BELOW_G1, NoaaGeomagneticStormScale.fromKp(4.33));
+        assertEquals(NoaaGeomagneticStormScale.G1, NoaaGeomagneticStormScale.fromKp(4.67));
+        assertEquals(NoaaGeomagneticStormScale.G1, NoaaGeomagneticStormScale.fromKp(5.33));
+        assertEquals(NoaaGeomagneticStormScale.G2, NoaaGeomagneticStormScale.fromKp(5.67));
         assertEquals(NoaaGeomagneticStormScale.G2, NoaaGeomagneticStormScale.fromKp(6.00));
-        assertEquals(NoaaGeomagneticStormScale.G3, NoaaGeomagneticStormScale.fromKp(7.00));
-        assertEquals(NoaaGeomagneticStormScale.G4, NoaaGeomagneticStormScale.fromKp(8.00));
+        assertEquals(NoaaGeomagneticStormScale.G3, NoaaGeomagneticStormScale.fromKp(6.67));
+        assertEquals(NoaaGeomagneticStormScale.G4, NoaaGeomagneticStormScale.fromKp(7.67));
+        assertEquals(NoaaGeomagneticStormScale.G4, NoaaGeomagneticStormScale.fromKp(8.33));
+        assertEquals(NoaaGeomagneticStormScale.G5, NoaaGeomagneticStormScale.fromKp(8.67));
         assertEquals(NoaaGeomagneticStormScale.G5, NoaaGeomagneticStormScale.fromKp(9.00));
     }
 }

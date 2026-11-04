@@ -52,6 +52,83 @@ class LocationServiceTest {
     }
 
     @Test
+    void matchesChineseNamesIncludingACitySuffixWithoutCachingLocalizedNamesById() {
+        Location beijing = new Location(1816670, "北京", "", "", "中国", 39.9075, 116.39723, "Asia/Shanghai");
+        Location beijingEnglish = new Location(1816670, "Beijing", "", "", "China", 39.9075, 116.39723, "Asia/Shanghai");
+        Location unrelated = new Location(1, "南京", "", "", "中国", 32.06, 118.78, "Asia/Shanghai");
+        // Open-Meteo finds nothing for 北京市 itself, only for 北京.
+        when(provider.search("北京市")).thenReturn(List.of());
+        when(provider.search("北京")).thenReturn(List.of(beijing, unrelated));
+        when(provider.get(1816670)).thenReturn(java.util.Optional.of(beijingEnglish));
+
+        assertEquals(List.of(beijing), service.search("北京市"));
+        assertEquals("Beijing", service.get(1816670).name());
+        verify(provider).search("北京市");
+        verify(provider).search("北京");
+    }
+
+    @Test
+    void findsAChineseNameTheGeocoderDoesNotKnow() {
+        Location reykjavik = new Location(3413829, "Reykjavik", "Capital Region", "Reykjavíkurborg", "Iceland",
+                64.13548, -21.89541, "Atlantic/Reykjavik");
+        when(provider.get(3413829)).thenReturn(Optional.of(reykjavik));
+
+        assertEquals(List.of(new Location(3413829, "雷克雅未克", "", "", "冰岛",
+                64.13548, -21.89541, "Atlantic/Reykjavik")), service.search("雷克雅未克"));
+        assertEquals("Reykjavik", service.get(3413829).name());
+    }
+
+    @Test
+    void putsTheUsualPlaceBeforeOtherPlacesWithTheSameChineseName() {
+        Location london = new Location(2643743, "London", "England", "", "United Kingdom",
+                51.50853, -0.12574, "Europe/London");
+        Location ontario = new Location(6058560, "伦敦", "安大略", "", "加拿大", 42.98339, -81.23304, "America/Toronto");
+        when(provider.get(2643743)).thenReturn(Optional.of(london));
+        when(provider.search("伦敦")).thenReturn(List.of(ontario));
+
+        List<Location> found = service.search("伦敦");
+
+        assertEquals(List.of(2643743L, 6058560L), found.stream().map(Location::id).toList());
+        assertEquals("英国", found.getFirst().country());
+    }
+
+    @Test
+    void appliesTheCitySuffixAndCountryWordsToChineseNames() {
+        Location newYork = new Location(5128581, "New York", "New York", "", "United States",
+                40.71427, -74.00597, "America/New_York");
+        when(provider.get(5128581)).thenReturn(Optional.of(newYork));
+
+        assertEquals("纽约", service.search("纽约市").getFirst().name());
+        assertEquals("纽约", service.search("纽约 美国").getFirst().name());
+        assertTrue(service.search("纽约 日本").isEmpty());
+    }
+
+    @Test
+    void stillAnswersWhenAChineseNamePointsAtAPlaceTheGeocoderDropped() {
+        when(provider.get(3413829)).thenReturn(Optional.empty());
+
+        assertTrue(service.search("雷克雅未克").isEmpty());
+    }
+
+    @Test
+    void stripsTheLongestChineseAdministrativeSuffix() {
+        Location innerMongolia = new Location(2035607, "内蒙古", "内蒙古", "", "中国", 44.0, 113.0, "Asia/Shanghai");
+        when(provider.search("内蒙古")).thenReturn(List.of(innerMongolia));
+
+        assertEquals(List.of(innerMongolia), service.search("内蒙古自治区"));
+        verify(provider, org.mockito.Mockito.never()).search("内蒙古自治");
+    }
+
+    @Test
+    void matchesLettersThatDoNotDecomposeWhenTypedWithoutTheirMark() {
+        Location tromso = new Location(3133895, "Tromsø", "Troms", "Tromsø", "Norway",
+                69.6489, 18.95508, "Europe/Oslo");
+        when(provider.search("Tromso")).thenReturn(List.of(tromso));
+
+        assertEquals(List.of(tromso), service.search("Tromso"));
+    }
+
+    @Test
     void filtersFuzzyProviderResultsThatDoNotMatchThePlaceName() {
         Location dublin = new Location(2964574, "Dublin", "Leinster", "Dublin City", "Ireland",
                 53.33306, -6.24889, "Europe/Dublin");

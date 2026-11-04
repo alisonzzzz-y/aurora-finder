@@ -45,6 +45,24 @@ public class AssistantRequestLimiter {
         this.clock = clock;
     }
 
+    /**
+     * Checks the client, global and concurrency limits together and records the request only if all pass,
+     * so a request rejected by the shared limits does not use up the client's own allowance.
+     */
+    public synchronized Permit admit(String clientKey) {
+        Instant now = clock.instant();
+        Instant cutoff = now.minus(window);
+        Deque<Instant> recent = requests.get(clientKey);
+        if (recent != null) prune(recent, cutoff);
+        if (recent != null && recent.size() >= requestLimit) throw new AssistantRateLimitException();
+        prune(globalRequests, cutoff);
+        if (active >= maxConcurrent || globalRequests.size() >= globalLimit) throw new AssistantRateLimitException();
+        check(clientKey);
+        active++;
+        globalRequests.addLast(now);
+        return new Permit();
+    }
+
     public synchronized void check(String clientKey) {
         Instant now = clock.instant();
         if (!requests.containsKey(clientKey) && requests.size() >= MAX_TRACKED_CLIENTS) {

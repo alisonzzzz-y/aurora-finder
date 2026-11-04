@@ -32,14 +32,20 @@ export function formatKpTime(instant: string | number, locale: string, timeZone:
   }).format(new Date(instant))
 }
 
+// NOAA rounds Kp to a whole K index before assigning a G level, so 4.67 (5-) is already G1.
+export function kpStormLevel(kp: number) {
+  return Math.max(0, Math.min(5, Math.round(kp) - 4))
+}
+
 export function kpStormScale(kp: number, names: string[], belowG1: string, scale?: string) {
-  if (scale === 'BELOW_G1' || kp < 5) return belowG1
-  const level = scale?.startsWith('G') ? Number(scale.slice(1)) : Math.min(5, Math.floor(kp) - 4)
+  if (scale === 'BELOW_G1' || kpStormLevel(kp) === 0) return belowG1
+  const level = scale?.startsWith('G') ? Number(scale.slice(1)) : kpStormLevel(kp)
   if (!Number.isFinite(level) || level < 1 || level > 5) return belowG1
   return `G${level} · ${names[level - 1]}`
 }
 
 // G3 colour includes higher storms; the readout retains the exact G level.
 export function kpStormBand(kp: number) {
-  return kp >= 7 ? 'kp-storm-g3' : kp >= 6 ? 'kp-storm-g2' : kp >= 5 ? 'kp-storm-g1' : ''
+  const level = kpStormLevel(kp)
+  return level >= 3 ? 'kp-storm-g3' : level === 2 ? 'kp-storm-g2' : level === 1 ? 'kp-storm-g1' : ''
 }

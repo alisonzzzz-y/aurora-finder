@@ -6,6 +6,7 @@ import com.aurora.observation.dto.OutlookResponse;
 import com.aurora.observation.dto.OutlookLevel;
 import com.aurora.observation.dto.OutlookReasonCode;
 import com.aurora.observation.dto.RuleStatus;
+import com.aurora.observation.dto.SolarDarkness;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -32,7 +33,7 @@ public class OutlookService {
     public OutlookResponse forLocation(long id) {
         Location location = locations.get(id);
         ZoneId zone = ZoneId.of(location.timezone());
-        LocalDate tonight = LocalDate.now(clock.withZone(zone));
+        LocalDate tonight = currentNightDate(location, zone, clock.instant());
         List<NightOutlook> nights = IntStream.range(0, 3)
                 .mapToObj(offset -> {
                     LocalDate localDate = tonight.plusDays(offset);
@@ -47,5 +48,26 @@ public class OutlookService {
                 })
                 .toList();
         return new OutlookResponse(location, clock.instant(), RuleStatus.NOT_VALIDATED, nights);
+    }
+
+    /**
+     * A night keeps the date of the evening it began until civil dawn, so the hours after midnight
+     * still belong to "tonight". Without civil darkness (polar day) the calendar date is used.
+     */
+    LocalDate currentNightDate(Location location, ZoneId zone, Instant now) {
+        LocalDate today = LocalDate.ofInstant(now, zone);
+        Instant todayNoon = today.atTime(LocalTime.NOON).atZone(zone).toInstant();
+        if (!now.isBefore(todayNoon)) return today;
+        LocalDate yesterday = today.minusDays(1);
+        Instant yesterdayNoon = yesterday.atTime(LocalTime.NOON).atZone(zone).toInstant();
+        var civil = solarDarkness.forWindow(location, yesterdayNoon, todayNoon).thresholds().stream()
+                .filter(threshold -> threshold.threshold() == SolarDarkness.Threshold.CIVIL_TWILIGHT)
+                .findFirst().orElse(null);
+        if (civil == null || civil.status() == SolarDarkness.Status.CALCULATION_FAILED) {
+            // Without a solar result, treat the small hours as the previous evening's night.
+            return now.atZone(zone).getHour() < 6 ? yesterday : today;
+        }
+        boolean nightInProgress = civil.intervals().stream().anyMatch(interval -> now.isBefore(interval.endUtc()));
+        return nightInProgress ? yesterday : today;
     }
 }

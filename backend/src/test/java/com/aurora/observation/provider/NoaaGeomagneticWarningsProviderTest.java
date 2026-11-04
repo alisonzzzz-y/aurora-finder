@@ -56,6 +56,23 @@ class NoaaGeomagneticWarningsProviderTest {
     }
 
     @Test
+    void includesStrongStormWarningsForKIndexSixAndSevenOrGreater() {
+        reply.set(new Reply(200, """
+                [
+                  {"product_id":"K07W","message":"WARNING: Geomagnetic K-index of 7 or greater expected\\nValid From: 2026 Sep 25 2100 UTC\\nValid To: 2026 Sep 26 0300 UTC\\nNOAA Scale: G3 or Greater - Strong to Extreme"},
+                  {"product_id":"K06W","message":"WARNING: Geomagnetic K-index of 6 expected\\nValid From: 2026 Sep 25 2000 UTC\\nValid To: 2026 Sep 26 0300 UTC\\nNOAA Scale: G2 - Moderate"}
+                ]
+                """));
+        var warnings = provider.latest().warnings();
+        assertEquals(2, warnings.size());
+        assertEquals("K07W", warnings.get(0).productId());
+        assertEquals(7, warnings.get(0).expectedKIndex());
+        assertEquals("G3 or Greater - Strong to Extreme", warnings.get(0).noaaScale());
+        assertEquals(6, warnings.get(1).expectedKIndex());
+        assertEquals("G2 - Moderate", warnings.get(1).noaaScale());
+    }
+
+    @Test
     void parsesTheLatestDailyStormWatchAndDropsPastUtcDates() {
         reply.set(new Reply(200, """
                 [

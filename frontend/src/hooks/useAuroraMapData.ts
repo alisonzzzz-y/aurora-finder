@@ -14,6 +14,20 @@ export function useAuroraMapData() {
     let expiryTimer: number | undefined
     let retryTimer: number | undefined
     let retryAttempt = 0
+    let lastGood: AuroraMapData | null = null
+
+    function scheduleExpiry(response: AuroraMapData) {
+      const forecastDeadline = Date.parse(response.forecastTime)
+      if (response.status !== 'CURRENT' || !Number.isFinite(forecastDeadline)) return
+      const delay = forecastDeadline - Date.now() + 100
+      if (delay <= 0) return
+      expiryTimer = window.setTimeout(() => {
+        setData(previous => previous?.retrievedAt === response.retrievedAt
+          ? { ...previous, status: 'EXPIRED', points: [] }
+          : previous)
+        void refresh()
+      }, delay)
+    }
 
     async function refresh(isRetry = false) {
       if (!isRetry) {
@@ -38,24 +52,21 @@ export function useAuroraMapData() {
           ? { ...response, status: 'EXPIRED' as const, points: [] }
           : response
         setData(freshResponse)
+        lastGood = freshResponse
         setError('')
         retryAttempt = 0
 
-        if (freshResponse.status === 'CURRENT' && Number.isFinite(forecastDeadline)) {
-          const delay = forecastDeadline - Date.now() + 100
-          if (delay > 0) {
-            expiryTimer = window.setTimeout(() => {
-              setData(previous => previous?.retrievedAt === freshResponse.retrievedAt
-                ? { ...previous, status: 'EXPIRED', points: [] }
-                : previous)
-              void refresh()
-            }, delay)
-          }
-        }
+        scheduleExpiry(freshResponse)
       } catch (cause) {
         if (current.signal.aborted) return
-        setData(null)
-        setError(cause instanceof Error ? cause.message : 'Aurora forecast data could not be loaded.')
+        // A failed refresh keeps a still-valid forecast on screen; its expiry timer still removes it on time.
+        const stillValid = lastGood?.status === 'CURRENT' && Date.now() <= Date.parse(lastGood.forecastTime)
+        if (stillValid && lastGood) scheduleExpiry(lastGood)
+        else {
+          lastGood = null
+          setData(null)
+          setError(cause instanceof Error ? cause.message : 'Aurora forecast data could not be loaded.')
+        }
         const delay = transientRetryDelay(cause, retryAttempt)
         if (delay !== null) {
           retryAttempt += 1
