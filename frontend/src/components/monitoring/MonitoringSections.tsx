@@ -9,6 +9,7 @@ import { InfoHint } from '../InfoHint'
 import { EvidenceChart, type EvidencePoint } from './EvidenceChart'
 import './MonitoringSections.css'
 import { CameraViewer } from './CameraViewer'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
 
 type Series = { id: string; unit: string; status: string; points: EvidencePoint[] }
 type Solar = { retrievedAt: string; sourceUrl: string; series: Series[] }
@@ -72,7 +73,7 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
     <section className="home-section-band home-section-band-odd monitoring-section">
       <h2>{c.regional}<InfoHint>{c.regionHelp}</InfoHint></h2>
       {!r ? <p role="status">{regional.failed ? c.unavailable : c.loading}</p> : r.status === 'UNAVAILABLE' ? <p>{c.unavailable}</p> : <>
-        <div className="monitoring-headline"><strong>{r.station}</strong><span style={{ color: r.color ?? undefined }}>{r.status === 'STALE' ? c.stale : c[r.alert as 'green' | 'yellow' | 'amber' | 'red'] ?? r.alert}</span></div>
+        <div className="monitoring-headline"><strong>{language === 'zh' ? r.station.replace(/, UK$/, '，英国') : r.station}</strong><span style={{ color: r.color ?? undefined }}>{r.status === 'STALE' ? c.stale : c[r.alert as 'green' | 'yellow' | 'amber' | 'red'] ?? r.alert}</span></div>
         {r.status === 'CURRENT' && recentPair && <p>{last.value > previous.value ? c.rising : last.value < previous.value ? c.falling : c.steady}</p>}
         <EvidenceChart points={r.points} unit="nT" label={c.regional} locale={locale} maxGapMinutes={90} />
         <p className="monitoring-source">{c.source}: <a href={r.sourceUrl} target="_blank" rel="noreferrer">AuroraWatch UK ↗</a><InfoHint>{r.attribution} · {r.license}{r.updatedAt && ` · ${time(r.updatedAt)}`}</InfoHint></p>
@@ -102,8 +103,11 @@ export function MonitoringSections({ facts }: { facts: ObservationFacts | null }
 }
 function ObservationHistory({ facts }: { facts: ObservationFacts | null }) {
   const { language } = useI18n(), c = copy[language], locale = language === 'zh' ? 'zh-CN' : 'en'
-  const places = [{ id: 2964574, name: 'Dublin' }, { id: 2965768, name: 'Carlow' }, { id: 3413829, name: 'Reykjavik' }]
-  if (facts && !places.some(p => p.id === facts.outlook.location.id)) places.unshift(facts.outlook.location)
+  const shownPlace = useLocalizedPlace(facts?.outlook.location ?? null)
+  const places: { id: number; name: string }[] = language === 'zh'
+    ? [{ id: 2964574, name: '都柏林' }, { id: 2965768, name: '卡洛' }, { id: 3413829, name: '雷克雅未克' }]
+    : [{ id: 2964574, name: 'Dublin' }, { id: 2965768, name: 'Carlow' }, { id: 3413829, name: 'Reykjavik' }]
+  if (shownPlace && !places.some(p => p.id === shownPlace.id)) places.unshift(shownPlace)
   const [locationId, setLocationId] = useState(facts?.outlook.location.id ?? 2964574)
   const { data, failed } = useMonitoring<History>(`/api/v1/history/${locationId}`, facts?.generatedAtUtc)
   const [selectedAt, setSelectedAt] = useState('')

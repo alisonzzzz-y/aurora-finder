@@ -6,9 +6,13 @@ import { getObservationFacts } from '../../api/observationFacts'
 import { useI18n } from '../../i18n'
 import { InfoHint } from '../InfoHint'
 import { commonCloudTimes, darknessAt, distanceKm } from './nearbyMath'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
 import './NearbyComparison.css'
 
 type Row = { place: Location; facts: ObservationFacts | null }
+function PlaceName({ place }: { place: Location }) {
+  return useLocalizedPlace(place).name
+}
 export function NearbyComparison({ origin, onSelect }: { origin: Location; onSelect:(place:Location)=>void }) {
   const { language } = useI18n()
   const zh = language==='zh'
@@ -57,7 +61,7 @@ export function NearbyComparison({ origin, onSelect }: { origin: Location; onSel
         const activity=row.facts?.auroraActivity
         const current=activity?.status==='CURRENT' && activity.data?.status==='CURRENT' && Date.parse(activity.data.forecastTime)>now
         const value=current?activity.data?.modelValue:null
-        return <article key={row.place.id}><h3>{row.place.name}</h3><span>{index===0?(zh?'当前地点':'Selected place'):`${distanceKm(origin,row.place).toFixed(1)} km · ${zh?'直线距离':'straight line'}`}</span>
+        return <article key={row.place.id}><h3><PlaceName place={row.place} /></h3><span>{index===0?(zh?'当前地点':'Selected place'):`${distanceKm(origin,row.place).toFixed(1)} km · ${zh?'直线距离':'straight line'}`}</span>
           {!row.facts && <p role="status">{zh?'预报暂不可用':'Forecast unavailable'}</p>}
           <dl><div><dt>{zh?'云量':'Cloud cover'}</dt><dd>{cloud==null || time===undefined?'—':`${cloud}%`}{validClouds.length>=2 && cloud===Math.min(...validClouds) && <span className="nearby-best">{zh?'云量最少':'Least cloud'}</span>}</dd></div>
           <div><dt>{zh?'天色足够暗':'Dark sky'}</dt><dd>{dark===null?'—':dark?(zh?'是':'Yes'):(zh?'否':'No')}</dd></div>

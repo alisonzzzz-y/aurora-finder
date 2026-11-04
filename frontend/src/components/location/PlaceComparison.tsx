@@ -7,6 +7,7 @@ import { ViewingConditionsSummary } from '../outlook/ViewingConditionsSummary'
 import { InfoHint } from '../InfoHint'
 import './PlaceComparison.css'
 import { placeLabel } from './placeLabel'
+import { useLocalizedPlace } from '../../hooks/useLocalizedPlace'
 
 type Props = {
   places: Location[]
@@ -30,6 +31,7 @@ function ComparisonRow({ place, revision, onSelect, onRemove }: {
   place: Location; revision: number; onSelect: (location: Location) => void; onRemove: () => void
 }) {
   const { t } = useI18n()
+  const shownPlace = useLocalizedPlace(place)
   const [facts, setFacts] = useState<ObservationFacts | null>(null)
   const [error, setError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
@@ -51,7 +53,7 @@ function ComparisonRow({ place, revision, onSelect, onRemove }: {
     return () => { controller?.abort(); window.clearInterval(timer) }
   }, [place.id, revision])
   return <article className="comparison-row">
-    <header><h3>{placeLabel(place)}</h3><button className="comparison-remove" type="button" aria-label={`${t('compareRemove')} ${place.name}, ${place.country}`} onClick={onRemove}>{t('compareRemove')}</button></header>
+    <header><h3>{placeLabel(shownPlace)}</h3><button className="comparison-remove" type="button" aria-label={`${t('compareRemove')} ${placeLabel(shownPlace)}`} onClick={onRemove}>{t('compareRemove')}</button></header>
     {loading && <p role="status">{t('loading')}</p>}
     {error !== null && <p role="status">{localizeError(error, t)}</p>}
     {!loading && facts && <ViewingConditionsSummary facts={facts} />}

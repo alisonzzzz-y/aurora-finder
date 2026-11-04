@@ -242,6 +242,27 @@ test('background alerts subscribe with the page language and unsubscribe', async
   expect(posts.at(-1)).toEqual({ path: '/api/v1/push/unsubscribe', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test' } })
 })
 
+test('a chosen place follows the page language in every place it is shown', async ({ page }) => {
+  await page.route(`**/api/v1/locations/${place.id}?language=zh`, route => route.fulfill({ json: { ...place, name: '都柏林', region: '倫斯特省', subregion: '', country: '爱尔兰' } }))
+  await selectDublin(page)
+  const sidebarName = page.locator('.map-sidebar-location-panel h3')
+  await expect(sidebarName).toContainText('Dublin')
+  await page.getByRole('button', { name: '简体中文' }).click()
+  await expect(sidebarName).toHaveText('都柏林, 爱尔兰')
+  await expect(page.locator('#location-details-title')).toHaveText('都柏林的极光与观测条件')
+  await expect(page.locator('.selected-location-heading h2')).toContainText('都柏林, 爱尔兰')
+  await expect(page.locator('.selected-place-confirmation')).toHaveText(/都柏林, 伦斯特省, 爱尔兰/)
+  await page.getByRole('button', { name: 'English', exact: true }).click()
+  await expect(sidebarName).toContainText('Dublin')
+})
+
+test('failure messages and search examples follow the page language', async ({ page }) => {
+  await page.getByRole('button', { name: '简体中文' }).click()
+  await expect(page.locator('.map-sidebar [role=combobox]')).toHaveAttribute('placeholder', /都柏林/)
+  await expect(page.getByText('地磁预报暂时不可用。')).toBeVisible()
+  await expect(page.getByText('The geomagnetic forecast is unavailable right now.')).toHaveCount(0)
+})
+
 test('a section that fails while the backend wakes keeps loading and fills in by itself', async ({ page }) => {
   let failing = true
   let failures = 0
