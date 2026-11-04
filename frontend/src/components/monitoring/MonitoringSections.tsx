@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { apiUrl } from '../../api/apiUrl'
 import { fetchJson } from '../../api/fetchJson'
+import { transientRetryDelay } from '../../api/requestError'
 import type { ObservationFacts } from '../../types/observationFacts'
 import { InfoHint } from '../InfoHint'
 import { EvidenceChart, type EvidencePoint } from './EvidenceChart'
@@ -37,10 +38,20 @@ function useMonitoring<T>(path: string, revision = '') {
   useEffect(() => {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
+    let retryAttempt = 0
     async function load() {
-      try { const data = await fetchJson<T>(apiUrl(path), { signal: controller.signal }); if (!controller.signal.aborted) setResult({ path, data, failed: false }) }
-      catch { if (!controller.signal.aborted) setResult({ path, data: null, failed: true }) }
-      if (!controller.signal.aborted) timer = setTimeout(load, 180000)
+      let nextLoadMs = 180000
+      try {
+        const data = await fetchJson<T>(apiUrl(path), { signal: controller.signal })
+        if (!controller.signal.aborted) setResult({ path, data, failed: false })
+        retryAttempt = 0
+      } catch (cause) {
+        const retryMs = transientRetryDelay(cause, retryAttempt)
+        // The backend may be waking, so the section keeps its state until the retries run out.
+        if (retryMs !== null) { retryAttempt += 1; nextLoadMs = retryMs }
+        else if (!controller.signal.aborted) setResult({ path, data: null, failed: true })
+      }
+      if (!controller.signal.aborted) timer = setTimeout(load, nextLoadMs)
     }
     void load()
     return () => { controller.abort(); clearTimeout(timer) }

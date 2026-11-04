@@ -57,3 +57,18 @@ test('only slow backend reads count as the server waking up', async t => {
   await pending
   assert.equal(hasSlowRequest(), false)
 })
+
+test('a backend read that times out keeps the slow notice until its retry can take over', async t => {
+  t.mock.method(globalThis, 'fetch', (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+  }))
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const pending = fetchJson('/api/v1/kp-index', {}, 'Unavailable')
+  t.mock.timers.tick(8000)
+  assert.equal(hasSlowRequest(), true)
+  t.mock.timers.tick(142_000)
+  await assert.rejects(pending, error => error instanceof ApiRequestError && error.status === 408)
+  assert.equal(hasSlowRequest(), true)
+  t.mock.timers.tick(20_000)
+  assert.equal(hasSlowRequest(), false)
+})
