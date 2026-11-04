@@ -8,6 +8,7 @@ import type { Location } from '../../types/location'
 import { localizeError, useI18n } from '../../i18n'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './AuroraMap.css'
+import { placeLabel } from '../location/placeLabel'
 
 setWorkerUrl(workerUrl)
 
@@ -96,7 +97,7 @@ function asSelectedLocationGeoJson(location: Location | null): FeatureCollection
     features: location ? [{
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
-      properties: { name: `${location.name}, ${location.country}`, timezone: location.timezone },
+      properties: { name: placeLabel(location), timezone: location.timezone },
     }] : [],
   }
 }
@@ -460,7 +461,7 @@ export function AuroraMap({ data, forecastError, forecastLoading, activityPoints
   }, [activityPoints, selectedActivityIndex, t, tilesReady])
 
   const mapLabel = selectedLocation
-    ? `${t('mapAria')}: ${selectedLocation.name}, ${selectedLocation.country}`
+    ? `${t('mapAria')}: ${placeLabel(selectedLocation)}`
     : t('mapAria')
 
   return <section className="aurora-map-panel" aria-label={mapLabel}>
