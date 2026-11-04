@@ -20,6 +20,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import { useActivityAreaNames } from '../hooks/useActivityAreaNames'
 import { strongestDistinctPoints } from '../components/aurora/activityPoints'
 import { placeLabel } from '../components/location/placeLabel'
+import { useLocalizedPlace } from '../hooks/useLocalizedPlace'
 
 const AuroraMap = lazy(() => import('../components/aurora/AuroraMap').then(module => ({ default: module.AuroraMap })))
 
@@ -38,6 +39,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
   const [comparisonPlaces, setComparisonPlaces] = useState<Location[]>([])
   const [comparisonLimit, setComparisonLimit] = useState(false)
   const [mapLocation, setMapLocation] = useState<Location | null>(null)
+  const shownLocation = useLocalizedPlace(mapLocation)
   const activityPoints = useMemo(
     () => auroraMap.data?.status === 'CURRENT' ? strongestDistinctPoints(auroraMap.data.points) : [],
     [auroraMap.data],
@@ -97,7 +99,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
           </div>}
           {sidebarView === 'activity' && <CurrentActivityAreas points={activityPoints} areaNames={activityAreaNames} data={auroraMap.data} error={auroraMap.error} loading={auroraMap.loading} selectedIndex={selectedActivityIndex} onSelect={setSelectedActivityIndex} />}
           {sidebarView === 'local' && <div className="map-sidebar-location-panel">
-            {mapLocation && <h3>{placeLabel(mapLocation)}</h3>}
+            {shownLocation && <h3>{placeLabel(shownLocation)}</h3>}
             {busy && <p className="location-result-status" role="status">{t('loading')}</p>}
             {error && <p className="error location-result-status" role="alert">{localizeError(new Error(error), t)}</p>}
             {visibleFacts && <>
@@ -116,7 +118,7 @@ export function LocationSearchPage({ busy, facts, error, onSelect }: Props) {
     </section>
     <div className="home-content-sections">
       {(hasLocationRequest || comparisonPlaces.length > 0) && <section id="location-details" tabIndex={-1} className="home-section-band home-section-band-even location-details-band" aria-labelledby="location-details-title">
-        <header className="location-details-heading"><h2 id="location-details-title">{mapLocation ? language === 'zh' ? `${mapLocation.name}${c.title}` : `${c.title}${mapLocation.name}` : t('localOutlook')}</h2><button className="comparison-action" type="button" onClick={() => moveTo('aurora-dashboard')}>{c.back}</button></header>
+        <header className="location-details-heading"><h2 id="location-details-title">{shownLocation ? language === 'zh' ? `${shownLocation.name}${c.title}` : `${c.title}${shownLocation.name}` : t('localOutlook')}</h2><button className="comparison-action" type="button" onClick={() => moveTo('aurora-dashboard')}>{c.back}</button></header>
         {busy && <p role="status">{t('loading')}</p>}
         {error && <p role="alert" className="error">{localizeError(new Error(error), t)}</p>}
         {visibleFacts && <LocalOutlookDashboard key={`outlook-${visibleFacts.outlook.location.id}`} facts={visibleFacts} />}
