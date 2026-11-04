@@ -242,6 +242,24 @@ test('background alerts subscribe with the page language and unsubscribe', async
   expect(posts.at(-1)).toEqual({ path: '/api/v1/push/unsubscribe', body: { endpoint: 'https://fcm.googleapis.com/fcm/send/test' } })
 })
 
+test('a section that fails while the backend wakes keeps loading and fills in by itself', async ({ page }) => {
+  let failing = true
+  let failures = 0
+  await page.route('**/api/v1/regional-activity', async route => {
+    if (failing) {
+      failures += 1
+      return route.fulfill({ status: 503, json: { message: 'Fixture: still waking' } })
+    }
+    return route.fulfill({ json: { status: 'CURRENT', station: 'Fixture station', updatedAt: '2026-10-26T11:00:00Z', alert: 'green', color: '#33ff33', attribution: 'Fixture', license: 'Fixture', sourceUrl: 'https://example.test', points: [] } })
+  })
+  await page.reload()
+  const section = page.locator('.monitoring-section').filter({ hasText: 'Regional magnetic activity' })
+  await expect.poll(() => failures).toBeGreaterThan(0)
+  await expect(section.getByRole('status')).toHaveText('Loading data…')
+  failing = false
+  await expect(section).toContainText('Fixture station', { timeout: 15000 })
+})
+
 test('explains a long wait while the backend wakes up, then clears the message', async ({ page }) => {
   await setup(page)
   await page.route('**/api/v1/kp-index', async route => {
