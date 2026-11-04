@@ -6,5 +6,7 @@ import java.util.Optional;
 
 public interface GeocodingProvider {
     List<Location> search(String query);
+    List<Location> search(String query, String language);
     Optional<Location> get(long id);
+    Optional<Location> get(long id, String language);
 }
