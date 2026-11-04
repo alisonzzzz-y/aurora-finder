@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -84,12 +85,33 @@ public class LocationService {
             if (withoutSuffix != null) terms.add(withoutSuffix);
         }
 
+        Map<Long, Location> matches = new LinkedHashMap<>();
+        aliasMatch(query, terms).ifPresent(location -> matches.put(location.id(), location));
         for (String term : terms) {
             if (term.length() < 2) continue;
-            List<Location> matches = filterMatches(query, geocoding.search(term));
-            if (!matches.isEmpty()) return matches;
+            List<Location> found = filterMatches(query, geocoding.search(term));
+            found.forEach(location -> matches.putIfAbsent(location.id(), location));
+            if (!found.isEmpty()) break;
         }
-        return List.of();
+        return List.copyOf(matches.values());
+    }
+
+    /** Comes first because it is the place people usually mean; other places with that name still follow. */
+    private Optional<Location> aliasMatch(String query, Set<String> terms) {
+        for (String term : terms) {
+            ChineseLocationAliases.Alias alias = ChineseLocationAliases.find(term);
+            if (alias == null) continue;
+            Location place;
+            try {
+                place = get(alias.locationId());
+            } catch (LocationNotFoundException gone) {
+                return Optional.empty();
+            }
+            Location named = new Location(place.id(), term, "", "", alias.country(),
+                    place.latitude(), place.longitude(), place.timezone());
+            return Optional.of(named).filter(location -> matchesQuery(query, location));
+        }
+        return Optional.empty();
     }
 
     private String withoutChineseAdministrativeSuffix(String term) {
